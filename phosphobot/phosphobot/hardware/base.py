@@ -854,7 +854,7 @@ class BaseManipulator(BaseRobot):
 
         # Convert to np and radians
         np_angles_rad = np.array(angles)
-        if unit == "deg":
+        if unit in ("deg", "degrees"):
             np_angles_rad = np.deg2rad(np_angles_rad)
         elif unit == "motor_units":
             np_angles_rad = self._units_vec_to_radians(np_angles_rad)

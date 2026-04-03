@@ -28,10 +28,34 @@ import useSWR from "swr";
 type PositionDataPoint = { time: number; value: number; goal: number };
 type TorqueDataPoint = { time: number; value: number };
 
-// Physical limits for joints (motor units)
-const POSITION_LIMIT = 4095;
+// Keep the UI in degrees so the same control page works across robot backends.
+const POSITION_LIMIT = 180;
 // Example torque limits (adjust as needed)
 const TORQUE_LIMIT = 200; // replace with actual joint torque limit
+
+const createPositionBuffers = (
+  jointCount: number,
+  pointsCount: number,
+): PositionDataPoint[][] =>
+  Array(jointCount)
+    .fill(null)
+    .map(() =>
+      Array.from({ length: pointsCount }, (_, i) => ({
+        time: i,
+        value: 0,
+        goal: 0,
+      })),
+    );
+
+const createTorqueBuffers = (
+  jointCount: number,
+  pointsCount: number,
+): TorqueDataPoint[][] =>
+  Array(jointCount)
+    .fill(null)
+    .map(() =>
+      Array.from({ length: pointsCount }, (_, i) => ({ time: i, value: 0 })),
+    );
 
 export function JointControl() {
   const NUM_JOINTS = 6;
@@ -46,23 +70,11 @@ export function JointControl() {
   const [isInitialized, setIsInitialized] = useState(false);
 
   const [positionBuffers, setPositionBuffers] = useState<PositionDataPoint[][]>(
-    Array(NUM_JOINTS)
-      .fill(null)
-      .map(() =>
-        Array.from({ length: NUM_POINTS }, (_, i) => ({
-          time: i,
-          value: 0,
-          goal: 0,
-        })),
-      ),
+    createPositionBuffers(NUM_JOINTS, NUM_POINTS),
   );
 
   const [torqueBuffers, setTorqueBuffers] = useState<TorqueDataPoint[][]>(
-    Array(NUM_JOINTS)
-      .fill(null)
-      .map(() =>
-        Array.from({ length: NUM_POINTS }, (_, i) => ({ time: i, value: 0 })),
-      ),
+    createTorqueBuffers(NUM_JOINTS, NUM_POINTS),
   );
 
   const [jointPositions, setJointPositions] = useState<number[]>(
@@ -81,6 +93,13 @@ export function JointControl() {
   );
 
   const intervalRef = useRef<number | null>(null);
+  const goalAnglesRef = useRef(goalAngles);
+  const pendingGoalAnglesRef = useRef<number[] | null>(null);
+  const sendInFlightRef = useRef(false);
+
+  useEffect(() => {
+    goalAnglesRef.current = goalAngles;
+  }, [goalAngles]);
 
   const robotIDFromName = (name?: string | null) => {
     if (name === undefined || name === null || !serverStatus?.robot_status) {
@@ -98,7 +117,7 @@ export function JointControl() {
       `/joints/read?robot_id=${robotId}`,
       "POST",
       {
-        unit: "motor_units",
+        unit: "degrees",
         joints_ids: null,
       },
     );
@@ -114,12 +133,42 @@ export function JointControl() {
     return Array.isArray(data) ? data : jointTorques;
   };
 
-  const sendJointCommands = async () => {
+  const sendJointCommands = async (angles: number[]) => {
     const robotId = robotIDFromName(selectedRobotName);
-    await fetchWithBaseUrl(`/joints/write?robot_id=${robotId}`, "POST", {
-      angles: goalAngles,
-      unit: "motor_units",
+    const response = await fetchWithBaseUrl(`/joints/write?robot_id=${robotId}`, "POST", {
+      angles,
+      unit: "degrees",
     });
+    if (!response) {
+      throw new Error("Failed to send joint command");
+    }
+  };
+
+  const flushPendingJointCommands = async () => {
+    if (sendInFlightRef.current || pendingGoalAnglesRef.current === null) {
+      return;
+    }
+
+    const nextAngles = pendingGoalAnglesRef.current;
+    pendingGoalAnglesRef.current = null;
+    sendInFlightRef.current = true;
+
+    try {
+      await sendJointCommands(nextAngles);
+      setError("");
+    } catch (err) {
+      setError(`Failed to send joint command: ${err}`);
+    } finally {
+      sendInFlightRef.current = false;
+      if (pendingGoalAnglesRef.current !== null) {
+        void flushPendingJointCommands();
+      }
+    }
+  };
+
+  const queueJointCommands = (angles: number[]) => {
+    pendingGoalAnglesRef.current = angles;
+    void flushPendingJointCommands();
   };
 
   // Initialize joints from API
@@ -128,10 +177,11 @@ export function JointControl() {
       const positions = await fetchJointPositions();
       setJointPositions(positions);
       setGoalAngles(positions);
+      goalAnglesRef.current = positions;
 
       // Initialize position buffers with current positions
-      setPositionBuffers((prev) =>
-        prev.map((buf, idx) =>
+      setPositionBuffers(
+        createPositionBuffers(positions.length, NUM_POINTS).map((buf, idx) =>
           buf.map((pt) => ({
             ...pt,
             value: positions[idx],
@@ -141,16 +191,7 @@ export function JointControl() {
       );
 
       // Reset torque buffers
-      setTorqueBuffers(
-        Array(NUM_JOINTS)
-          .fill(null)
-          .map(() =>
-            Array.from({ length: NUM_POINTS }, (_, i) => ({
-              time: i,
-              value: 0,
-            })),
-          ),
-      );
+      setTorqueBuffers(createTorqueBuffers(positions.length, NUM_POINTS));
 
       setIsInitialized(true);
       setError(""); // Clear any previous errors
@@ -160,12 +201,11 @@ export function JointControl() {
   };
 
   const updateJointGoalAngle = async (jointIndex: number, value: number) => {
-    const newGoals = [...goalAngles];
+    const newGoals = [...goalAnglesRef.current];
     newGoals[jointIndex] = value;
     setGoalAngles(newGoals);
-
-    // Immediately send command for real-time control
-    await sendJointCommands();
+    goalAnglesRef.current = newGoals;
+    queueJointCommands(newGoals);
 
     setPositionBuffers((prev) =>
       prev.map((buf, idx) =>
@@ -201,6 +241,8 @@ export function JointControl() {
       // Reset initialization state to force reload
       setIsInitialized(false);
       setError("");
+      pendingGoalAnglesRef.current = null;
+      sendInFlightRef.current = false;
 
       // Reinitialize with new robot
       const reinitialize = async () => {
@@ -229,7 +271,7 @@ export function JointControl() {
             next.push({
               time: buf[buf.length - 1].time + 1,
               value: positions[idx],
-              goal: goalAngles[idx],
+              goal: goalAnglesRef.current[idx],
             });
             return next;
           }),
@@ -262,7 +304,7 @@ export function JointControl() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [updateInterval, goalAngles, isInitialized, selectedRobotName]);
+  }, [updateInterval, isInitialized, selectedRobotName]);
 
   return (
     <div className="container mx-auto p-4 max-w-7xl">
@@ -280,7 +322,7 @@ export function JointControl() {
                 <Sliders className="h-5 w-5" /> Joint Controls
               </CardTitle>
               <CardDescription>
-                Adjust joint positions (motor units)
+                Adjust joint positions (degrees)
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -313,20 +355,20 @@ export function JointControl() {
                 <div key={i} className="space-y-3">
                   <div className="flex justify-between items-center">
                     <Label htmlFor={`joint-${i}`}>Joint {i + 1}</Label>
-                    <span>{Math.round(angle)} units</span>
+                    <span>{Math.round(angle)} deg</span>
                   </div>
                   <Slider
                     id={`joint-${i}`}
-                    min={0}
+                    min={-POSITION_LIMIT}
                     max={POSITION_LIMIT}
                     step={1}
                     value={[angle]}
                     onValueChange={(vals) => updateJointGoalAngle(i, vals[0])}
                   />
                   <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>-180</span>
                     <span>0</span>
-                    <span>2048</span>
-                    <span>4095</span>
+                    <span>180</span>
                   </div>
                 </div>
               ))}
