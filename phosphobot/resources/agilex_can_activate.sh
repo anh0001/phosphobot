@@ -49,13 +49,13 @@ log_success "Detected $CAN_COUNT CAN interface(s)."
 
 # Configure interfaces
 for iface in "${CAN_INTERFACES[@]}"; do
-    BUS_INFO=$(sudo ethtool -i "$iface" | grep "bus-info" | awk '{print $2}')
+    BUS_INFO=$(sudo -n ethtool -i "$iface" 2>/dev/null | grep "bus-info" | awk '{print $2}')
 
     log_info "Configuring $iface (USB: $BUS_INFO)..."
 
-    sudo ip link set "$iface" down
-    sudo ip link set "$iface" type can bitrate "$DEFAULT_BITRATE"
-    sudo ip link set "$iface" up
+    sudo -n ip link set "$iface" down
+    sudo -n ip link set "$iface" type can bitrate "$DEFAULT_BITRATE"
+    sudo -n ip link set "$iface" up
     log_success "Configured $iface"
 done
 

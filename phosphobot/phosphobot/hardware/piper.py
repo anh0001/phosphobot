@@ -197,14 +197,23 @@ class PiperHardware(BaseManipulator):
                 logger.error("Failed to start the CAN activation script.")
                 return
 
-            # Example: read lines one by one, log them
-            for line in proc.stdout:
-                logger.debug("[can-script] " + line.rstrip())
+            try:
+                stdout_data, stderr_data = proc.communicate(timeout=15)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.communicate()
+                logger.warning(
+                    "CAN activation script timed out (sudo may require a password). "
+                    "Run: sudo visudo and add a NOPASSWD entry for ip and ethtool, "
+                    "or run: sudo -v before starting the server."
+                )
+                return
 
-            for line in proc.stderr:
-                logger.error("[can-script] " + line.rstrip())
+            for line in stdout_data.splitlines():
+                logger.debug("[can-script] " + line)
+            for line in stderr_data.splitlines():
+                logger.error("[can-script] " + line)
 
-            proc.wait(timeout=10)
             if proc.returncode != 0:
                 logger.warning(f"Script exited with exit code: {proc.returncode}")
                 return

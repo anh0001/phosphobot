@@ -9,11 +9,21 @@ ifneq ($(strip $(CAN_INTERFACE)),)
 RUN_ARGS += --can-interface $(CAN_INTERFACE)
 endif
 
+# Configure passwordless sudo for CAN interface commands (run once)
+setup-can-sudo:
+	@if [ ! -f /etc/sudoers.d/piper-can ]; then \
+		echo "robofi ALL=(ALL) NOPASSWD: /sbin/ip, /usr/sbin/ethtool" | sudo tee /etc/sudoers.d/piper-can > /dev/null && \
+		sudo chmod 440 /etc/sudoers.d/piper-can && \
+		echo "[SUCCESS] Passwordless sudo configured for CAN interface commands."; \
+	else \
+		echo "[INFO] Passwordless sudo for CAN already configured, skipping."; \
+	fi
+
 # Default target
 all: prod
 
 # Run the server for prod settings (able to connect to the Meta Quest). If npm is not installed, it will skip the build step.
-prod:
+prod: $(if $(strip $(CAN_INTERFACE)),setup-can-sudo)
 	cd ./dashboard && (npm i && npm run build && mkdir -p ../phosphobot/resources/dist/ && cp -r ./dist/* ../phosphobot/resources/dist/)
 	cd phosphobot && uv run --python 3.10 phosphobot run --simulation=headless --no-crash-telemetry $(RUN_ARGS)
 
@@ -127,4 +137,4 @@ tests:
 	cd phosphobot && uv run pytest tests/phosphobot/ -n 5
 
 
-.PHONY: all dev prod prod_gui stop stop_hard dataset_annotate dataset_convert dataset_push robot_watch test_server build clean_build build_pyinstaller run_bin run_bin_test info_bin
+.PHONY: all dev prod prod_gui stop stop_hard dataset_annotate dataset_convert dataset_push robot_watch test_server build clean_build build_pyinstaller run_bin run_bin_test info_bin setup-can-sudo
