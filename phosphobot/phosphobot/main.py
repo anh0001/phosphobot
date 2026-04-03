@@ -245,6 +245,13 @@ def run(
             help="Enable the cameras. If False, no camera will be detected. Useful in case of conflicts.",
         ),
     ] = True,
+    can_interface: Annotated[
+        list[str],
+        typer.Option(
+            "--can-interface",
+            help="Preferred CAN interface name to use for Piper discovery. Repeat to allow multiple interfaces, e.g. --can-interface can_piper --can-interface can2.",
+        ),
+    ] = [],
     max_can_interfaces: Annotated[
         int,
         typer.Option(
@@ -297,6 +304,7 @@ def run(
         "realsense": realsense,
         "can": can,
         "cameras": cameras,
+        "can_interface": can_interface,
         "max_opencv_index": max_opencv_index,
         "max_can_interfaces": max_can_interfaces,
         "profile": profile,

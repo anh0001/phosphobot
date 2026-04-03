@@ -237,6 +237,105 @@ def zip_folder(folder_path: str, zip_path: str) -> None:
                 zipf.write(file_path, arcname)
 
 
+def list_can_interfaces(
+    max_interfaces: Optional[int] = None,
+    preferred_interfaces: Optional[list[str]] = None,
+) -> list[str]:
+    """
+    Return detected CAN interface names as reported by the OS.
+
+    If preferred interface names are provided, only matching interfaces are returned.
+    Matching is done against both the primary interface name and any Linux altnames,
+    while the primary interface name is returned for compatibility with SocketCAN APIs.
+    """
+
+    if sys.platform != "linux":
+        return []
+
+    try:
+        result = subprocess.run(
+            ["ip", "-j", "-d", "link", "show", "type", "can"],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=3,
+        )
+        raw_interfaces = json.loads(result.stdout)
+    except Exception as e:
+        logger.debug(
+            f"Failed to enumerate CAN interfaces via JSON output, falling back to text parsing: {e}"
+        )
+        try:
+            result = subprocess.run(
+                ["ip", "-br", "link", "show", "type", "can"],
+                capture_output=True,
+                text=True,
+                check=True,
+                timeout=3,
+            )
+        except Exception as inner_e:
+            logger.warning(f"Failed to enumerate CAN interfaces: {inner_e}")
+            return []
+
+        interfaces = []
+        for line in result.stdout.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            interface_name = line.split()[0].split("@", 1)[0]
+            interfaces.append({"name": interface_name, "altnames": []})
+    else:
+        interfaces = []
+        for interface in raw_interfaces:
+            interface_name = interface.get("ifname")
+            if not interface_name:
+                continue
+
+            altnames = interface.get("altnames") or interface.get("altname") or []
+            if isinstance(altnames, str):
+                altnames = [altnames]
+            elif not isinstance(altnames, list):
+                altnames = []
+
+            interfaces.append({"name": interface_name, "altnames": altnames})
+
+    interface_names = [interface["name"] for interface in interfaces]
+
+    if preferred_interfaces:
+        preferred_interface_names: list[str] = []
+        unresolved_preferred_interfaces: list[str] = []
+
+        for preferred_interface in preferred_interfaces:
+            matched_interface = next(
+                (
+                    interface["name"]
+                    for interface in interfaces
+                    if preferred_interface == interface["name"]
+                    or preferred_interface in interface["altnames"]
+                ),
+                None,
+            )
+
+            if matched_interface is None:
+                unresolved_preferred_interfaces.append(preferred_interface)
+                continue
+
+            if matched_interface not in preferred_interface_names:
+                preferred_interface_names.append(matched_interface)
+
+        if unresolved_preferred_interfaces:
+            logger.warning(
+                "Requested CAN interfaces were not detected: "
+                + ", ".join(unresolved_preferred_interfaces)
+            )
+
+        interface_names = preferred_interface_names
+
+    if max_interfaces is not None:
+        return interface_names[:max_interfaces]
+    return interface_names
+
+
 def is_can_plugged(interface: str = "can0") -> bool:
     """
     Checks if a specified CAN interface exists.

@@ -3,6 +3,11 @@
 
 # Default output filename when running `make build`
 OUTPUT_FILENAME ?= main.bin
+RUN_ARGS ?=
+
+ifneq ($(strip $(CAN_INTERFACE)),)
+RUN_ARGS += --can-interface $(CAN_INTERFACE)
+endif
 
 # Default target
 all: prod
@@ -10,33 +15,33 @@ all: prod
 # Run the server for prod settings (able to connect to the Meta Quest). If npm is not installed, it will skip the build step.
 prod:
 	cd ./dashboard && (npm i && npm run build && mkdir -p ../phosphobot/resources/dist/ && cp -r ./dist/* ../phosphobot/resources/dist/)
-	cd phosphobot && uv run --python 3.10 phosphobot run --simulation=headless --no-crash-telemetry
+	cd phosphobot && uv run --python 3.10 phosphobot run --simulation=headless --no-crash-telemetry $(RUN_ARGS)
 
 prod_back:
-	cd phosphobot && MESA_GL_VERSION_OVERRIDE=3.3 uv run --python 3.10 phosphobot run --simulation=headless --no-crash-telemetry
+	cd phosphobot && MESA_GL_VERSION_OVERRIDE=3.3 uv run --python 3.10 phosphobot run --simulation=headless --no-crash-telemetry $(RUN_ARGS)
 
 # Chat agent run
 chat:
-	cd phosphobot && uv run --python 3.10 phosphobot run --chat --simulation=headless --no-crash-telemetry
+	cd phosphobot && uv run --python 3.10 phosphobot run --chat --simulation=headless --no-crash-telemetry $(RUN_ARGS)
 
 # Same as prod, but with the simulation GUI (useful when adding new robots to test)
 prod_gui:
 	cd ./dashboard && (npm i && npm run build && mkdir -p ../phosphobot/resources/dist/ && cp -r ./dist/* ../phosphobot/resources/dist/)
-	cd phosphobot && MESA_GL_VERSION_OVERRIDE=3.3 uv run --python 3.10 phosphobot run --simulation=gui --no-crash-telemetry
+	cd phosphobot && MESA_GL_VERSION_OVERRIDE=3.3 uv run --python 3.10 phosphobot run --simulation=gui --no-crash-telemetry $(RUN_ARGS)
 
 # Trick for raspberrypi : pretend opengl>=3.2 so that pybullet will run in a gui
 prod_gui_back:
-	cd phosphobot && MESA_GL_VERSION_OVERRIDE=3.3 uv run --python 3.10 phosphobot run --simulation=gui --no-crash-telemetry
+	cd phosphobot && MESA_GL_VERSION_OVERRIDE=3.3 uv run --python 3.10 phosphobot run --simulation=gui --no-crash-telemetry $(RUN_ARGS)
 
 
 # Run the server for prod settings (able to connect to the Meta Quest) but with telemetry disabled. If npm is not installed, it will skip the build step.
 prod_no_telemetry:
 	cd ./dashboard && ((npm i && npm run build && mkdir -p ../phosphobot/resources/dist/ && cp -r ./dist/* ../phosphobot/resources/dist/) || echo "npm command failed, continuing anyway") 
-	cd phosphobot && uv run phosphobot run --simulation=headless --no-telemetry
+	cd phosphobot && uv run phosphobot run --simulation=headless --no-telemetry $(RUN_ARGS)
 
 # Run the server for prod settings with the simulation enabled
 prod_sim:
-	cd ./phosphobot && uv run phosphobot run --simulation=gui --no-telemetry
+	cd ./phosphobot && uv run phosphobot run --simulation=gui --no-telemetry $(RUN_ARGS)
 
 # Run info command for prod settings
 prod_info:
@@ -44,19 +49,19 @@ prod_info:
 
 # Run localhost server for dev settings
 local:
-	cd ./phosphobot && uv run phosphobot run --simulation=gui --port=8080 --host=127.0.0.1 --no-telemetry
+	cd ./phosphobot && uv run phosphobot run --simulation=gui --port=8080 --host=127.0.0.1 --no-telemetry $(RUN_ARGS)
 
 # For running integration tests
 test_server:
-	cd ./phosphobot && uv run phosphobot run --simulation=headless --only-simulation --simulate-cameras --port=8080 --host=127.0.0.1 --no-telemetry &
+	cd ./phosphobot && uv run phosphobot run --simulation=headless --only-simulation --simulate-cameras --port=8080 --host=127.0.0.1 --no-telemetry $(RUN_ARGS) &
 
 # For running the built app in test mode
 run_bin_test:
-	./phosphobot/dist/main.bin run --simulation=headless --simulate-cameras --port=8080 --host=127.0.0.1 --no-telemetry &
+	./phosphobot/dist/main.bin run --simulation=headless --simulate-cameras --port=8080 --host=127.0.0.1 --no-telemetry $(RUN_ARGS) &
 
 # For running the built app in prod mode
 run_bin:
-	./phosphobot/dist/main.bin run --simulation=headless
+	./phosphobot/dist/main.bin run --simulation=headless $(RUN_ARGS)
 
 # To have the information about the software and the hardware from the built app
 info_bin:

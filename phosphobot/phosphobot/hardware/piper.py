@@ -184,7 +184,11 @@ class PiperHardware(BaseManipulator):
 
         try:
             proc = subprocess.Popen(
-                ["bash", str(get_resources_path() / "agilex_can_activate.sh")],
+                [
+                    "bash",
+                    str(get_resources_path() / "agilex_can_activate.sh"),
+                    self.can_name,
+                ],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,

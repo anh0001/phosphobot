@@ -291,6 +291,7 @@ def start_server(
     realsense: bool = True,
     can: bool = True,
     cameras: bool = True,
+    can_interface: list[str] | None = None,
     max_opencv_index: int = 10,
     max_can_interfaces: int = 4,
     profile: bool = False,
@@ -365,6 +366,7 @@ def start_server(
     config.CRASH_TELEMETRY = crash_telemetry  # Enable crash telemetry by default
     config.USAGE_TELEMETRY = usage_telemetry  # Enable usage telemetry by default
     config.ENABLE_CAN = can
+    config.PREFERRED_CAN_INTERFACES = can_interface or None
     config.MAX_OPENCV_INDEX = max_opencv_index
     config.MAX_CAN_INTERFACES = max_can_interfaces
 

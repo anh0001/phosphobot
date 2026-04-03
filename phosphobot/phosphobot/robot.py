@@ -23,7 +23,7 @@ from phosphobot.hardware import (
     get_sim,
 )
 from phosphobot.models import RobotConfigStatus
-from phosphobot.utils import is_can_plugged
+from phosphobot.utils import list_can_interfaces
 
 rcm = None
 
@@ -76,13 +76,10 @@ class RobotConnectionManager:
         available_ports = list_ports.comports()
 
         if config.ENABLE_CAN:
-            # Look for CAN ports
-            can_ports = []
-            for i in range(config.MAX_CAN_INTERFACES):
-                can_name = f"can{i}"
-                if is_can_plugged(can_name):
-                    can_ports.append(can_name)
-            available_can_ports = can_ports
+            available_can_ports = list_can_interfaces(
+                max_interfaces=config.MAX_CAN_INTERFACES,
+                preferred_interfaces=config.PREFERRED_CAN_INTERFACES,
+            )
         else:
             available_can_ports = []
 

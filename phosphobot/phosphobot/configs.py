@@ -62,6 +62,7 @@ class Configuration(BaseModel):
     MAX_OPENCV_INDEX: int = 10
     # Adjust based on maximum expected CAN interfaces
     MAX_CAN_INTERFACES: int = 4
+    PREFERRED_CAN_INTERFACES: Optional[List[str]] = None
 
     # HF token
     HF_TOKEN_VALID: bool = False

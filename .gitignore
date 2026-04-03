@@ -181,4 +181,5 @@ config.yaml
 node_modules
 .testenv
 bullet3
-.vscode
+.vscode/*
+!.vscode/tasks.json

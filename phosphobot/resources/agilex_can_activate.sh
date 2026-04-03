@@ -3,8 +3,8 @@
 # agilex_can_activate.sh
 set -euo pipefail
 
+TARGET_INTERFACE="${1:-}"
 DEFAULT_BITRATE="${2:-1000000}"
-CAN_PREFIX="can"
 
 log_success() { echo -e "\e[32m[SUCCESS] $1\e[0m"; }
 log_error() { echo -e "\e[31m[ERROR] $1\e[0m" >&2; }
@@ -21,7 +21,24 @@ done
 log_success "All required packages are installed."
 
 # Retrieve CAN interfaces
-CAN_INTERFACES=($(ip -br link show type can | awk '{print $1}'))
+mapfile -t CAN_INTERFACES < <(ip -br link show type can | awk '{print $1}')
+
+if [ -n "$TARGET_INTERFACE" ]; then
+    FOUND_INTERFACE=0
+    for iface in "${CAN_INTERFACES[@]}"; do
+        if [ "$iface" = "$TARGET_INTERFACE" ]; then
+            FOUND_INTERFACE=1
+            CAN_INTERFACES=("$TARGET_INTERFACE")
+            break
+        fi
+    done
+
+    if [ "$FOUND_INTERFACE" -eq 0 ]; then
+        log_error "CAN interface '$TARGET_INTERFACE' was not detected."
+        exit 1
+    fi
+fi
+
 CAN_COUNT=${#CAN_INTERFACES[@]}
 
 if [ "$CAN_COUNT" -eq 0 ]; then
@@ -31,9 +48,7 @@ fi
 log_success "Detected $CAN_COUNT CAN interface(s)."
 
 # Configure interfaces
-index=0
 for iface in "${CAN_INTERFACES[@]}"; do
-    NEW_NAME="${CAN_PREFIX}${index}"
     BUS_INFO=$(sudo ethtool -i "$iface" | grep "bus-info" | awk '{print $2}')
 
     log_info "Configuring $iface (USB: $BUS_INFO)..."
@@ -41,27 +56,7 @@ for iface in "${CAN_INTERFACES[@]}"; do
     sudo ip link set "$iface" down
     sudo ip link set "$iface" type can bitrate "$DEFAULT_BITRATE"
     sudo ip link set "$iface" up
-    log_success "Bitrate set for $iface"
-
-    # Only attempt to rename if the current name doesn't match the desired name
-    if [ "$iface" != "$NEW_NAME" ]; then
-        log_info "Renaming $iface → $NEW_NAME..."
-        sudo ip link set "$iface" down
-        if sudo ip link set "$iface" name "$NEW_NAME"; then
-            sudo ip link set "$NEW_NAME" up
-            log_success "Renamed $iface → $NEW_NAME"
-        else
-            log_error "Failed to rename $iface to $NEW_NAME"
-            sudo ip link set "$iface" up  # Make sure to bring the interface back up
-            exit 1
-        fi
-    else
-        log_info "Interface $iface already has the correct name"
-    fi
-
-    log_info "Index ++"
-    index=$((index + 1))
-    log_info "Index incremented"
+    log_success "Configured $iface"
 done
 
 log_success "All CAN interfaces active"
