@@ -35,6 +35,8 @@ class PiperHardware(BaseManipulator):
     CALIBRATION_POSITION = [0, 0, 0, 0, 0, 0]
     # Default ready (operating) pose for the arm joints (radians, no gripper).
     READY_POSITION = [0.0, 1.2, -0.2, 0.0, -0.8, 0.0]
+    pose_command_repetitions: int = 4
+    pose_command_interval_s: float = 0.05
 
     is_object_gripped = False
     is_moving = False

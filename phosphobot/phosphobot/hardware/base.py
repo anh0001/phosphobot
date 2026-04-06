@@ -66,7 +66,10 @@ class BaseManipulator(BaseRobot):
 
     CALIBRATION_POSITION: List[float]  # same size as SERVO_IDS
     SLEEP_POSITION: Optional[List[float]] = None
+    READY_POSITION: Optional[List[float]] = None
     time_to_sleep: float = 0.7  # seconds to wait after moving to sleep position
+    pose_command_repetitions: int = 1
+    pose_command_interval_s: float = 0.0
     RESOLUTION: int
     # The effector is the gripper
     END_EFFECTOR_LINK_INDEX: int
@@ -433,8 +436,10 @@ class BaseManipulator(BaseRobot):
         arm_joint_count = len(self.SERVO_IDS) - 1
         zero_position = np.zeros(arm_joint_count)
         target_position, enable_gripper = self._build_pose_target(zero_position)
-        self.set_motors_positions(target_position, enable_gripper=enable_gripper)
-        await asyncio.sleep(0.5)
+        await self._apply_pose_target(
+            target_position,
+            enable_gripper=enable_gripper,
+        )
 
     async def move_to_ready_position(self) -> None:
         """
@@ -467,8 +472,10 @@ class BaseManipulator(BaseRobot):
         target_position, enable_gripper = self._build_pose_target(
             np.array(ready_pose, dtype=float)
         )
-        self.set_motors_positions(target_position, enable_gripper=enable_gripper)
-        await asyncio.sleep(0.5)
+        await self._apply_pose_target(
+            target_position,
+            enable_gripper=enable_gripper,
+        )
 
     def _build_pose_target(self, arm_pose_rad: np.ndarray) -> tuple[np.ndarray, bool]:
         """
@@ -502,6 +509,25 @@ class BaseManipulator(BaseRobot):
             return target_positions, True
 
         return arm_pose_rad, False
+
+    async def _apply_pose_target(
+        self,
+        target_position: np.ndarray,
+        enable_gripper: bool,
+    ) -> None:
+        """
+        Apply a pose target. Some robots, notably Piper, are more reliable if the
+        same one-shot pose command is sent a few times.
+        """
+        repetitions = max(1, getattr(self, "pose_command_repetitions", 1))
+        interval_s = max(0.0, getattr(self, "pose_command_interval_s", 0.0))
+
+        for idx in range(repetitions):
+            self.set_motors_positions(target_position, enable_gripper=enable_gripper)
+            if idx < repetitions - 1 and interval_s > 0:
+                await asyncio.sleep(interval_s)
+
+        await asyncio.sleep(0.5)
 
     def _units_vec_to_radians(self, units: np.ndarray) -> np.ndarray:
         """
