@@ -1,4 +1,3 @@
-import controlschema from "@/assets/ControlSchema.jpg";
 import { LoadingPage } from "@/components/common/loading";
 import { SpeedSelect } from "@/components/common/speed-select";
 import { Button } from "@/components/ui/button";
@@ -51,7 +50,7 @@ export function KeyboardControl() {
   const [selectedRobotName, setSelectedRobotName] = useState<string | null>(
     null,
   );
-  const [selectedSpeed, setSelectedSpeed] = useState<number>(0.8);
+  const [selectedSpeed, setSelectedSpeed] = useState<number>(0.4);
 
   // Refs to manage our control loop and state
   const keysPressedRef = useRef(new Set<string>());
@@ -65,7 +64,8 @@ export function KeyboardControl() {
 
   // Configuration constants
   const BASE_URL = `http://${window.location.hostname}:${window.location.port}/`;
-  const STEP_SIZE = 1;
+  const TRANSLATION_STEP_CM = 1;
+  const ROTATION_STEP_DEG = 2;
   const LOOP_INTERVAL = 10; // ms, target loop frequency
   const INSTRUCTIONS_PER_SECOND = 30; // Max command send rate
   const DEBOUNCE_INTERVAL = 1000 / INSTRUCTIONS_PER_SECOND;
@@ -81,16 +81,32 @@ export function KeyboardControl() {
 
   // Mappings for keys
   const KEY_MAPPINGS: Record<string, RobotMovement> = {
-    f: { x: 0, y: 0, z: STEP_SIZE, rz: 0, rx: 0, ry: 0 },
-    v: { x: 0, y: 0, z: -STEP_SIZE, rz: 0, rx: 0, ry: 0 },
-    ArrowUp: { x: STEP_SIZE, y: 0, z: 0, rz: 0, rx: 0, ry: 0 },
-    ArrowDown: { x: -STEP_SIZE, y: 0, z: 0, rz: 0, rx: 0, ry: 0 },
-    ArrowRight: { x: 0, y: 0, z: 0, rz: -STEP_SIZE * 3.14, rx: 0, ry: 0 },
-    ArrowLeft: { x: 0, y: 0, z: 0, rz: STEP_SIZE * 3.14, rx: 0, ry: 0 },
-    d: { x: 0, y: 0, z: 0, rz: 0, rx: STEP_SIZE * 3.14, ry: 0 },
-    g: { x: 0, y: 0, z: 0, rz: 0, rx: -STEP_SIZE * 3.14, ry: 0 },
-    b: { x: 0, y: 0, z: 0, rz: 0, rx: 0, ry: STEP_SIZE * 3.14 },
-    c: { x: 0, y: 0, z: 0, rz: 0, rx: 0, ry: -STEP_SIZE * 3.14 },
+    f: { x: 0, y: 0, z: TRANSLATION_STEP_CM, rz: 0, rx: 0, ry: 0 },
+    v: { x: 0, y: 0, z: -TRANSLATION_STEP_CM, rz: 0, rx: 0, ry: 0 },
+    ArrowUp: { x: TRANSLATION_STEP_CM, y: 0, z: 0, rz: 0, rx: 0, ry: 0 },
+    ArrowDown: { x: -TRANSLATION_STEP_CM, y: 0, z: 0, rz: 0, rx: 0, ry: 0 },
+    ArrowRight: {
+      x: 0,
+      y: -TRANSLATION_STEP_CM,
+      z: 0,
+      rz: 0,
+      rx: 0,
+      ry: 0,
+    },
+    ArrowLeft: {
+      x: 0,
+      y: TRANSLATION_STEP_CM,
+      z: 0,
+      rz: 0,
+      rx: 0,
+      ry: 0,
+    },
+    q: { x: 0, y: 0, z: 0, rz: ROTATION_STEP_DEG, rx: 0, ry: 0 },
+    e: { x: 0, y: 0, z: 0, rz: -ROTATION_STEP_DEG, rx: 0, ry: 0 },
+    d: { x: 0, y: 0, z: 0, rz: 0, rx: ROTATION_STEP_DEG, ry: 0 },
+    g: { x: 0, y: 0, z: 0, rz: 0, rx: -ROTATION_STEP_DEG, ry: 0 },
+    b: { x: 0, y: 0, z: 0, rz: 0, rx: 0, ry: ROTATION_STEP_DEG },
+    c: { x: 0, y: 0, z: 0, rz: 0, rx: 0, ry: -ROTATION_STEP_DEG },
     " ": { x: 0, y: 0, z: 0, rz: 0, rx: 0, ry: 0 }, // Placeholder, logic handled separately
   };
 
@@ -152,8 +168,9 @@ export function KeyboardControl() {
 
       // Check if the key is a recognized control key
       if (KEY_MAPPINGS[key] || KEY_MAPPINGS[keyLower]) {
-        setActiveKey(key);
-        keysPressedRef.current.add(KEY_MAPPINGS[key] ? key : keyLower);
+        const effectiveKey = KEY_MAPPINGS[key] ? key : keyLower;
+        setActiveKey(effectiveKey);
+        keysPressedRef.current.add(effectiveKey);
 
         // UX Feature for Spacebar: If gripper is not fully open, a single press will fully open it.
         if (key === " " && openStateRef.current < 0.99) {
@@ -353,56 +370,79 @@ export function KeyboardControl() {
   const controls = [
     {
       key: "ArrowUp",
-      description: "Move in the positive X direction",
+      label: "UP",
+      description: "Move forward (+X)",
       icon: <ArrowUp className="size-5" />,
     },
     {
       key: "ArrowDown",
-      description: "Move in the negative X direction",
+      label: "DOWN",
+      description: "Move backward (-X)",
       icon: <ArrowDown className="size-5" />,
     },
     {
       key: "ArrowLeft",
-      description: "Rotate Z counter-clockwise (yaw)",
+      label: "LEFT",
+      description: "Move left",
       icon: <ArrowLeft className="size-5" />,
     },
     {
       key: "ArrowRight",
-      description: "Rotate Z clockwise (yaw)",
+      label: "RIGHT",
+      description: "Move right",
       icon: <ArrowRight className="size-5" />,
     },
     {
-      key: "F",
+      key: "f",
+      label: "F",
       description: "Increase Z (move up)",
       icon: <ChevronUp className="size-5" />,
     },
     {
-      key: "V",
+      key: "v",
+      label: "V",
       description: "Decrease Z (move down)",
       icon: <ChevronDown className="size-5" />,
     },
     {
-      key: "D",
+      key: "q",
+      label: "Q",
+      description: "Yaw left",
+      icon: <RotateCcw className="size-5" />,
+    },
+    {
+      key: "e",
+      label: "E",
+      description: "Yaw right",
+      icon: <RotateCw className="size-5" />,
+    },
+    {
+      key: "d",
+      label: "D",
       description: "Wrist pitch up",
       icon: <ArrowUpFromLine className="size-5" />,
     },
     {
-      key: "G",
+      key: "g",
+      label: "G",
       description: "Wrist pitch down",
       icon: <ArrowDownFromLine className="size-5" />,
     },
     {
-      key: "B",
+      key: "b",
+      label: "B",
       description: "Wrist roll clockwise",
       icon: <RotateCw className="size-5" />,
     },
     {
-      key: "C",
+      key: "c",
+      label: "C",
       description: "Wrist roll counter-clockwise",
       icon: <RotateCcw className="size-5" />,
     },
     {
       key: " ",
+      label: "SPACE",
       description:
         "Hold to close gripper, release to open. Press once to fully open.",
       icon: <Space className="size-5" />,
@@ -472,16 +512,31 @@ export function KeyboardControl() {
                 Stop
               </Button>
             </div>
-            <figure className="flex flex-col items-center">
-              <img
-                src={controlschema}
-                alt="Robot Control Schema"
-                className="w-full max-w-md rounded-md shadow"
-              />
-              <figcaption className="text-sm text-muted-foreground text-center mt-2">
-                Press a key or click a button to move the robot.
-              </figcaption>
-            </figure>
+            <div className="w-full max-w-md rounded-md border p-4 text-sm text-muted-foreground space-y-3">
+              <div>
+                <p className="font-medium text-foreground">Translation</p>
+                <p>
+                  <span className="font-mono">↑/↓</span> forward and backward,{" "}
+                  <span className="font-mono">←/→</span> left and right,{" "}
+                  <span className="font-mono">F/V</span> up and down.
+                </p>
+              </div>
+              <div>
+                <p className="font-medium text-foreground">Orientation</p>
+                <p>
+                  <span className="font-mono">Q/E</span> yaw,{" "}
+                  <span className="font-mono">D/G</span> wrist pitch,{" "}
+                  <span className="font-mono">B/C</span> wrist roll.
+                </p>
+              </div>
+              <div>
+                <p className="font-medium text-foreground">Gripper</p>
+                <p>
+                  <span className="font-mono">SPACE</span> closes while held and
+                  re-opens on release.
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -507,9 +562,7 @@ export function KeyboardControl() {
                   >
                     {control.icon}
                     <span className="mt-2 text-sm font-bold">
-                      {control.key === " "
-                        ? "SPACE"
-                        : control.key.toUpperCase()}
+                      {control.label}
                     </span>
                   </Card>
                 </TooltipTrigger>

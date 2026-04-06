@@ -78,25 +78,26 @@ export interface Control {
 
 // Configuration constants
 export const BASE_URL = `http://${window.location.hostname}:${window.location.port}/`;
-export const STEP_SIZE = 1; // in centimeters
+export const STEP_SIZE = 1; // Translation step in centimeters
+export const ROTATION_STEP_DEG = 2; // Rotation step in degrees
 export const LOOP_INTERVAL = 10; // ms (~100 Hz)
 export const INSTRUCTIONS_PER_SECOND = 30;
 export const DEBOUNCE_INTERVAL = 1000 / INSTRUCTIONS_PER_SECOND;
 export const AXIS_DEADZONE = 0.15; // Deadzone for analog sticks
-export const AXIS_SCALE = 2; // Scale factor for analog stick movement
+export const AXIS_SCALE = 1; // Scale factor for analog stick movement
 
 // Gamepad button mappings (standard gamepad layout)
 export const BUTTON_MAPPINGS: Record<number, RobotMovement> = {
-  12: { x: 0, y: 0, z: 0, rz: 0, rx: STEP_SIZE * 3.14, ry: 0 }, // D-pad up - wrist pitch up
-  13: { x: 0, y: 0, z: 0, rz: 0, rx: -STEP_SIZE * 3.14, ry: 0 }, // D-pad down - wrist pitch down
-  14: { x: 0, y: 0, z: 0, rz: 0, rx: 0, ry: -STEP_SIZE * 3.14 }, // D-pad left - wrist roll counter-clockwise
-  15: { x: 0, y: 0, z: 0, rz: 0, rx: 0, ry: STEP_SIZE * 3.14 }, // D-pad right - wrist roll clockwise
+  12: { x: 0, y: 0, z: 0, rz: 0, rx: ROTATION_STEP_DEG, ry: 0 }, // D-pad up - wrist pitch up
+  13: { x: 0, y: 0, z: 0, rz: 0, rx: -ROTATION_STEP_DEG, ry: 0 }, // D-pad down - wrist pitch down
+  14: { x: 0, y: 0, z: 0, rz: 0, rx: 0, ry: -ROTATION_STEP_DEG }, // D-pad left - wrist roll counter-clockwise
+  15: { x: 0, y: 0, z: 0, rz: 0, rx: 0, ry: ROTATION_STEP_DEG }, // D-pad right - wrist roll clockwise
   4: { x: 0, y: 0, z: 0, rz: 0, rx: 0, ry: 0, toggleOpen: true }, // L1/LB - toggle gripper
   5: { x: 0, y: 0, z: 0, rz: 0, rx: 0, ry: 0, toggleOpen: true }, // R1/RB - toggle gripper
-  0: { x: 0, y: 0, z: 0, rz: 0, rx: -STEP_SIZE * 3.14, ry: 0 }, // A/X button - wrist pitch down
-  1: { x: 0, y: 0, z: 0, rz: 0, rx: 0, ry: STEP_SIZE * 3.14 }, // B/Circle - wrist roll clockwise
-  2: { x: 0, y: 0, z: 0, rz: 0, rx: 0, ry: -STEP_SIZE * 3.14 }, // X/Square - wrist roll counter-clockwise
-  3: { x: 0, y: 0, z: 0, rz: 0, rx: STEP_SIZE * 3.14, ry: 0 }, // Y/Triangle - wrist pitch up
+  0: { x: 0, y: 0, z: 0, rz: 0, rx: -ROTATION_STEP_DEG, ry: 0 }, // A/X button - wrist pitch down
+  1: { x: 0, y: 0, z: 0, rz: 0, rx: 0, ry: ROTATION_STEP_DEG }, // B/Circle - wrist roll clockwise
+  2: { x: 0, y: 0, z: 0, rz: 0, rx: 0, ry: -ROTATION_STEP_DEG }, // X/Square - wrist roll counter-clockwise
+  3: { x: 0, y: 0, z: 0, rz: 0, rx: ROTATION_STEP_DEG, ry: 0 }, // Y/Triangle - wrist pitch up
   9: { x: 0, y: 0, z: 0, rz: 0, rx: 0, ry: 0 }, // Start/Menu - move to sleep position
   10: { x: 0, y: 0, z: 0, rz: 0, rx: 0, ry: 0 }, // Start/Menu (alternate index) - move to sleep position
 };
@@ -187,19 +188,19 @@ export const processAnalogSticks = (
     ry: 0,
   };
 
-  // Left stick - Rotation (X) and Forward/Backward (Y)
+  // Left stick - Planar movement
   const leftX = Math.abs(gamepad.axes[0]) > AXIS_DEADZONE ? gamepad.axes[0] : 0;
   const leftY = Math.abs(gamepad.axes[1]) > AXIS_DEADZONE ? gamepad.axes[1] : 0;
 
-  // Right stick - Left/Right strafe (X) and Up/Down (Y)
+  // Right stick - Yaw (X) and height (Y)
   const rightX = Math.abs(gamepad.axes[2]) > AXIS_DEADZONE ? gamepad.axes[2] : 0;
   const rightY = Math.abs(gamepad.axes[3]) > AXIS_DEADZONE ? gamepad.axes[3] : 0;
 
   // Map to robot movement
-  movement.rz = leftX * STEP_SIZE * 3.14 * AXIS_SCALE; // Rotation (from left stick X)
-  movement.z = -leftY * STEP_SIZE * AXIS_SCALE; // Up/down (from left stick Y)
-  movement.y = -rightX * STEP_SIZE * AXIS_SCALE; // Left/right strafe (from right stick X)
-  movement.x = -rightY * STEP_SIZE * AXIS_SCALE; // Forward/backward (from right stick Y)
+  movement.x = -leftY * STEP_SIZE * AXIS_SCALE; // Forward/backward
+  movement.y = -leftX * STEP_SIZE * AXIS_SCALE; // Left/right strafe
+  movement.rz = rightX * ROTATION_STEP_DEG * AXIS_SCALE; // Yaw
+  movement.z = -rightY * STEP_SIZE * AXIS_SCALE; // Up/down
 
   // Triggers - check both axes and buttons
   let leftTrigger = 0;

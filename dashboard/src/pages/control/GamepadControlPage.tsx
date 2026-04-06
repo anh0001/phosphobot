@@ -35,7 +35,11 @@ import { fetcher } from "@/lib/utils";
 import type { ServerStatus } from "@/types";
 import {
   AlertCircle,
+  ArrowDown,
   ArrowDownFromLine,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
   ArrowUpFromLine,
   Gamepad2,
   Home,
@@ -84,7 +88,7 @@ export function GamepadControl() {
   );
 
   const [isMoving, setIsMoving] = useState(false);
-  const [selectedSpeed, setSelectedSpeed] = useState<number>(0.8);
+  const [selectedSpeed, setSelectedSpeed] = useState<number>(0.4);
   const [configMode, setConfigMode] = useState<ConfigMode>("individual");
 
   // Multi-gamepad and multi-arm support states
@@ -411,39 +415,39 @@ export function GamepadControl() {
     {
       key: "move-forward",
       label: "Forward",
-      buttons: ["Right Stick ↑"],
+      buttons: ["Left Stick ↑"],
       description: "Move forward",
-      icon: <ArrowUpFromLine className="size-6" />,
+      icon: <ArrowUp className="size-6" />,
       type: "analog-vertical" as const,
     },
     {
       key: "move-backward",
       label: "Backward",
-      buttons: ["Right Stick ↓"],
+      buttons: ["Left Stick ↓"],
       description: "Move backward",
-      icon: <ArrowDownFromLine className="size-6" />,
+      icon: <ArrowDown className="size-6" />,
       type: "analog-vertical" as const,
     },
     {
       key: "move-left",
-      label: "Strafe Left",
-      buttons: ["Right Stick ←"],
+      label: "Left",
+      buttons: ["Left Stick ←"],
       description: "Move left",
-      icon: <RotateCcw className="size-6" />,
+      icon: <ArrowLeft className="size-6" />,
       type: "analog-horizontal" as const,
     },
     {
       key: "move-right",
-      label: "Strafe Right",
-      buttons: ["Right Stick →"],
+      label: "Right",
+      buttons: ["Left Stick →"],
       description: "Move right",
-      icon: <RotateCw className="size-6" />,
+      icon: <ArrowRight className="size-6" />,
       type: "analog-horizontal" as const,
     },
     {
       key: "move-up",
       label: "Up",
-      buttons: ["Left Stick ↑"],
+      buttons: ["Right Stick ↑"],
       description: "Move up",
       icon: <ArrowUpFromLine className="size-6" />,
       type: "analog-vertical" as const,
@@ -451,23 +455,23 @@ export function GamepadControl() {
     {
       key: "move-down",
       label: "Down",
-      buttons: ["Left Stick ↓"],
+      buttons: ["Right Stick ↓"],
       description: "Move down",
       icon: <ArrowDownFromLine className="size-6" />,
       type: "analog-vertical" as const,
     },
     {
       key: "rotate-left",
-      label: "Rotate Left",
-      buttons: ["Left Stick ←"],
+      label: "Yaw Left",
+      buttons: ["Right Stick ←"],
       description: "Rotate counter-clockwise",
       icon: <RotateCcw className="size-6" />,
       type: "analog-horizontal" as const,
     },
     {
       key: "rotate-right",
-      label: "Rotate Right",
-      buttons: ["Left Stick →"],
+      label: "Yaw Right",
+      buttons: ["Right Stick →"],
       description: "Rotate clockwise",
       icon: <RotateCw className="size-6" />,
       type: "analog-horizontal" as const,
@@ -1194,12 +1198,12 @@ export function GamepadControl() {
               <h4 className="font-medium mb-2">Movement & Rotation</h4>
               <ul className="text-sm space-y-1 text-muted-foreground">
                 <li>
-                  • <span className="font-medium">Left Stick</span>: Rotate (X)
-                  / Move up-down (Y)
+                  • <span className="font-medium">Left Stick</span>: Move
+                  forward-back (Y) and left-right (X)
                 </li>
                 <li>
-                  • <span className="font-medium">Right Stick</span>: Strafe
-                  left-right (X) / Move forward-back (Y)
+                  • <span className="font-medium">Right Stick</span>: Yaw (X)
+                  and move up-down (Y)
                 </li>
               </ul>
             </div>
@@ -1289,35 +1293,35 @@ export function GamepadControl() {
                   switch (controlKey) {
                     case "move-forward":
                       currentValue =
-                        values.rightStickY < 0 ? -values.rightStickY : 0;
+                        values.leftStickY < 0 ? -values.leftStickY : 0;
                       break;
                     case "move-backward":
                       currentValue =
-                        values.rightStickY > 0 ? values.rightStickY : 0;
+                        values.leftStickY > 0 ? values.leftStickY : 0;
                       break;
                     case "move-left":
                       currentValue =
-                        values.rightStickX < 0 ? -values.rightStickX : 0;
+                        values.leftStickX < 0 ? -values.leftStickX : 0;
                       break;
                     case "move-right":
                       currentValue =
-                        values.rightStickX > 0 ? values.rightStickX : 0;
+                        values.leftStickX > 0 ? values.leftStickX : 0;
                       break;
                     case "move-up":
                       currentValue =
-                        values.leftStickY < 0 ? -values.leftStickY : 0;
+                        values.rightStickY < 0 ? -values.rightStickY : 0;
                       break;
                     case "move-down":
                       currentValue =
-                        values.leftStickY > 0 ? values.leftStickY : 0;
+                        values.rightStickY > 0 ? values.rightStickY : 0;
                       break;
                     case "rotate-left":
                       currentValue =
-                        values.leftStickX < 0 ? -values.leftStickX : 0;
+                        values.rightStickX < 0 ? -values.rightStickX : 0;
                       break;
                     case "rotate-right":
                       currentValue =
-                        values.leftStickX > 0 ? values.leftStickX : 0;
+                        values.rightStickX > 0 ? values.rightStickX : 0;
                       break;
                   }
 
