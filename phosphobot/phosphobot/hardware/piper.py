@@ -33,6 +33,8 @@ class PiperHardware(BaseManipulator):
     SLEEP_POSITION = [0, 0, 0, 0, 0, 0]
     time_to_sleep: float = 1.8
     CALIBRATION_POSITION = [0, 0, 0, 0, 0, 0]
+    # Default ready (operating) pose for the arm joints (radians, no gripper).
+    READY_POSITION = [0.0, 1.2, -0.2, 0.0, -0.8, 0.0]
 
     is_object_gripped = False
     is_moving = False
@@ -314,7 +316,15 @@ class PiperHardware(BaseManipulator):
     def init_config(self) -> None:
         """
         Load the config file.
+        Try saved per-robot config first, then fall back to built-in defaults.
         """
+        saved = BaseRobotConfig.from_serial_id(
+            serial_id=self.SERIAL_ID, name=self.name
+        )
+        if saved is not None:
+            self.config = saved
+            logger.success("Loaded Piper config from saved file.")
+            return
         self.config = self.get_default_base_robot_config(voltage="24v")
 
     def enable_torque(self) -> None:

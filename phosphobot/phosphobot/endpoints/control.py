@@ -2,7 +2,7 @@ import asyncio
 import json
 import traceback
 from copy import copy
-from typing import Optional, cast
+from typing import List, Optional, cast
 
 import httpx
 import json_numpy  # type: ignore
@@ -465,6 +465,98 @@ async def move_sleep(
     """
     robot = await rcm.get_robot(robot_id)
     await robot.move_to_sleep()
+    return StatusResponse()
+
+
+@router.post(
+    "/move/home",
+    response_model=StatusResponse,
+    summary="Move robot to home (zero) position",
+    description="Move the arm joints to zero. Gripper is left unchanged.",
+)
+async def move_home(
+    robot_id: int = 0,
+    rcm: RobotConnectionManager = Depends(get_rcm),
+) -> StatusResponse:
+    robot = await rcm.get_robot(robot_id)
+    if not isinstance(robot, BaseManipulator):
+        raise HTTPException(status_code=400, detail="Robot is not a manipulator")
+    await robot.move_to_home_position()
+    return StatusResponse()
+
+
+@router.post(
+    "/move/ready",
+    response_model=StatusResponse,
+    summary="Move robot to ready (operating) position",
+    description="Move the arm to the saved or default ready pose.",
+)
+async def move_ready(
+    robot_id: int = 0,
+    rcm: RobotConnectionManager = Depends(get_rcm),
+) -> StatusResponse:
+    robot = await rcm.get_robot(robot_id)
+    if not isinstance(robot, BaseManipulator):
+        raise HTTPException(status_code=400, detail="Robot is not a manipulator")
+    await robot.move_to_ready_position()
+    return StatusResponse()
+
+
+@router.post(
+    "/robot/config/ready-pose",
+    response_model=StatusResponse,
+    summary="Save ready pose",
+    description="Save the current arm joint angles (or provided angles) as the robot's ready pose.",
+)
+async def save_ready_pose(
+    robot_id: int = 0,
+    angles: Optional[List[float]] = None,
+    rcm: RobotConnectionManager = Depends(get_rcm),
+) -> StatusResponse:
+    """
+    If *angles* is omitted, the current arm joint positions are captured.
+    The ready pose is persisted to the robot's local config JSON.
+    """
+    robot = await rcm.get_robot(robot_id)
+    if not isinstance(robot, BaseManipulator):
+        raise HTTPException(status_code=400, detail="Robot is not a manipulator")
+
+    arm_joint_count = len(robot.SERVO_IDS) - 1
+    if angles is None:
+        # Read current arm-only joint positions (exclude gripper)
+        if not hasattr(robot, "read_joints_position"):
+            raise HTTPException(
+                status_code=400,
+                detail="Robot does not support reading joint positions",
+            )
+        all_positions = robot.read_joints_position(unit="rad", source="robot")
+        if len(all_positions) < arm_joint_count:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Expected at least {arm_joint_count} arm joints when reading "
+                    f"robot {robot.name}, got {len(all_positions)}."
+                ),
+            )
+        angles = [float(a) for a in all_positions[:arm_joint_count]]
+    elif len(angles) != arm_joint_count:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Ready pose for robot {robot.name} expects {arm_joint_count} arm "
+                f"joints, got {len(angles)}."
+            ),
+        )
+
+    robot.init_config()
+    if robot.config is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Robot config not loaded. Calibrate the robot first.",
+        )
+
+    robot.config.ready_pose_rad = angles
+    robot.config.save_local(serial_id=robot.SERIAL_ID)
     return StatusResponse()
 
 

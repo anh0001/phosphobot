@@ -194,6 +194,14 @@ class BaseRobotConfig(BaseModel):
     )
     pid_gains: List[BaseRobotPIDGains] = Field(default_factory=list)
 
+    # User-configurable ready pose for arm joints (radians, excludes gripper).
+    # When set, /move/ready will move the arm to this pose instead of
+    # the robot-class default.
+    ready_pose_rad: Optional[List[float]] = Field(
+        default=None,
+        description="Arm-only joint angles (radians) for the operator-defined ready pose.",
+    )
+
     # Torque value to consider that an object is gripped
     gripping_threshold: int = Field(
         default=80,

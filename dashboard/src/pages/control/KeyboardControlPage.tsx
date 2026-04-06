@@ -1,4 +1,5 @@
 import { LoadingPage } from "@/components/common/loading";
+import { PoseControlPanel } from "@/components/common/pose-control-panel";
 import { SpeedSelect } from "@/components/common/speed-select";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -367,6 +368,11 @@ export function KeyboardControl() {
     setActiveKey(null);
   };
 
+  const clearTeleopInputs = () => {
+    keysPressedRef.current.clear();
+    setActiveKey(null);
+  };
+
   const controls = [
     {
       key: "ArrowUp",
@@ -539,6 +545,11 @@ export function KeyboardControl() {
             </div>
           </CardContent>
         </Card>
+        <PoseControlPanel
+          robotId={robotIDFromName(selectedRobotName)}
+          serverStatus={serverStatus}
+          onBeforeAction={clearTeleopInputs}
+        />
       </div>
 
       <div className="md:w-1/2">

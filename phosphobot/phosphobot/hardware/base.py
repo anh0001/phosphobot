@@ -424,6 +424,85 @@ class BaseManipulator(BaseRobot):
             self.disable_torque()
             await asyncio.sleep(0.1)
 
+    async def move_to_home_position(self) -> None:
+        """
+        Move the arm joints to zero (home pose). Gripper is left unchanged.
+        """
+        self.init_config()
+        self.enable_torque()
+        arm_joint_count = len(self.SERVO_IDS) - 1
+        zero_position = np.zeros(arm_joint_count)
+        target_position, enable_gripper = self._build_pose_target(zero_position)
+        self.set_motors_positions(target_position, enable_gripper=enable_gripper)
+        await asyncio.sleep(0.5)
+
+    async def move_to_ready_position(self) -> None:
+        """
+        Move the arm to the operator-defined ready pose.
+
+        Resolution order:
+        1. ``config.ready_pose_rad`` (user-saved)
+        2. class-level ``READY_POSITION`` (robot default)
+        3. raise ``HTTPException(400)`` if neither exists
+        """
+        self.init_config()
+        ready_pose: Optional[List[float]] = None
+
+        # 1. User-saved ready pose
+        if self.config is not None and self.config.ready_pose_rad is not None:
+            ready_pose = self.config.ready_pose_rad
+
+        # 2. Robot-class default
+        if ready_pose is None:
+            ready_pose = getattr(self, "READY_POSITION", None)
+
+        if ready_pose is None:
+            raise HTTPException(
+                status_code=400,
+                detail=f"No ready pose defined for robot {self.name}. "
+                "Save one via POST /robot/config/ready-pose first.",
+            )
+
+        self.enable_torque()
+        target_position, enable_gripper = self._build_pose_target(
+            np.array(ready_pose, dtype=float)
+        )
+        self.set_motors_positions(target_position, enable_gripper=enable_gripper)
+        await asyncio.sleep(0.5)
+
+    def _build_pose_target(self, arm_pose_rad: np.ndarray) -> tuple[np.ndarray, bool]:
+        """
+        Build a joint target for a home/ready pose while preserving the current gripper.
+        """
+        arm_joint_count = len(self.SERVO_IDS) - 1
+        if len(arm_pose_rad) != arm_joint_count:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Expected {arm_joint_count} arm joints for pose control, "
+                    f"got {len(arm_pose_rad)}."
+                ),
+            )
+
+        current_positions = np.array(
+            self.read_joints_position(unit="rad", source="robot"), dtype=float
+        )
+        if len(current_positions) < arm_joint_count:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Could not read enough joints from robot {self.name} to build "
+                    "a pose target."
+                ),
+            )
+
+        if len(current_positions) > arm_joint_count:
+            target_positions = current_positions.copy()
+            target_positions[:arm_joint_count] = arm_pose_rad
+            return target_positions, True
+
+        return arm_pose_rad, False
+
     def _units_vec_to_radians(self, units: np.ndarray) -> np.ndarray:
         """
         Convert from motor discrete units (0 -> RESOLUTION) to radians

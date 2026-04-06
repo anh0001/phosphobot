@@ -1,4 +1,5 @@
 import { LoadingPage } from "@/components/common/loading";
+import { PoseControlPanel } from "@/components/common/pose-control-panel";
 import { SpeedSelect } from "@/components/common/speed-select";
 import {
   Accordion,
@@ -219,6 +220,11 @@ export function GamepadControl() {
 
   const stopMoving = async () => {
     setIsMoving(false);
+    controlStates.current.clear();
+    setActiveButtonsPerPair(new Map());
+  };
+
+  const clearTeleopInputs = () => {
     controlStates.current.clear();
     setActiveButtonsPerPair(new Map());
   };
@@ -1381,6 +1387,19 @@ export function GamepadControl() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Pose Control Panel for individual mode */}
+      {configMode === "individual" &&
+        controllerArmPairs
+          .filter((pair) => pair.robot_name !== null)
+          .map((pair) => (
+            <PoseControlPanel
+              key={`pose-${pair.robot_name}`}
+              robotId={robotIDFromName(pair.robot_name!, serverStatus)}
+              serverStatus={serverStatus}
+              onBeforeAction={clearTeleopInputs}
+            />
+          ))}
 
       {/* Show gamepad visualizers for active configurations when moving */}
       {isMoving && (
