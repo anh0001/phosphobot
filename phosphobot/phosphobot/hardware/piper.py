@@ -1,10 +1,14 @@
+import hashlib
 import asyncio
 import os
+from pathlib import Path
+import re
 import subprocess
 import time
 from typing import Any, List, Literal, Optional, Union
 
 import numpy as np
+import pybullet as p
 from loguru import logger
 from piper_sdk import C_PiperInterface_V2
 
@@ -33,6 +37,15 @@ class PiperHardware(BaseManipulator):
 
     END_EFFECTOR_LINK_INDEX = 5
     GRIPPER_JOINT_INDEX = 6
+    END_EFFECTOR_LINK_CANDIDATES = ("tcp", "piper_tcp", "link6")
+    EXPECTED_DEFAULT_URDF_JOINT_NAMES = (
+        "joint6",
+        "joint6_to_gripper_base",
+        "joint6_to_tcp",
+        "joint7",
+        "joint8",
+    )
+    LEGACY_FIRMWARE_CUTOFF = (1, 6, 3)
 
     SERVO_IDS = [1, 2, 3, 4, 5, 6, 7]
 
@@ -101,7 +114,10 @@ class PiperHardware(BaseManipulator):
         )
         self.SERIAL_ID = can_name
         self.is_torqued = False
+        self._resolved_end_effector_link_name = "link6"
+        self.END_EFFECTOR_LINK_INDEX = self._resolve_end_effector_link_index()
         self._init_sim_gripper()
+        self._log_runtime_model_diagnostics()
 
     @classmethod
     def _resolve_urdf_file_path(cls) -> str:
@@ -192,6 +208,151 @@ class PiperHardware(BaseManipulator):
             f"Init gripper: {self._gripper_joint_indices=} {closed=} {opened=} {limits=}"
         )
 
+    def _get_joint_records(self) -> list[dict[str, Union[int, str]]]:
+        joint_records: list[dict[str, Union[int, str]]] = []
+        for joint_index in range(self.num_joints):
+            joint_info = self.sim.get_joint_info(
+                robot_id=self.p_robot_id, joint_index=joint_index
+            )
+            joint_records.append(
+                {
+                    "index": joint_index,
+                    "joint_name": joint_info[1].decode("utf-8"),
+                    "joint_type": int(joint_info[2]),
+                    "child_link": joint_info[12].decode("utf-8"),
+                }
+            )
+        return joint_records
+
+    def _joint_type_name(self, joint_type: int) -> str:
+        joint_type_names = {
+            p.JOINT_REVOLUTE: "revolute",
+            p.JOINT_PRISMATIC: "prismatic",
+            p.JOINT_FIXED: "fixed",
+            p.JOINT_PLANAR: "planar",
+            p.JOINT_POINT2POINT: "point2point",
+        }
+        return joint_type_names.get(joint_type, f"unknown({joint_type})")
+
+    def _resolve_end_effector_link_index(self) -> int:
+        joint_records = self._get_joint_records()
+        for preferred_link_name in self.END_EFFECTOR_LINK_CANDIDATES:
+            for joint_record in joint_records:
+                child_link = str(joint_record["child_link"])
+                if child_link != preferred_link_name:
+                    continue
+                self._resolved_end_effector_link_name = child_link
+                if child_link != "link6":
+                    logger.info(
+                        f"Piper: resolved end-effector link '{child_link}' at joint index "
+                        f"{joint_record['index']}."
+                    )
+                return int(joint_record["index"])
+
+        logger.warning(
+            f"Piper: failed to resolve an end-effector link from "
+            f"{self.END_EFFECTOR_LINK_CANDIDATES}; falling back to link index "
+            f"{self.END_EFFECTOR_LINK_INDEX}."
+        )
+        return self.END_EFFECTOR_LINK_INDEX
+
+    def _log_runtime_model_diagnostics(self) -> None:
+        urdf_path = Path(self.URDF_FILE_PATH)
+        urdf_mtime = time.strftime(
+            "%Y-%m-%d %H:%M:%S", time.localtime(urdf_path.stat().st_mtime)
+        )
+        urdf_sha = hashlib.sha256(urdf_path.read_bytes()).hexdigest()[:12]
+        joint_records = self._get_joint_records()
+        joint_snapshot = [
+            (
+                record["index"],
+                record["joint_name"],
+                record["child_link"],
+                self._joint_type_name(int(record["joint_type"])),
+            )
+            for record in joint_records
+        ]
+        actuated_joint_names = [
+            str(joint_records[joint_index]["joint_name"])
+            for joint_index in self.actuated_joints
+            if joint_index < len(joint_records)
+        ]
+
+        logger.info(
+            "Piper model diagnostics: "
+            f"urdf='{urdf_path}' mtime='{urdf_mtime}' sha256='{urdf_sha}' "
+            f"eef_link='{self._resolved_end_effector_link_name}' "
+            f"eef_link_index={self.END_EFFECTOR_LINK_INDEX} "
+            f"actuated_joints={self.actuated_joints} "
+            f"actuated_joint_names={actuated_joint_names} "
+            f"gripper_joint_indices={self._gripper_joint_indices}"
+        )
+        logger.debug(f"Piper joint chain: {joint_snapshot}")
+
+        if urdf_path.resolve() == Path(self.DEFAULT_URDF_FILE_PATH).resolve():
+            joint_names = {str(record["joint_name"]) for record in joint_records}
+            missing_joint_names = sorted(
+                set(self.EXPECTED_DEFAULT_URDF_JOINT_NAMES) - joint_names
+            )
+            if missing_joint_names:
+                logger.error(
+                    "Piper default URDF validation failed: "
+                    f"missing expected joints {missing_joint_names}. "
+                    f"Loaded URDF: {urdf_path}"
+                )
+            if self._resolved_end_effector_link_name not in {"tcp", "piper_tcp"}:
+                logger.error(
+                    "Piper default URDF validation failed: end effector is not resolved "
+                    f"to a TCP link. Resolved '{self._resolved_end_effector_link_name}' "
+                    f"at index {self.END_EFFECTOR_LINK_INDEX}."
+                )
+
+    @classmethod
+    def _parse_firmware_version(
+        cls, firmware_version: Optional[str]
+    ) -> Optional[tuple[int, int, int]]:
+        if firmware_version is None:
+            return None
+        match = re.search(r"S-V(\d+)\.(\d+)-(\d+)", firmware_version)
+        if match is None:
+            return None
+        return tuple(int(group) for group in match.groups())
+
+    def _log_firmware_urdf_guidance(self) -> None:
+        firmware_version = self._parse_firmware_version(self.firmware_version)
+        if firmware_version is None:
+            logger.warning(
+                f"Piper: could not parse firmware version '{self.firmware_version}' "
+                "for URDF guidance."
+            )
+            return
+
+        using_default_urdf = (
+            Path(self.URDF_FILE_PATH).resolve()
+            == Path(self.DEFAULT_URDF_FILE_PATH).resolve()
+        )
+        if firmware_version < self.LEGACY_FIRMWARE_CUTOFF and using_default_urdf:
+            logger.warning(
+                "Piper firmware/URDF mismatch: firmware "
+                f"'{self.firmware_version}' predates S-V1.6-3, while the active URDF is "
+                f"the new-firmware model ('{self.URDF_FILE_PATH}'). "
+                "AgileX piper_ros docs recommend the legacy DH model for firmware "
+                "< S-V1.6-3 (see piper_description_old.urdf in agilexrobotics/piper_ros). "
+                "To switch, set the environment variable "
+                f"{self.URDF_VARIANT_ENV_VAR}=legacy before starting the server. "
+                "The server will NOT auto-switch URDFs; this warning is informational only."
+            )
+        elif firmware_version >= self.LEGACY_FIRMWARE_CUTOFF and not using_default_urdf:
+            logger.warning(
+                "Piper firmware/URDF mismatch: firmware "
+                f"'{self.firmware_version}' is at or after S-V1.6-3, while the active URDF "
+                f"is the legacy model ('{self.URDF_FILE_PATH}'). "
+                "AgileX piper_ros docs recommend the new DH model for firmware "
+                ">= S-V1.6-3 (see piper_description.urdf in agilexrobotics/piper_ros). "
+                f"To switch back, unset {self.URDF_VARIANT_ENV_VAR} or set it to 'default'. "
+                "The server will NOT auto-switch URDFs; this warning is informational only."
+            )
+
     @classmethod
     def from_can_port(cls, can_name: str = "can0") -> Optional["PiperHardware"]:
         try:
@@ -281,6 +442,7 @@ class PiperHardware(BaseManipulator):
         logger.info(
             f"Connected to Agilex Piper on {self.can_name} with firmware version {self.firmware_version}"
         )
+        self._log_firmware_urdf_guidance()
 
         self.motors_bus.ArmParamEnquiryAndConfig(
             param_setting=0x01,
@@ -320,7 +482,9 @@ class PiperHardware(BaseManipulator):
             servos_voltage=12.0,
             servos_offsets=[0] * len(self.SERVO_IDS),
             servos_calibration_position=[1e-6] * len(self.SERVO_IDS),
-            servos_offsets_signs=[1] * len(self.SERVO_IDS),
+            # Piper SDK joint readings are signed millidegrees. Keep the
+            # fallback config neutral and let saved calibration data override it.
+            servos_offsets_signs=[1.0] * len(self.SERVO_IDS),
             gripping_threshold=4500,
             non_gripping_threshold=500,
         )
@@ -351,9 +515,18 @@ class PiperHardware(BaseManipulator):
         saved = BaseRobotConfig.from_serial_id(serial_id=self.SERIAL_ID, name=self.name)
         if saved is not None:
             self.config = saved
-            logger.success("Loaded Piper config from saved file.")
+            logger.success(
+                "Loaded Piper config from saved file with "
+                f"offsets={saved.servos_offsets} signs={saved.servos_offsets_signs}"
+            )
             return
         self.config = self.get_default_base_robot_config(voltage="24v")
+        logger.warning(
+            "Piper is using fallback joint conversion defaults because no saved "
+            f"calibration config was found for '{self.SERIAL_ID}'. "
+            f"offsets={self.config.servos_offsets if self.config else None} "
+            f"signs={self.config.servos_offsets_signs if self.config else None}"
+        )
 
     def enable_torque(self) -> None:
         if not self.is_connected:
@@ -453,7 +626,17 @@ class PiperHardware(BaseManipulator):
         )  # size 6, the gripper is excluded from actuated_joints in the Piper class
         target_positions = [q_target_rad[i] for i in joint_indices]
 
-        # Move in simulation first to validate the position
+        # Validate against an immediate joint sync. The background stepping
+        # loop is asynchronous, so reading joint states right after
+        # setJointMotorControlArray can return the previous pose and flatten
+        # real CAN commands back to the current robot pose.
+        self.sim.sync_joints_immediate(
+            robot_id=self.p_robot_id,
+            joint_indices=joint_indices,
+            target_positions=target_positions,
+        )
+        # Keep motor targets aligned with the synced pose for subsequent
+        # background steps and visualization.
         self.sim.set_joints_states(
             robot_id=self.p_robot_id,
             joint_indices=joint_indices,
@@ -467,11 +650,17 @@ class PiperHardware(BaseManipulator):
         self.sim.step()
 
         if self.is_connected:
-            validated_q_target = self.sim.get_joints_states(
-                robot_id=self.p_robot_id, joint_indices=joint_indices
-            )  # size 6
-            validated_q_target_array = np.array(validated_q_target)
+            validated_q_target_array = np.array(
+                self.sim.get_joints_states(
+                    robot_id=self.p_robot_id, joint_indices=joint_indices
+                )
+            )
             q_target = self._radians_vec_to_motor_units(validated_q_target_array)
+            logger.debug(
+                "Piper: validated joint target "
+                f"{np.round(validated_q_target_array, 6).tolist()} rad -> "
+                f"{q_target.tolist()} motor units"
+            )
             if enable_gripper and len(q_target_rad) < self.GRIPPER_SERVO_ID:
                 q_target = np.append(
                     q_target,
@@ -587,20 +776,15 @@ class PiperHardware(BaseManipulator):
 
     def _units_vec_to_radians(self, units: np.ndarray) -> np.ndarray:
         """
-        Convert from motor discrete units (0 -> RESOLUTION) to radians
+        Route Piper through BaseManipulator's offset/sign-aware conversion path.
         """
-        position_deg = units * 2 * np.pi / self.RESOLUTION  # in 0.001 deg
-        return position_deg  # in deg
+        return super()._units_vec_to_radians(units)
 
     def _radians_vec_to_motor_units(self, radians: np.ndarray) -> np.ndarray:
         """
-        Convert from radians to motor discrete units (0 -> RESOLUTION)
-
-        Note: The result can exceed the resolution of the motor, in the case of a continuous rotation motor.
+        Route Piper through BaseManipulator's offset/sign-aware conversion path.
         """
-        position_deg = np.rad2deg(radians)  # in degrees
-        position_units = (position_deg * 1000).astype(int)  # in motor units
-        return position_units
+        return super()._radians_vec_to_motor_units(radians)
 
     async def calibrate(self) -> tuple[Literal["success", "in_progress", "error"], str]:
         """
@@ -748,6 +932,18 @@ class PiperHardware(BaseManipulator):
         """
         return RobotConfigStatus(
             name=self.name, device_name=self.can_name, robot_type="manipulator"
+        )
+
+    async def move_to_ready_position(self) -> None:
+        await super().move_to_ready_position()
+        effector_position, effector_orientation_rad = self.forward_kinematics(
+            sync_robot_pos=self.is_connected
+        )
+        logger.info(
+            "Piper ready FK: "
+            f"eef_link='{self._resolved_end_effector_link_name}' "
+            f"position={np.round(effector_position, 4).tolist()} "
+            f"orientation_rad={np.round(effector_orientation_rad, 4).tolist()}"
         )
 
     def move_gripper_in_sim(self, open: float) -> None:

@@ -360,6 +360,34 @@
       link="gripper_base" />
   </joint>
   <link
+    name="tcp">
+    <inertial>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <mass
+        value="0.0001" />
+      <inertia
+        ixx="0.00000001"
+        ixy="0"
+        ixz="0"
+        iyy="0.00000001"
+        iyz="0"
+        izz="0.00000001" />
+    </inertial>
+  </link>
+  <joint
+    name="joint6_to_tcp"
+    type="fixed">
+    <origin
+      xyz="0 0 0.14"
+      rpy="0 0 0" />
+    <parent
+      link="link6" />
+    <child
+      link="tcp" />
+  </joint>
+  <link
     name="link7">
     <inertial>
       <origin

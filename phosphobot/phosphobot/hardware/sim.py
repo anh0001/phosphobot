@@ -343,6 +343,36 @@ class PyBulletSimulation:
             targetPositions=target_positions,
         )
 
+    def sync_joints_immediate(
+        self, robot_id: int, joint_indices: List[int], target_positions: List[float]
+    ) -> None:
+        """
+        Immediately teleport joints to target positions and align motor targets.
+
+        This does two things:
+        1. ``resetJointState`` on each joint so a subsequent
+           ``getLinkState``/``computeForwardKinematics`` returns the correct
+           pose instantly, without any simulation stepping.
+        2. ``setJointMotorControlArray`` with the same targets so that later
+           background ``stepSimulation()`` calls keep the joints where they
+           are instead of pulling them back toward stale motor commands.
+        """
+        if not self.connected or not p.isConnected():
+            logger.warning(
+                "Simulation is not connected, cannot sync joints immediately"
+            )
+            return
+
+        for joint_id, position in zip(joint_indices, target_positions):
+            p.resetJointState(robot_id, joint_id, position)
+
+        p.setJointMotorControlArray(
+            bodyIndex=robot_id,
+            jointIndices=joint_indices,
+            controlMode=p.POSITION_CONTROL,
+            targetPositions=target_positions,
+        )
+
     def get_joints_states(self, robot_id: int, joint_indices: List[int]) -> List[float]:
         """
         Get the states of multiple joints in the simulation.
@@ -387,6 +417,7 @@ class PyBulletSimulation:
         target_position: np.ndarray,
         target_orientation: Optional[np.ndarray],
         rest_poses: List,
+        current_positions: Optional[List] = None,
         joint_damping: Optional[List] = None,
         lower_limits: Optional[List] = None,
         upper_limits: Optional[List] = None,
@@ -425,6 +456,7 @@ class PyBulletSimulation:
                 end_effector_link_index,
                 targetPosition=target_position,
                 targetOrientation=target_orientation,
+                currentPositions=current_positions,
                 restPoses=rest_poses,
                 lowerLimits=lower_limits,
                 upperLimits=upper_limits,
@@ -440,6 +472,7 @@ class PyBulletSimulation:
             targetOrientation=target_orientation,
             jointDamping=joint_damping,
             solver=p.IK_SDLS,
+            currentPositions=current_positions,
             restPoses=rest_poses,
             lowerLimits=lower_limits,
             upperLimits=upper_limits,

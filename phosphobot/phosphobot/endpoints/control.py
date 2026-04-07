@@ -82,6 +82,14 @@ signal_leader_follower = ControlSignal()
 signal_vr_control = ControlSignal()
 
 
+def _get_robot_motion_lock(robot: object) -> asyncio.Lock:
+    lock = getattr(robot, "_motion_lock", None)
+    if lock is None:
+        lock = asyncio.Lock()
+        setattr(robot, "_motion_lock", lock)
+    return cast(asyncio.Lock, lock)
+
+
 def _read_control_forward_kinematics(
     robot: object, sync: bool = True
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -99,6 +107,54 @@ def _read_control_forward_kinematics(
     sync_robot_pos = sync and isinstance(robot, BaseManipulator)
     robot_with_fk = cast(BaseManipulator, robot)
     return robot_with_fk.forward_kinematics(sync_robot_pos=sync_robot_pos)
+
+
+async def _execute_world_frame_move(
+    robot: object,
+    target_position: np.ndarray,
+    target_orientation_rad: np.ndarray,
+    position_tolerance: float,
+    orientation_tolerance: float,
+    max_trials: int,
+) -> None:
+    """
+    Move *robot* to an already-world-frame target pose via IK with retry.
+
+    Both ``target_position`` and ``target_orientation_rad`` must be expressed
+    in the pybullet world frame — no controller-relative offset is applied
+    here.  This helper is shared by the public ``/move/absolute`` and
+    ``/move/relative`` endpoints so the conversion from user coordinates to
+    world coordinates only needs to happen once in each caller.
+    """
+    current_position, current_orientation = _read_control_forward_kinematics(
+        robot, sync=True
+    )
+
+    position_residual = float(np.linalg.norm(current_position - target_position))
+    orientation_residual = float(
+        np.linalg.norm(current_orientation - target_orientation_rad)
+    )
+
+    num_trials = 0
+    while (
+        position_residual > position_tolerance
+        or orientation_residual > orientation_tolerance
+    ) and num_trials <= max_trials - 1:
+        if num_trials > 0:
+            await asyncio.sleep(0.03 + 0.2 / (num_trials + 1))
+
+        num_trials += 1
+        await robot.move_robot_absolute(
+            target_position=target_position,
+            target_orientation_rad=target_orientation_rad,
+        )
+        current_position, current_orientation = _read_control_forward_kinematics(
+            robot, sync=True
+        )
+        position_residual = float(np.linalg.norm(current_position - target_position))
+        orientation_residual = float(
+            np.linalg.norm(current_orientation - target_orientation_rad)
+        )
 
 
 @router.post(
@@ -207,118 +263,86 @@ async def move_to_absolute_position(
     Update the robot position based on the received data
     """
     robot = await rcm.get_robot(robot_id)
+    motion_lock = _get_robot_motion_lock(robot)
 
-    # Divide by 100 to convert from cm to m
-    query.x = query.x / 100 if query.x is not None else 0
-    query.y = query.y / 100 if query.y is not None else 0
-    query.z = query.z / 100 if query.z is not None else 0
+    async with motion_lock:
+        # Divide by 100 to convert from cm to m
+        query.x = query.x / 100 if query.x is not None else 0
+        query.y = query.y / 100 if query.y is not None else 0
+        query.z = query.z / 100 if query.z is not None else 0
 
-    if hasattr(robot, "control_gripper") and query.open is not None:
-        # If the robot has a control_gripper method, use it to open/close the gripper
-        background_tasks.add_task(
-            background_task_log_exceptions(robot.control_gripper),
-            open_command=query.open,
-        )
+        if hasattr(robot, "control_gripper") and query.open is not None:
+            # If the robot has a control_gripper method, use it to open/close the gripper
+            background_tasks.add_task(
+                background_task_log_exceptions(robot.control_gripper),
+                open_command=query.open,
+            )
 
-    initial_position = getattr(robot, "initial_position", None)
-    initial_orientation_rad = getattr(robot, "initial_orientation_rad", None)
-    if initial_position is None or initial_orientation_rad is None:
-        await robot.move_to_initial_position()
         initial_position = getattr(robot, "initial_position", None)
         initial_orientation_rad = getattr(robot, "initial_orientation_rad", None)
         if initial_position is None or initial_orientation_rad is None:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Robot {robot.name} .move_to_initial_position() did not set initial position or orientation: {initial_position=}, {initial_orientation_rad=}",
-            )
+            await robot.move_to_initial_position()
+            initial_position = getattr(robot, "initial_position", None)
+            initial_orientation_rad = getattr(robot, "initial_orientation_rad", None)
+            if initial_position is None or initial_orientation_rad is None:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Robot {robot.name} .move_to_initial_position() did not set initial position or orientation: {initial_position=}, {initial_orientation_rad=}",
+                )
 
-    if hasattr(robot, "forward_kinematics"):
-        # If the robot has a forward_kinematics method, use it to move more precisely to the target
-        current_position, current_orientation = _read_control_forward_kinematics(
-            robot, sync=True
-        )
+        if hasattr(robot, "forward_kinematics"):
+            # Convert controller-relative coordinates to world frame
+            target_controller_position = np.array([query.x, query.y, query.z])
+            target_position = initial_position + target_controller_position
 
-        target_controller_position = np.array([query.x, query.y, query.z])
-        target_position = initial_position + target_controller_position
-        position_residual = np.linalg.norm(current_position - target_position)
+            # angle
+            if query.rx is not None and query.ry is not None and query.rz is not None:
+                if robot.name == "so100":
+                    # We invert rx and ry
+                    target_controller_orientation = np.array([query.ry, query.rx, query.rz])
+                else:
+                    target_controller_orientation = np.array([query.rx, query.ry, query.rz])
 
-        # angle
-        if query.rx is not None and query.ry is not None and query.rz is not None:
-            if robot.name == "so100":
-                # We invert rx and ry
-                target_controller_orientation = np.array([query.ry, query.rx, query.rz])
+                # Convert from degrees to radians
+                target_controller_orientation_rad = np.deg2rad(
+                    target_controller_orientation
+                )
+
+                target_orientation_rad = (
+                    initial_orientation_rad + target_controller_orientation_rad
+                )
             else:
-                target_controller_orientation = np.array([query.rx, query.ry, query.rz])
+                # Maintain the current EEF orientation when no orientation delta
+                # is provided.  Without this, the IK solver has unconstrained
+                # orientation and will drift the base/wrist joints instead of
+                # translating the EEF.
+                current_position, current_orientation = _read_control_forward_kinematics(
+                    robot, sync=True
+                )
+                target_orientation_rad = current_orientation
 
-            # Convert from degrees to radians
-            target_controller_orientation_rad = np.deg2rad(
-                target_controller_orientation
-            )
-
-            target_orientation_rad = (
-                initial_orientation_rad + target_controller_orientation_rad
-            )
-            use_angles = True
-        else:
-            # Maintain the current EEF orientation when no orientation delta
-            # is provided.  Without this, the IK solver has unconstrained
-            # orientation and will drift the base/wrist joints instead of
-            # translating the EEF.
-            target_orientation_rad = current_orientation
-            use_angles = True
-
-        orientation_residual: float
-        if use_angles:
-            orientation_residual = float(
-                np.linalg.norm(current_orientation - target_orientation_rad)
+            await _execute_world_frame_move(
+                robot=robot,
+                target_position=target_position,
+                target_orientation_rad=target_orientation_rad,
+                position_tolerance=query.position_tolerance,
+                orientation_tolerance=query.orientation_tolerance,
+                max_trials=query.max_trials,
             )
         else:
-            orientation_residual = 0
+            # Otherwise, run the move_robot_absolute method directly
+            if query.rx is not None:
+                query.rx = np.deg2rad(query.rx)
+            if query.ry is not None:
+                query.ry = np.deg2rad(query.ry)
+            if query.rz is not None:
+                query.rz = np.deg2rad(query.rz)
+            await robot.move_robot_absolute(
+                target_position=np.array([query.x, query.y, query.z]),
+                target_orientation_rad=np.array([query.rx, query.ry, query.rz]),
+            )
 
-        async def try_moving_to_target() -> None:
-            nonlocal \
-                current_position, \
-                current_orientation, \
-                position_residual, \
-                orientation_residual
-
-            num_trials = 0
-            while (
-                position_residual > query.position_tolerance
-                or orientation_residual > query.orientation_tolerance
-            ) and num_trials <= query.max_trials - 1:
-                if num_trials > 0:
-                    await asyncio.sleep(0.03 + 0.2 / (num_trials + 1))
-
-                num_trials += 1
-                await robot.move_robot_absolute(
-                    target_position=target_position,
-                    target_orientation_rad=target_orientation_rad,
-                )
-                current_position, current_orientation = (
-                    _read_control_forward_kinematics(robot, sync=True)
-                )
-                position_residual = np.linalg.norm(current_position - target_position)
-                if use_angles:
-                    orientation_residual = float(
-                        np.linalg.norm(current_orientation - target_orientation_rad)
-                    )
-
-        await try_moving_to_target()
-    else:
-        # Otherwise, run the move_robot_absolute method directly
-        if query.rx is not None:
-            query.rx = np.deg2rad(query.rx)
-        if query.ry is not None:
-            query.ry = np.deg2rad(query.ry)
-        if query.rz is not None:
-            query.rz = np.deg2rad(query.rz)
-        await robot.move_robot_absolute(
-            target_position=np.array([query.x, query.y, query.z]),
-            target_orientation_rad=np.array([query.rx, query.ry, query.rz]),
-        )
-
-    return StatusResponse()
+        return StatusResponse()
 
 
 @router.post(
@@ -337,122 +361,154 @@ async def move_relative(
     Data: The delta sent by OpenVLA for example
     """
 
-    # Convert units to meters
-    data.x = data.x / 100 if data.x is not None else None
-    data.y = data.y / 100 if data.y is not None else None
-    data.z = data.z / 100 if data.z is not None else None
-
     robot = await rcm.get_robot(robot_id)
+    motion_lock = _get_robot_motion_lock(robot)
 
-    if (
-        data.x is None
-        and data.y is None
-        and data.z is None
-        and data.rx is None
-        and data.ry is None
-        and data.rz is None
-        and data.open is not None
-    ):
-        if hasattr(robot, "control_gripper"):
-            # If the robot has a control_gripper method, use it to open/close the gripper
-            robot.control_gripper(open_command=data.open)
+    async with motion_lock:
+        # Convert units to meters
+        data.x = data.x / 100 if data.x is not None else None
+        data.y = data.y / 100 if data.y is not None else None
+        data.z = data.z / 100 if data.z is not None else None
+
+        if (
+            data.x is None
+            and data.y is None
+            and data.z is None
+            and data.rx is None
+            and data.ry is None
+            and data.rz is None
+            and data.open is not None
+        ):
+            if hasattr(robot, "control_gripper"):
+                # If the robot has a control_gripper method, use it to open/close the gripper
+                robot.control_gripper(open_command=data.open)
+                return StatusResponse()
+
+        if hasattr(robot, "move_robot_relative"):
+            # If the robot has a move_robot_relative method, use it
+            target_orientation_rad = np.array(
+                [
+                    np.deg2rad(u) if u is not None else None
+                    for u in [data.rx, data.ry, data.rz]
+                ]
+            )
+            await robot.move_robot_relative(
+                target_position=np.array([data.x, data.y, data.z]),
+                target_orientation_rad=target_orientation_rad,
+            )
+            if hasattr(robot, "control_gripper") and data.open is not None:
+                # If the robot has a control_gripper method, use it to open/close the gripper
+                robot.control_gripper(open_command=data.open)
             return StatusResponse()
 
-    if hasattr(robot, "move_robot_relative"):
-        # If the robot has a move_robot_relative method, use it
-        target_orientation_rad = np.array(
-            [
-                np.deg2rad(u) if u is not None else None
-                for u in [data.rx, data.ry, data.rz]
-            ]
-        )
-        await robot.move_robot_relative(
-            target_position=np.array([data.x, data.y, data.z]),
-            target_orientation_rad=target_orientation_rad,
-        )
-        if hasattr(robot, "control_gripper") and data.open is not None:
-            # If the robot has a control_gripper method, use it to open/close the gripper
-            robot.control_gripper(open_command=data.open)
-        return StatusResponse()
-
-    # Call move_robot_absolute if the robot does not have move_robot_relative
-    if not hasattr(robot, "forward_kinematics"):
-        raise HTTPException(
-            status_code=400,
-            detail="Robot doesn't support move_robot_relative method or forward_kinematics method",
-        )
-
-    initial_position = getattr(robot, "initial_position", None)
-    initial_orientation_rad = getattr(robot, "initial_orientation_rad", None)
-    if initial_position is None or initial_orientation_rad is None:
-        await robot.move_to_initial_position()
-        initial_position = getattr(robot, "initial_position", None)
-        initial_orientation_rad = getattr(robot, "initial_orientation_rad", None)
-        if initial_position is None or initial_orientation_rad is None:
+        # Fall back to IK-based absolute move if no native move_robot_relative
+        if not hasattr(robot, "forward_kinematics"):
             raise HTTPException(
                 status_code=400,
-                detail=f"Robot {robot.name} .move_to_initial_position() did not set initial position or orientation: {initial_position=}, {initial_orientation_rad=}",
+                detail="Robot doesn't support move_robot_relative method or forward_kinematics method",
             )
 
-    delta_position = np.array([data.x, data.y, data.z])
-    has_orientation_delta = any(v is not None for v in (data.rx, data.ry, data.rz))
-    delta_orientation_euler_degrees = np.array([data.rx, data.ry, data.rz])
-    open = data.open if data.open is not None else None
+        open_cmd = data.open if data.open is not None else None
 
-    # Call /move/absolute by adding the delta to the current position
-    current_position, current_orientation = _read_control_forward_kinematics(robot)
-    # Round to 3 decimals
-    current_position = np.round(current_position, 3)
-    current_orientation = np.round(current_orientation, 3)
-    # Replace the None values in delta_position and delta_orientation_euler_degrees with 0
-    delta_position = np.array([0 if v is None else v for v in delta_position])
-    if has_orientation_delta:
-        delta_orientation_euler_degrees = np.array(
-            [0 if v is None else v for v in delta_orientation_euler_degrees]
+        delta_position = np.array([data.x, data.y, data.z])
+        has_orientation_delta = any(v is not None for v in (data.rx, data.ry, data.rz))
+        delta_orientation_euler_degrees = np.array([data.rx, data.ry, data.rz])
+
+        # Read the current world-frame pose (synced with real motors)
+        current_position_raw, current_orientation_raw = _read_control_forward_kinematics(
+            robot, sync=True
+        )
+        piper_diagnostics_enabled = (
+            isinstance(robot, BaseManipulator) and getattr(robot, "name", None) == "agilex-piper"
+        )
+        pre_joint_vector: Optional[np.ndarray] = None
+        if piper_diagnostics_enabled:
+            try:
+                pre_joint_vector = np.array(
+                    robot.read_joints_position(unit="rad", source="robot"),
+                    dtype=float,
+                )
+            except Exception as exc:
+                logger.debug(f"[move_relative PIPER_DIAG] Failed to read pre joints: {exc}")
+
+        current_position = np.round(current_position_raw.copy(), 3)
+        current_orientation = np.round(current_orientation_raw.copy(), 3)
+
+        # Replace None values with 0
+        delta_position = np.array([0 if v is None else v for v in delta_position])
+
+        # Compute world-frame target = current + delta (no initial_position added)
+        target_position = np.round(current_position + delta_position, 3)
+
+        # Orientation: apply delta if provided, otherwise hold current
+        if has_orientation_delta:
+            delta_orientation_euler_degrees = np.array(
+                [0 if v is None else v for v in delta_orientation_euler_degrees]
+            )
+            target_orientation_rad = current_orientation + np.deg2rad(
+                delta_orientation_euler_degrees
+            )
+        else:
+            target_orientation_rad = current_orientation
+
+        logger.debug(
+            f"[move_relative DEBUG] "
+            f"delta_pos=[{delta_position[0]:.4f}, {delta_position[1]:.4f}, {delta_position[2]:.4f}] "
+            f"current_pos=[{current_position[0]:.4f}, {current_position[1]:.4f}, {current_position[2]:.4f}] "
+            f"target_pos=[{target_position[0]:.4f}, {target_position[1]:.4f}, {target_position[2]:.4f}] "
+            f"has_orientation_delta={has_orientation_delta}"
         )
 
-    target_position = current_position + delta_position - initial_position
-    target_orientation = None
-    if has_orientation_delta:
-        target_orientation = (
-            np.rad2deg(current_orientation)
-            + delta_orientation_euler_degrees
-            - np.rad2deg(initial_orientation_rad)
-        )
+        if hasattr(robot, "control_gripper") and open_cmd is not None:
+            background_tasks.add_task(
+                background_task_log_exceptions(robot.control_gripper),
+                open_command=open_cmd,
+            )
 
-    # Round to 3 decimals
-    target_position = np.round(target_position, 3)
-    if target_orientation is not None:
-        target_orientation = np.round(target_orientation, 3)
-
-    logger.debug(
-        f"[move_relative DEBUG] "
-        f"delta_pos=[{delta_position[0]:.4f}, {delta_position[1]:.4f}, {delta_position[2]:.4f}] "
-        f"current_pos=[{current_position[0]:.4f}, {current_position[1]:.4f}, {current_position[2]:.4f}] "
-        f"initial_pos=[{initial_position[0]:.4f}, {initial_position[1]:.4f}, {initial_position[2]:.4f}] "
-        f"target_pos=[{target_position[0]:.4f}, {target_position[1]:.4f}, {target_position[2]:.4f}] "
-        f"keep_orientation={has_orientation_delta}"
-    )
-
-    await move_to_absolute_position(
-        query=MoveAbsoluteRequest(
-            x=target_position[0] * 100,
-            y=target_position[1] * 100,
-            z=target_position[2] * 100,
-            rx=None if target_orientation is None else target_orientation[0],
-            ry=None if target_orientation is None else target_orientation[1],
-            rz=None if target_orientation is None else target_orientation[2],
-            open=open,
+        # Call the world-frame helper directly — no controller-relative
+        # conversion, so the delta is applied exactly once.
+        await _execute_world_frame_move(
+            robot=robot,
+            target_position=target_position,
+            target_orientation_rad=target_orientation_rad,
             position_tolerance=1e-3,
             orientation_tolerance=1e-3,
             max_trials=1,
-        ),
-        background_tasks=background_tasks,
-        robot_id=robot_id,
-        rcm=rcm,
-    )
+        )
 
-    return StatusResponse()
+        if piper_diagnostics_enabled:
+            post_position_raw: Optional[np.ndarray] = None
+            post_joint_vector: Optional[np.ndarray] = None
+            try:
+                post_position_raw, _ = _read_control_forward_kinematics(robot, sync=True)
+            except Exception as exc:
+                logger.debug(
+                    f"[move_relative PIPER_DIAG] Failed to read post FK pose: {exc}"
+                )
+
+            try:
+                post_joint_vector = np.array(
+                    robot.read_joints_position(unit="rad", source="robot"),
+                    dtype=float,
+                )
+            except Exception as exc:
+                logger.debug(
+                    f"[move_relative PIPER_DIAG] Failed to read post joints: {exc}"
+                )
+
+            if post_position_raw is not None:
+                measured_delta_position = post_position_raw - current_position_raw
+                logger.debug(
+                    "[move_relative PIPER_DIAG] "
+                    f"requested_delta_pos=[{delta_position[0]:.4f}, {delta_position[1]:.4f}, {delta_position[2]:.4f}] "
+                    f"measured_sync_fk_delta=[{measured_delta_position[0]:.4f}, {measured_delta_position[1]:.4f}, {measured_delta_position[2]:.4f}] "
+                    f"pre_sync_pos={np.round(current_position_raw, 4).tolist()} "
+                    f"post_sync_pos={np.round(post_position_raw, 4).tolist()} "
+                    f"pre_joints={(np.round(pre_joint_vector, 4).tolist() if pre_joint_vector is not None else None)} "
+                    f"post_joints={(np.round(post_joint_vector, 4).tolist() if post_joint_vector is not None else None)}"
+                )
+
+        return StatusResponse()
 
 
 @router.post(

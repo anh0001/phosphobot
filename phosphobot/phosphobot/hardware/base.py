@@ -658,6 +658,7 @@ class BaseManipulator(BaseRobot):
                 target_position=target_position_cartesian,
                 target_orientation=target_orientation_quaternions,
                 rest_poses=rest_poses,
+                current_positions=rest_poses,
                 joint_damping=None,
                 lower_limits=self.lower_joint_limits,
                 upper_limits=self.upper_joint_limits,
@@ -676,6 +677,7 @@ class BaseManipulator(BaseRobot):
                 target_position=target_position_cartesian,
                 target_orientation=target_orientation_quaternions,
                 rest_poses=rest_poses,
+                current_positions=rest_poses,
                 lower_limits=self.lower_joint_limits,
                 upper_limits=self.upper_joint_limits,
                 joint_ranges=[
@@ -698,6 +700,7 @@ class BaseManipulator(BaseRobot):
                 target_position=target_position_cartesian,
                 target_orientation=target_orientation_quaternions,
                 rest_poses=rest_poses,
+                current_positions=rest_poses,
                 joint_damping=[0.001] * len(self.lower_joint_limits),
                 lower_limits=self.lower_joint_limits,
                 upper_limits=self.upper_joint_limits,
@@ -737,13 +740,13 @@ class BaseManipulator(BaseRobot):
             target_positions = current_motor_positions[
                 : len(self.actuated_joints)
             ].tolist()
-            self.sim.set_joints_states(
+            # Use resetJointState for immediate teleport so the subsequent
+            # getLinkState returns the correct pose without stepping.
+            self.sim.sync_joints_immediate(
                 robot_id=self.p_robot_id,
                 joint_indices=self.actuated_joints,
                 target_positions=target_positions,
             )
-            # Update the simulation
-            self.sim.step()
 
         # Get the link state of the end effector
         end_effector_link_state = self.sim.get_link_state(
@@ -757,9 +760,11 @@ class BaseManipulator(BaseRobot):
         # because the inverseKinematics requires the link frame position, not the center of mass
         current_effector_position = np.array(end_effector_link_state[4])
 
-        # orientation of the end effector in radians
+        # Orientation of the end effector in radians — use the URDF link-frame
+        # quaternion (index 5) so position and orientation come from the same
+        # coordinate frame.
         current_effector_orientation_rad = euler_from_quaternion(
-            np.array(end_effector_link_state[1]), degrees=False
+            np.array(end_effector_link_state[5]), degrees=False
         )
 
         return (

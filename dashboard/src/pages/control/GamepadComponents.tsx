@@ -149,6 +149,7 @@ export function useGamepadControl(
   setMultiArmGroups: React.Dispatch<React.SetStateAction<MultiArmGroup[]>>
 ) {
   const controlStates = useRef<Map<string, ControllerState>>(new Map());
+  const inFlightRobotCommands = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     if (!isMoving) return;
@@ -371,14 +372,22 @@ export function useGamepadControl(
             const robotsToControl = getRobotsToControl(config, configMode);
             robotsToControl.forEach((robotName) => {
               let finalData = { ...data };
+              const robotId = robotIDFromName(robotName, serverStatus);
               
               // Apply control mode modifications
               if (configMode === "multi-arm" && 'control_mode' in config) {
                 finalData = applyControlMode(data, config.control_mode);
               }
-              
-              postData(BASE_URL + "move/relative", finalData, {
-                robot_id: robotIDFromName(robotName, serverStatus),
+
+              if (inFlightRobotCommands.current.has(robotId)) {
+                return;
+              }
+
+              inFlightRobotCommands.current.add(robotId);
+              void postData(BASE_URL + "move/relative", finalData, {
+                robot_id: robotId,
+              }).finally(() => {
+                inFlightRobotCommands.current.delete(robotId);
               });
             });
           }
