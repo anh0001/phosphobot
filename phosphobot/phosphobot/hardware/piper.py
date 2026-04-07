@@ -22,26 +22,37 @@ class PiperHardware(BaseManipulator):
     name = "agilex-piper"
     device_name = "agilex-piper"
 
-    # Default to the Humble new-firmware model (>= S-V1.6-3). The previous
-    # locally tuned model is kept alongside it as a legacy fallback asset.
+    # Default to the official new-firmware model (>= S-V1.6-3) and keep a
+    # vendored copy of AgileX's old-firmware URDF for firmware < S-V1.6-3.
     DEFAULT_URDF_FILE_PATH = str(
         get_resources_path() / "urdf" / "piper" / "urdf" / "piper.urdf"
     )
     LEGACY_URDF_FILE_PATH = str(
-        get_resources_path() / "urdf" / "piper" / "urdf" / "piper_legacy_local.urdf"
+        get_resources_path() / "urdf" / "piper" / "urdf" / "piper_old.urdf"
     )
     URDF_FILE_PATH = DEFAULT_URDF_FILE_PATH
     URDF_VARIANT_ENV_VAR = "PHOSPHOBOT_PIPER_URDF_VARIANT"
+    DH_OFFSET_ENV_VAR = "PHOSPHOBOT_PIPER_DH_IS_OFFSET"
 
     AXIS_ORIENTATION = [0, 0, 0, 1]
 
     END_EFFECTOR_LINK_INDEX = 5
     GRIPPER_JOINT_INDEX = 6
-    END_EFFECTOR_LINK_CANDIDATES = ("tcp", "piper_tcp", "link6")
+    # Prefer link6 because it exists in both official old/new URDF variants and
+    # gives us a consistent link frame across firmware generations. The newer
+    # URDF also exposes a fixed tcp link, but that is a fixed descendant of
+    # link6 rather than a distinct kinematic branch.
+    END_EFFECTOR_LINK_CANDIDATES = ("link6", "tcp", "piper_tcp")
     EXPECTED_DEFAULT_URDF_JOINT_NAMES = (
         "joint6",
         "joint6_to_gripper_base",
         "joint6_to_tcp",
+        "joint7",
+        "joint8",
+    )
+    EXPECTED_LEGACY_URDF_JOINT_NAMES = (
+        "joint6",
+        "joint6_to_gripper_base",
         "joint7",
         "joint8",
     )
@@ -114,29 +125,69 @@ class PiperHardware(BaseManipulator):
         )
         self.SERIAL_ID = can_name
         self.is_torqued = False
+        # Track the last commanded move mode, but do not assume the hardware
+        # actually stayed there across resets/reconnects.
+        self._current_move_mode = -1
         self._resolved_end_effector_link_name = "link6"
         self.END_EFFECTOR_LINK_INDEX = self._resolve_end_effector_link_index()
         self._init_sim_gripper()
         self._log_runtime_model_diagnostics()
 
     @classmethod
-    def _resolve_urdf_file_path(cls) -> str:
-        variant = os.getenv(cls.URDF_VARIANT_ENV_VAR, "default").strip().lower()
+    def _resolve_urdf_file_path(cls, firmware_version: Optional[str] = None) -> str:
+        variant = os.getenv(cls.URDF_VARIANT_ENV_VAR, "").strip().lower()
 
-        if variant in {"legacy", "piper_legacy_local", "local"}:
+        if variant in {"legacy", "piper_old", "piper_legacy_local", "local"}:
             logger.warning(
                 f"Using legacy Piper URDF from {cls.LEGACY_URDF_FILE_PATH} because "
                 f"{cls.URDF_VARIANT_ENV_VAR}={variant!r}."
             )
             return cls.LEGACY_URDF_FILE_PATH
 
-        if variant not in {"", "default", "agilex", "new", "piper"}:
+        if variant in {"default", "agilex", "new", "piper"}:
+            return cls.DEFAULT_URDF_FILE_PATH
+
+        if variant not in {"", "auto"}:
             logger.warning(
                 f"Unknown {cls.URDF_VARIANT_ENV_VAR}={variant!r}; falling back to "
-                f"{cls.DEFAULT_URDF_FILE_PATH}."
+                f"auto-selection."
             )
 
+        # Auto-select based on firmware version when no explicit override is set
+        if firmware_version is not None:
+            parsed = cls._parse_firmware_version(firmware_version)
+            if parsed is not None:
+                if parsed < cls.LEGACY_FIRMWARE_CUTOFF:
+                    logger.info(
+                        f"Auto-selected legacy URDF for firmware '{firmware_version}' "
+                        f"(< S-V{cls.LEGACY_FIRMWARE_CUTOFF[0]}.{cls.LEGACY_FIRMWARE_CUTOFF[1]}-{cls.LEGACY_FIRMWARE_CUTOFF[2]})."
+                    )
+                    return cls.LEGACY_URDF_FILE_PATH
+                else:
+                    logger.info(
+                        f"Auto-selected default (new) URDF for firmware '{firmware_version}' "
+                        f"(>= S-V{cls.LEGACY_FIRMWARE_CUTOFF[0]}.{cls.LEGACY_FIRMWARE_CUTOFF[1]}-{cls.LEGACY_FIRMWARE_CUTOFF[2]})."
+                    )
+                    return cls.DEFAULT_URDF_FILE_PATH
+
         return cls.DEFAULT_URDF_FILE_PATH
+
+    @classmethod
+    def _resolve_dh_is_offset(cls, firmware_version: Optional[str] = None) -> int:
+        env_val = os.getenv(cls.DH_OFFSET_ENV_VAR, "").strip().lower()
+        if env_val in {"0", "false", "no", "old"}:
+            return 0
+        if env_val in {"1", "true", "yes", "new"}:
+            return 1
+
+        # Auto-select based on firmware: old firmware = 0, new firmware = 1
+        if firmware_version is not None:
+            parsed = cls._parse_firmware_version(firmware_version)
+            if parsed is not None:
+                return 0 if parsed < cls.LEGACY_FIRMWARE_CUTOFF else 1
+
+        # Default to 1 (new firmware) to match SDK default
+        return 1
 
     def _init_sim_gripper(self) -> None:
         """Discover and cache gripper joints + limits in simulation."""
@@ -289,22 +340,30 @@ class PiperHardware(BaseManipulator):
         )
         logger.debug(f"Piper joint chain: {joint_snapshot}")
 
+        joint_names = {str(record["joint_name"]) for record in joint_records}
+        expected_joint_names: Optional[tuple[str, ...]] = None
+        validation_label: Optional[str] = None
         if urdf_path.resolve() == Path(self.DEFAULT_URDF_FILE_PATH).resolve():
-            joint_names = {str(record["joint_name"]) for record in joint_records}
-            missing_joint_names = sorted(
-                set(self.EXPECTED_DEFAULT_URDF_JOINT_NAMES) - joint_names
-            )
+            expected_joint_names = self.EXPECTED_DEFAULT_URDF_JOINT_NAMES
+            validation_label = "default"
+        elif urdf_path.resolve() == Path(self.LEGACY_URDF_FILE_PATH).resolve():
+            expected_joint_names = self.EXPECTED_LEGACY_URDF_JOINT_NAMES
+            validation_label = "legacy"
+
+        if expected_joint_names is not None and validation_label is not None:
+            missing_joint_names = sorted(set(expected_joint_names) - joint_names)
             if missing_joint_names:
                 logger.error(
-                    "Piper default URDF validation failed: "
+                    f"Piper {validation_label} URDF validation failed: "
                     f"missing expected joints {missing_joint_names}. "
                     f"Loaded URDF: {urdf_path}"
                 )
-            if self._resolved_end_effector_link_name not in {"tcp", "piper_tcp"}:
+            if self._resolved_end_effector_link_name not in self.END_EFFECTOR_LINK_CANDIDATES:
                 logger.error(
-                    "Piper default URDF validation failed: end effector is not resolved "
-                    f"to a TCP link. Resolved '{self._resolved_end_effector_link_name}' "
-                    f"at index {self.END_EFFECTOR_LINK_INDEX}."
+                    f"Piper {validation_label} URDF validation failed: end effector "
+                    f"not resolved to a known link. Resolved "
+                    f"'{self._resolved_end_effector_link_name}' at index "
+                    f"{self.END_EFFECTOR_LINK_INDEX}."
                 )
 
     @classmethod
@@ -338,9 +397,8 @@ class PiperHardware(BaseManipulator):
                 f"the new-firmware model ('{self.URDF_FILE_PATH}'). "
                 "AgileX piper_ros docs recommend the legacy DH model for firmware "
                 "< S-V1.6-3 (see piper_description_old.urdf in agilexrobotics/piper_ros). "
-                "To switch, set the environment variable "
-                f"{self.URDF_VARIANT_ENV_VAR}=legacy before starting the server. "
-                "The server will NOT auto-switch URDFs; this warning is informational only."
+                "The server normally auto-selects the matching URDF; this warning "
+                "usually means an explicit override is forcing the default model."
             )
         elif firmware_version >= self.LEGACY_FIRMWARE_CUTOFF and not using_default_urdf:
             logger.warning(
@@ -349,9 +407,64 @@ class PiperHardware(BaseManipulator):
                 f"is the legacy model ('{self.URDF_FILE_PATH}'). "
                 "AgileX piper_ros docs recommend the new DH model for firmware "
                 ">= S-V1.6-3 (see piper_description.urdf in agilexrobotics/piper_ros). "
-                f"To switch back, unset {self.URDF_VARIANT_ENV_VAR} or set it to 'default'. "
-                "The server will NOT auto-switch URDFs; this warning is informational only."
+                "The server normally auto-selects the matching URDF; this warning "
+                "usually means an explicit override is forcing the legacy model."
             )
+
+    def _reload_urdf(self) -> None:
+        """Remove the current PyBullet body and reload with the updated URDF."""
+        import pybullet as pb
+
+        # Retrieve the current base position before removing
+        base_pos, base_orn = pb.getBasePositionAndOrientation(self.p_robot_id)
+        preserved_joint_positions: list[float] = []
+        if getattr(self, "actuated_joints", None):
+            preserved_joint_positions = self.sim.get_joints_states(
+                robot_id=self.p_robot_id,
+                joint_indices=self.actuated_joints,
+            )
+        pb.removeBody(self.p_robot_id)
+
+        self.p_robot_id, num_joints, actuated_joints = self.sim.load_urdf(
+            urdf_path=self.URDF_FILE_PATH,
+            axis=list(base_pos),
+            axis_orientation=list(base_orn),
+            use_fixed_base=True,
+            enable_self_collision=True,
+        )
+        self.num_joints = num_joints
+        self.actuated_joints = actuated_joints
+        self.num_actuated_joints = len(actuated_joints)
+        self.gripper_servo_id = self.SERVO_IDS[-1]
+
+        # Rebuild IK data structures
+        joint_infos = [
+            self.sim.get_joint_info(self.p_robot_id, i) for i in range(num_joints)
+        ]
+        self.ik_joint_indices = [
+            i for i, info in enumerate(joint_infos) if info[2] != p.JOINT_FIXED
+        ]
+        self.ik_joint_index_lookup = {
+            joint_index: idx for idx, joint_index in enumerate(self.ik_joint_indices)
+        }
+        self.lower_joint_limits = [joint_infos[i][8] for i in self.ik_joint_indices]
+        self.upper_joint_limits = [joint_infos[i][9] for i in self.ik_joint_indices]
+
+        # Re-resolve EEF link and gripper for new URDF
+        self._resolved_end_effector_link_name = "link6"
+        self.END_EFFECTOR_LINK_INDEX = self._resolve_end_effector_link_index()
+        self._init_sim_gripper()
+        if preserved_joint_positions:
+            self.sim.sync_joints_immediate(
+                robot_id=self.p_robot_id,
+                joint_indices=self.actuated_joints[
+                    : min(len(self.actuated_joints), len(preserved_joint_positions))
+                ],
+                target_positions=preserved_joint_positions[
+                    : min(len(self.actuated_joints), len(preserved_joint_positions))
+                ],
+            )
+        self._log_runtime_model_diagnostics()
 
     @classmethod
     def from_can_port(cls, can_name: str = "can0") -> Optional["PiperHardware"]:
@@ -430,6 +543,11 @@ class PiperHardware(BaseManipulator):
             return
 
         self.motors_bus.ConnectPort(can_init=True)
+        if not self._enable_arm_with_retry():
+            logger.warning(
+                f"Could not enable Agilex Piper on {self.can_name} after connecting."
+            )
+            return
 
         # Start by resetting the control mode (useful if arm stuck in teaching mode)
         self.motors_bus.MotionCtrl_1(0x02, 0, 0)  # 恢复
@@ -442,6 +560,24 @@ class PiperHardware(BaseManipulator):
         logger.info(
             f"Connected to Agilex Piper on {self.can_name} with firmware version {self.firmware_version}"
         )
+
+        desired_dh = self._resolve_dh_is_offset(self.firmware_version)
+        logger.info(
+            f"Piper firmware '{self.firmware_version}' prefers SDK dh_is_offset={desired_dh}. "
+            "Keeping the existing SDK session to avoid disrupting joint control."
+        )
+
+        # Auto-select URDF if no explicit override was set
+        correct_urdf = self._resolve_urdf_file_path(self.firmware_version)
+        if Path(correct_urdf).resolve() != Path(self.URDF_FILE_PATH).resolve():
+            logger.info(
+                f"Piper: auto-switching URDF from '{self.URDF_FILE_PATH}' to "
+                f"'{correct_urdf}' based on firmware '{self.firmware_version}'."
+            )
+            self.URDF_FILE_PATH = correct_urdf
+            # Reload the URDF into PyBullet
+            self._reload_urdf()
+
         self._log_firmware_urdf_guidance()
 
         self.motors_bus.ArmParamEnquiryAndConfig(
@@ -507,6 +643,17 @@ class PiperHardware(BaseManipulator):
         self.is_connected = False
         self.is_torqued = False
 
+    def _enable_arm_with_retry(
+        self, timeout_s: float = 2.0, poll_interval_s: float = 0.05
+    ) -> bool:
+        """Enable the arm using the retry loop shown in the official SDK demos."""
+        deadline = time.monotonic() + timeout_s
+        while time.monotonic() < deadline:
+            if self.motors_bus.EnablePiper():
+                return True
+            time.sleep(poll_interval_s)
+        return False
+
     def init_config(self) -> None:
         """
         Load the config file.
@@ -531,8 +678,9 @@ class PiperHardware(BaseManipulator):
     def enable_torque(self) -> None:
         if not self.is_connected:
             return
-        self.motors_bus.EnablePiper()
-        self.is_torqued = True
+        self.is_torqued = self._enable_arm_with_retry()
+        if not self.is_torqued:
+            logger.warning("Piper EnablePiper() did not report success.")
 
     def disable_torque(self) -> None:
         # Disable torque
@@ -595,9 +743,7 @@ class PiperHardware(BaseManipulator):
             )
 
         # Move robot
-        self.motors_bus.ModeCtrl(
-            ctrl_mode=0x01, move_mode=0x01, move_spd_rate_ctrl=100, is_mit_mode=0x00
-        )
+        self._ensure_joint_control_mode()
         self.joint_position = current_position.tolist()
         self.motors_bus.JointCtrl(*[int(q) for q in current_position])
 
@@ -694,9 +840,7 @@ class PiperHardware(BaseManipulator):
                 clamped_joint = int(np.clip(joint, min_limit, max_limit))
                 clamped_joints.append(clamped_joint)
 
-        self.motors_bus.ModeCtrl(
-            ctrl_mode=0x01, move_mode=0x01, move_spd_rate_ctrl=100, is_mit_mode=0x00
-        )
+        self._ensure_joint_control_mode()
         self.motors_bus.JointCtrl(*clamped_joints)
 
         # Move the gripper if it is enabled
@@ -933,6 +1077,140 @@ class PiperHardware(BaseManipulator):
         return RobotConfigStatus(
             name=self.name, device_name=self.can_name, robot_type="manipulator"
         )
+
+    def _read_sdk_end_pose(self) -> tuple[np.ndarray, np.ndarray]:
+        """Read the current end-effector pose from the SDK.
+
+        Returns (position_meters, orientation_rad) as numpy arrays.
+        SDK units: 0.001mm for position, 0.001deg for orientation.
+        """
+        msgs = self.motors_bus.GetArmEndPoseMsgs()
+        pose = msgs.end_pose
+        position = np.array([
+            pose.X_axis * 1e-6,  # 0.001mm -> m
+            pose.Y_axis * 1e-6,
+            pose.Z_axis * 1e-6,
+        ])
+        orientation_rad = np.array([
+            np.deg2rad(pose.RX_axis * 1e-3),  # 0.001deg -> deg -> rad
+            np.deg2rad(pose.RY_axis * 1e-3),
+            np.deg2rad(pose.RZ_axis * 1e-3),
+        ])
+        return position, orientation_rad
+
+    def _ensure_joint_control_mode(self) -> None:
+        """Force joint control mode (MOVE J) before joint-space commands.
+
+        The previous working implementation sent this ModeCtrl command for
+        every joint write. That is intentional: the Piper controller can be
+        reset or left in a different mode even when our cached state says
+        MOVE J, and `home`/`ready` depend on raw JointCtrl commands.
+        """
+        self.motors_bus.ModeCtrl(
+            ctrl_mode=0x01,
+            move_mode=0x01,  # MOVE J
+            move_spd_rate_ctrl=100,
+            is_mit_mode=0x00,
+        )
+        self._current_move_mode = 0x01
+
+    def _send_sdk_end_pose(
+        self,
+        position_m: np.ndarray,
+        orientation_rad: np.ndarray,
+    ) -> None:
+        """Send an absolute end-effector pose via the SDK's EndPoseCtrl.
+
+        Converts from meters/radians to SDK units (0.001mm / 0.001deg).
+        Switches to Cartesian control mode (MOVE P) before sending.
+        """
+        # Switch to Cartesian point-to-point mode (ctrl_mode=0x01, move_mode=0x00)
+        self.motors_bus.MotionCtrl_2(
+            ctrl_mode=0x01,
+            move_mode=0x00,  # MOVE P (Cartesian point-to-point)
+            move_spd_rate_ctrl=100,
+            is_mit_mode=0x00,
+        )
+        self._current_move_mode = 0x00
+
+        x_cmd = int(round(position_m[0] * 1e6))  # m -> 0.001mm
+        y_cmd = int(round(position_m[1] * 1e6))
+        z_cmd = int(round(position_m[2] * 1e6))
+        rx_cmd = int(round(np.rad2deg(orientation_rad[0]) * 1e3))  # rad -> deg -> 0.001deg
+        ry_cmd = int(round(np.rad2deg(orientation_rad[1]) * 1e3))
+        rz_cmd = int(round(np.rad2deg(orientation_rad[2]) * 1e3))
+
+        logger.debug(
+            f"Piper EndPoseCtrl: X={x_cmd} Y={y_cmd} Z={z_cmd} "
+            f"RX={rx_cmd} RY={ry_cmd} RZ={rz_cmd}"
+        )
+        self.motors_bus.EndPoseCtrl(
+            X=x_cmd, Y=y_cmd, Z=z_cmd,
+            RX=rx_cmd, RY=ry_cmd, RZ=rz_cmd,
+        )
+
+    async def move_robot_relative(
+        self,
+        target_position: np.ndarray,
+        target_orientation_rad: np.ndarray,
+    ) -> None:
+        """Move the Piper end-effector by a relative delta using SDK-native Cartesian control.
+
+        When connected to real hardware, this bypasses PyBullet IK entirely and
+        uses the SDK's EndPoseCtrl for accurate Cartesian motion. Falls back to
+        the base class IK path for simulation-only mode.
+
+        Args:
+            target_position: Delta [dx, dy, dz] in meters (already converted from cm).
+            target_orientation_rad: Delta [drx, dry, drz] in radians. The
+                control endpoint already provides relative orientation deltas.
+        """
+        if not self.is_connected:
+            # Simulation-only: fall back to PyBullet IK path
+            current_pos, current_orient = self.forward_kinematics(sync_robot_pos=False)
+            abs_pos = current_pos + np.array([
+                0 if v is None else v for v in target_position
+            ])
+            abs_orient = current_orient + np.array([
+                0 if v is None else v for v in target_orientation_rad
+            ])
+            await self.move_robot_absolute(
+                target_position=abs_pos,
+                target_orientation_rad=abs_orient,
+            )
+            return
+
+        # Read the current pose from the SDK (not from PyBullet FK)
+        current_pos, current_orient = self._read_sdk_end_pose()
+
+        # Apply delta
+        delta_pos = np.array([0 if v is None else v for v in target_position])
+        delta_orient = np.array([0 if v is None else v for v in target_orientation_rad])
+
+        new_pos = current_pos + delta_pos
+        new_orient = current_orient + delta_orient
+
+        logger.debug(
+            f"Piper move_robot_relative: SDK current_pos={np.round(current_pos, 4).tolist()} "
+            f"delta={np.round(delta_pos, 4).tolist()} -> target={np.round(new_pos, 4).tolist()}"
+        )
+
+        # Send via SDK-native Cartesian control
+        self._send_sdk_end_pose(new_pos, new_orient)
+
+        # Also update sim for visualization (non-critical path)
+        try:
+            # Read back the joint positions from the real robot after a short delay
+            await asyncio.sleep(0.05)
+            current_joints = self.read_joints_position(unit="rad", source="robot")
+            target_positions = current_joints[:len(self.actuated_joints)].tolist()
+            self.sim.sync_joints_immediate(
+                robot_id=self.p_robot_id,
+                joint_indices=self.actuated_joints,
+                target_positions=target_positions,
+            )
+        except Exception as exc:
+            logger.debug(f"Piper: sim sync after SDK move failed (non-critical): {exc}")
 
     async def move_to_ready_position(self) -> None:
         await super().move_to_ready_position()
