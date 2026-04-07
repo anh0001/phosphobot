@@ -17,7 +17,6 @@ from fastapi import (
     WebSocketDisconnect,
 )
 from loguru import logger
-from scipy.spatial.transform import Rotation as R
 from supabase_auth.types import Session as SupabaseSession
 
 from phosphobot.ai_control import CustomAIControlSignal, setup_ai_control
@@ -81,6 +80,25 @@ signal_ai_control = CustomAIControlSignal()
 signal_gravity_control = ControlSignal()
 signal_leader_follower = ControlSignal()
 signal_vr_control = ControlSignal()
+
+
+def _read_control_forward_kinematics(
+    robot: object, sync: bool = True
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Read FK from the robot state used for control decisions.
+
+    When *sync* is True (the default), the simulation is first synchronised
+    with the real motor positions so the returned pose reflects the physical
+    robot – important at the start of a relative move.
+
+    Set *sync=False* for cheap follow-up reads (e.g. residual checks inside a
+    retry loop) where an extra hardware round-trip would add latency without
+    meaningfully improving accuracy.
+    """
+    sync_robot_pos = sync and isinstance(robot, BaseManipulator)
+    robot_with_fk = cast(BaseManipulator, robot)
+    return robot_with_fk.forward_kinematics(sync_robot_pos=sync_robot_pos)
 
 
 @router.post(
@@ -216,7 +234,9 @@ async def move_to_absolute_position(
 
     if hasattr(robot, "forward_kinematics"):
         # If the robot has a forward_kinematics method, use it to move more precisely to the target
-        current_position, current_orientation = robot.forward_kinematics()
+        current_position, current_orientation = _read_control_forward_kinematics(
+            robot, sync=True
+        )
 
         target_controller_position = np.array([query.x, query.y, query.z])
         target_position = initial_position + target_controller_position
@@ -240,8 +260,12 @@ async def move_to_absolute_position(
             )
             use_angles = True
         else:
-            target_orientation_rad = None
-            use_angles = False
+            # Maintain the current EEF orientation when no orientation delta
+            # is provided.  Without this, the IK solver has unconstrained
+            # orientation and will drift the base/wrist joints instead of
+            # translating the EEF.
+            target_orientation_rad = current_orientation
+            use_angles = True
 
         orientation_residual: float
         if use_angles:
@@ -271,7 +295,9 @@ async def move_to_absolute_position(
                     target_position=target_position,
                     target_orientation_rad=target_orientation_rad,
                 )
-                current_position, current_orientation = robot.forward_kinematics()
+                current_position, current_orientation = (
+                    _read_control_forward_kinematics(robot, sync=True)
+                )
                 position_residual = np.linalg.norm(current_position - target_position)
                 if use_angles:
                     orientation_residual = float(
@@ -369,41 +395,53 @@ async def move_relative(
             )
 
     delta_position = np.array([data.x, data.y, data.z])
+    has_orientation_delta = any(v is not None for v in (data.rx, data.ry, data.rz))
     delta_orientation_euler_degrees = np.array([data.rx, data.ry, data.rz])
     open = data.open if data.open is not None else None
 
     # Call /move/absolute by adding the delta to the current position
-    current_position, current_orientation = robot.forward_kinematics(
-        sync_robot_pos=False
-    )
+    current_position, current_orientation = _read_control_forward_kinematics(robot)
     # Round to 3 decimals
     current_position = np.round(current_position, 3)
     current_orientation = np.round(current_orientation, 3)
     # Replace the None values in delta_position and delta_orientation_euler_degrees with 0
     delta_position = np.array([0 if v is None else v for v in delta_position])
-    delta_orientation_euler_degrees = np.array(
-        [0 if v is None else v for v in delta_orientation_euler_degrees]
-    )
+    if has_orientation_delta:
+        delta_orientation_euler_degrees = np.array(
+            [0 if v is None else v for v in delta_orientation_euler_degrees]
+        )
 
     target_position = current_position + delta_position - initial_position
-    target_orientation = (
-        np.rad2deg(current_orientation)
-        + delta_orientation_euler_degrees
-        - np.rad2deg(initial_orientation_rad)
-    )
+    target_orientation = None
+    if has_orientation_delta:
+        target_orientation = (
+            np.rad2deg(current_orientation)
+            + delta_orientation_euler_degrees
+            - np.rad2deg(initial_orientation_rad)
+        )
 
     # Round to 3 decimals
     target_position = np.round(target_position, 3)
-    target_orientation = np.round(target_orientation, 3)
+    if target_orientation is not None:
+        target_orientation = np.round(target_orientation, 3)
+
+    logger.debug(
+        f"[move_relative DEBUG] "
+        f"delta_pos=[{delta_position[0]:.4f}, {delta_position[1]:.4f}, {delta_position[2]:.4f}] "
+        f"current_pos=[{current_position[0]:.4f}, {current_position[1]:.4f}, {current_position[2]:.4f}] "
+        f"initial_pos=[{initial_position[0]:.4f}, {initial_position[1]:.4f}, {initial_position[2]:.4f}] "
+        f"target_pos=[{target_position[0]:.4f}, {target_position[1]:.4f}, {target_position[2]:.4f}] "
+        f"keep_orientation={has_orientation_delta}"
+    )
 
     await move_to_absolute_position(
         query=MoveAbsoluteRequest(
             x=target_position[0] * 100,
             y=target_position[1] * 100,
             z=target_position[2] * 100,
-            rx=target_orientation[0],
-            ry=target_orientation[1],
-            rz=target_orientation[2],
+            rx=None if target_orientation is None else target_orientation[0],
+            ry=None if target_orientation is None else target_orientation[1],
+            rz=None if target_orientation is None else target_orientation[2],
             open=open,
             position_tolerance=1e-3,
             orientation_tolerance=1e-3,
@@ -1103,9 +1141,9 @@ async def spawn_inference_server(
             )
             robots_to_control.remove(robot)
 
-    assert all(
-        isinstance(robot, BaseManipulator) for robot in robots_to_control
-    ), "All robots must be manipulators for AI control"
+    assert all(isinstance(robot, BaseManipulator) for robot in robots_to_control), (
+        "All robots must be manipulators for AI control"
+    )
 
     # Get the modal host and port here
     _, _, server_info = await setup_ai_control(
@@ -1195,9 +1233,9 @@ async def start_ai_control(
             )
             robots_to_control.remove(robot)
 
-    assert all(
-        isinstance(robot, BaseManipulator) for robot in robots_to_control
-    ), "All robots must be manipulators for AI control"
+    assert all(isinstance(robot, BaseManipulator) for robot in robots_to_control), (
+        "All robots must be manipulators for AI control"
+    )
 
     # Get the modal host and port here
     model, model_spawn_config, server_info = await setup_ai_control(

@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "prod": "cd ../.. && sudo make prod",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run"
   },
   "dependencies": {
     "@codemirror/lang-javascript": "^6.2.4",
@@ -72,6 +73,7 @@
     "globals": "^15.15.0",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.24.1",
-    "vite": "^6.3.6"
+    "vite": "^6.3.6",
+    "vitest": "^3.2.4"
   }
 }

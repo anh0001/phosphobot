@@ -7,9 +7,18 @@
   <link
     name="base_link">
     <inertial>
-      <origin xyz="-0.00473641164191482 2.56829134630247E-05 0.041451518036016" rpy="0 0 0" />
-      <mass value="1.02" />
-      <inertia ixx="0.00267433" ixy="-0.00000073" ixz="-0.00017389" iyy="0.00282612" iyz="0.0000004" izz="0.00089624" />
+      <origin
+        xyz="-0.00979274765955341 1.82905827587138E-06 0.0410100126360189"
+        rpy="0 0 0" />
+      <mass
+        value="0.162548567403693" />
+      <inertia
+        ixx="0.000226596924525071"
+        ixy="-7.33972270153965E-08"
+        ixz="2.13249977802622E-06"
+        iyy="0.000269444772561524"
+        iyz="8.15169009611054E-09"
+        izz="0.000222318258878636" />
     </inertial>
     <visual>
       <origin
@@ -17,7 +26,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://piper/meshes/base_link.STL" />
+          filename="package://piper/meshes/base_link.dae" />
       </geometry>
       <material
         name="">
@@ -38,9 +47,18 @@
   <link
     name="link1">
     <inertial>
-      <origin xyz="0.000121504734057468 0.000104632162460536 -0.00438597309559853" rpy="0 0 0" />
-      <mass value="0.71" />
-      <inertia ixx="0.00048916" ixy="-0.00000036" ixz="-0.00000224" iyy="0.00040472" iyz="-0.00000242" izz="0.00043982" />
+      <origin
+        xyz="0.00131676031927024 0.000310288842008612 -0.00922874512303437"
+        rpy="0 0 0" />
+      <mass
+        value="0.0978679932242825" />
+      <inertia
+        ixx="7.76684558296782E-05"
+        ixy="1.09084650459924E-07"
+        ixz="-1.9748053243241E-06"
+        iyy="9.24967780161547E-05"
+        iyz="9.91284646834582E-07"
+        izz="8.24589062407807E-05" />
     </inertial>
     <visual>
       <origin
@@ -48,7 +66,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://piper/meshes/link1.STL" />
+          filename="package://piper/meshes/link1.dae" />
       </geometry>
       <material
         name="">
@@ -71,7 +89,7 @@
     type="revolute">
     <origin
       xyz="0 0 0.123"
-      rpy="0 0 0" />
+      rpy="0 0 -1.5708" />
     <parent
       link="base_link" />
     <child
@@ -79,17 +97,26 @@
     <axis
       xyz="0 0 1" />
     <limit
-      lower="-2.618"
-      upper="2.168"
+      lower="-2.6179"
+      upper="2.6179"
       effort="100"
       velocity="5" />
   </joint>
   <link
     name="link2">
     <inertial>
-      <origin xyz="0.198666145229743 -0.010926924140076 0.00142121714502687" rpy="0 0 0" />
-      <mass value="1.17" />
-      <inertia ixx="0.00116918" ixy="-0.00180037" ixz="0.00025146" iyy="0.06785384" iyz="-0.00000455" izz="0.06774489" />
+      <origin
+        xyz="0.148793602378802 -0.00242026983944119 0.00175154638467948"
+        rpy="0 0 0" />
+      <mass
+        value="0.290888938633388" />
+      <inertia
+        ixx="0.000148959640166183"
+        ixy="-7.37750384371657E-05"
+        ixz="-9.68688405196236E-07"
+        iyy="0.00172800946632652"
+        iyz="-1.09692225564224E-06"
+        izz="0.0017754628344594" />
     </inertial>
     <visual>
       <origin
@@ -97,7 +124,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://piper/meshes/link2.STL" />
+          filename="package://piper/meshes/link2.dae" />
       </geometry>
       <material
         name="">
@@ -120,8 +147,7 @@
     type="revolute">
     <origin
       xyz="0 0 0"
-      rpy="1.5708 -0.1359 -3.1416" />
-      <!-- rpy="1.5708 -0.10095-0.03490659 -3.1416" /> -->
+      rpy="1.5708 0 -1.5708" />
     <parent
       link="link1" />
     <child
@@ -137,9 +163,18 @@
   <link
     name="link3">
     <inertial>
-      <origin xyz="-0.0202737662122021 -0.133914995944595 -0.000458682652737356" rpy="0 0 0" />
-      <mass value="0.5" />
-      <inertia ixx="0.01361711" ixy="0.00165794" ixz="-0.00000048" iyy="0.00045024" iyz="-0.00000045" izz="0.01380322" />
+      <origin
+        xyz="-0.0996835215213704 0.0349477226691318 0.000508025815507312"
+        rpy="0 0 0" />
+      <mass
+        value="0.290847697793211" />
+      <inertia
+        ixx="0.000107879011637167"
+        ixy="2.92669521203626E-05"
+        ixz="6.825922326238E-07"
+        iyy="0.000214751671792086"
+        iyz="-7.78469047878196E-07"
+        izz="0.000241923439340319" />
     </inertial>
     <visual>
       <origin
@@ -147,7 +182,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://piper/meshes/link3.STL" />
+          filename="package://piper/meshes/link3.dae" />
       </geometry>
       <material
         name="">
@@ -169,9 +204,8 @@
     name="joint3"
     type="revolute">
     <origin
-      xyz="0.28503 0 0"
-      rpy="0 0 -1.7939" />
-      <!-- rpy="0 0 -1.759-0.03490659" /> -->
+      xyz="0.28358 0.028726 0"
+      rpy="0 0 0.10095" />
     <parent
       link="link2" />
     <child
@@ -182,14 +216,23 @@
       lower="-2.967"
       upper="0"
       effort="100"
-      velocity="5" />
+      velocity="3" />
   </joint>
   <link
     name="link4">
     <inertial>
-      <origin xyz="-9.66635791618542E-05 0.000876064475651083 -0.00496880904640868" rpy="0 0 0" />
-      <mass value="0.38" />
-      <inertia ixx="0.00018501" ixy="0.00000054" ixz="0.00000120" iyy="0.00018965" iyz="-0.00000841" izz="0.00015484" />
+      <origin
+        xyz="0.000276464622387979 -0.00102803669324875 -0.00472830700561663"
+        rpy="0 0 0" />
+      <mass
+        value="0.127087348341362" />
+      <inertia
+        ixx="3.82011730423416E-05"
+        ixy="-4.92358350897513E-08"
+        ixz="4.89589432973119E-08"
+        iyy="4.87048555222578E-05"
+        iyz="6.70802942500512E-08"
+        izz="4.10592077565559E-05" />
     </inertial>
     <visual>
       <origin
@@ -197,7 +240,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://piper/meshes/link4.STL" />
+          filename="package://piper/meshes/link4.dae" />
       </geometry>
       <material
         name="">
@@ -219,8 +262,8 @@
     name="joint4"
     type="revolute">
     <origin
-      xyz="-0.021984 -0.25075 0"
-      rpy="1.5708 0 0" />
+      xyz="-0.24221 0.068514 0"
+      rpy="-1.5708 0 1.3826" />
     <parent
       link="link3" />
     <child
@@ -236,9 +279,18 @@
   <link
     name="link5">
     <inertial>
-      <origin xyz="-4.10554118924211E-05 -0.0566486692356075 -0.0037205791677906" rpy="0 0 0" />
-      <mass value="0.383" />
-      <inertia ixx="0.00166169" ixy="0.00000006" ixz="-0.00000007" iyy="0.00018510" iyz="0.00001026" izz="0.00164321" />
+      <origin
+        xyz="8.82262433516967E-05 0.0566829014808256 -0.00196119720482461"
+        rpy="0 0 0" />
+      <mass
+        value="0.144711242639457" />
+      <inertia
+        ixx="4.39644313662493E-05"
+        ixy="-3.59259686444846E-08"
+        ixz="-1.89747741386183E-08"
+        iyy="5.63173920951307E-05"
+        iyz="-2.1540716689785E-07"
+        izz="4.88713664675268E-05" />
     </inertial>
     <visual>
       <origin
@@ -246,7 +298,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://piper/meshes/link5.STL" />
+          filename="package://piper/meshes/link5.dae" />
       </geometry>
       <material
         name="">
@@ -269,7 +321,7 @@
     type="revolute">
     <origin
       xyz="0 0 0"
-      rpy="-1.5708 0 0" />
+      rpy="1.5708 0 0" />
     <parent
       link="link4" />
     <child
@@ -277,30 +329,39 @@
     <axis
       xyz="0 0 1" />
     <limit
-      lower="-1.22"
-      upper="1.22"
+      lower="-1.047"
+      upper="1.047"
       effort="100"
       velocity="5" />
   </joint>
   <link
     name="link6">
     <inertial>
-      <origin xyz="-8.82590762930069E-05 9.0598378529832E-06 -0.002" rpy="0 0 0" />
-      <mass value="0.00699089613564366" />
-      <inertia ixx="5.73015540542155E-07" ixy="-1.98305403089247E-22" ixz="-7.2791893904596E-23" iyy="5.73015540542155E-07" iyz="-3.4146026640245E-24" izz="1.06738869138926E-06" />
+      <origin
+        xyz="0.00103120214523473 0.0121761387587524 0.0315480874960164"
+        rpy="0 0 0" />
+      <mass
+        value="0.195187143240719" />
+      <inertia
+        ixx="6.43790256535539E-05"
+        ixy="-1.2366166157046E-06"
+        ixz="1.97664606328472E-07"
+        iyy="0.000126146396374301"
+        iyz="2.41157078516408E-06"
+        izz="0.000154087076816444" />
     </inertial>
     <visual>
       <origin
         xyz="0 0 0"
-        rpy="0 0 0" />
+        rpy="0 0 1.5708" />
       <geometry>
         <mesh
-          filename="package://piper/meshes/link6.STL" />
+          filename="package://piper/meshes/link6.dae" />
       </geometry>
       <material
         name="">
         <color
-          rgba="0.898039215686275 0.917647058823529 0.929411764705882 1" />
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
       </material>
     </visual>
     <collision>
@@ -309,7 +370,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://piper/meshes/link6.STL" />
+          filename="package://piper/meshes/link6_1.STL" />
       </geometry>
     </collision>
   </link>
@@ -317,8 +378,8 @@
     name="joint6"
     type="revolute">
     <origin
-      xyz="8.8259E-05 -0.091 0"
-      rpy="1.5708 0 0" />
+      xyz="0 0.091 0.0014165"
+      rpy="-1.5708 -3.1415926 0" />
     <parent
       link="link5" />
     <child
@@ -326,54 +387,26 @@
     <axis
       xyz="0 0 1" />
     <limit
-      lower="-2.0944"
-      upper="2.0944"
+      lower="-2.09439"
+      upper="2.09439"
       effort="100"
       velocity="3" />
-  </joint>
-  <link
-    name="gripper_base">
-    <inertial>
-      <origin
-        xyz="-0.000183807162235591 8.05033155577911E-05 0.0321436689908876"
-        rpy="0 0 0" />
-      <mass
-        value="0.45" />
-      <inertia
-        ixx="0.00092934"
-        ixy="0.00000034"
-        ixz="-0.00000738"
-        iyy="0.00071447"
-        iyz="0.00000005"
-        izz="0.00039442" />
-    </inertial>
-  </link> 
-  <joint
-    name="joint6_to_gripper_base"
-    type="fixed">
-    <origin
-      xyz="0 0 0"
-      rpy="0 0 0" />
-    <parent
-      link="link6" />
-    <child
-      link="gripper_base" />
   </joint>
   <link
     name="link7">
     <inertial>
       <origin
-        xyz="0.00065123185041968 -0.0491929869131989 0.00972258769184025"
+        xyz="-0.000277778383727112 -0.0467673043650824 -0.00921029491873201"
         rpy="0 0 0" />
       <mass
-        value="0.025" />
+        value="0.02648229234527" />
       <inertia
-        ixx="0.00007371"
-        ixy="-0.00000113"
-        ixz="0.00000021"
-        iyy="-0.00000113"
-        iyz="-0.00001372"
-        izz="0.0000747" />
+        ixx="9.99787479924589E-06"
+        ixy="-1.57548495096104E-07"
+        ixz="-2.71342775003487E-08"
+        iyy="6.1795212293655E-06"
+        iyz="-1.58939803580081E-06"
+        izz="1.42102717246564E-05" />
     </inertial>
     <visual>
       <origin
@@ -381,7 +414,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://piper/meshes/link7.STL" />
+          filename="package://piper/meshes/link7.dae" />
       </geometry>
       <material
         name="">
@@ -403,10 +436,10 @@
     name="joint7"
     type="prismatic">
     <origin
-      xyz="0 0 0.1358"
-      rpy="1.5708 0 0" />
+      xyz="0 0 0.13503"
+      rpy="1.5708 0 3.1415926" />
     <parent
-      link="gripper_base" />
+      link="link6" />
     <child
       link="link7" />
     <axis
@@ -421,17 +454,17 @@
     name="link8">
     <inertial>
       <origin
-        xyz="0.000651231850419722 -0.0491929869131991 0.00972258769184024"
+        xyz="0.000277816920932317 0.0467673824063769 -0.00921030054508036"
         rpy="0 0 0" />
       <mass
-        value="0.025" />
+        value="0.0264822021416248" />
       <inertia
-        ixx="0.00007371"
-        ixy="-0.00000113"
-        ixz="0.00000021"
-        iyy="-0.00000113"
-        iyz="-0.00001372"
-        izz="0.0000747" />
+        ixx="9.99779119357223E-06"
+        ixy="-1.57542283433504E-07"
+        ixz="2.71367446701359E-08"
+        iyy="6.17952441557932E-06"
+        iyz="1.58939319453383E-06"
+        izz="1.4210192754512E-05" />
     </inertial>
     <visual>
       <origin
@@ -439,7 +472,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://piper/meshes/link8.STL" />
+          filename="package://piper/meshes/link8.dae" />
       </geometry>
       <material
         name="">
@@ -461,10 +494,10 @@
     name="joint8"
     type="prismatic">
     <origin
-      xyz="0 0 0.1358"
-      rpy="1.5708 0 -3.1416" />
+      xyz="0 0 0.13503"
+      rpy="-1.5708 0 3.1415926" />
     <parent
-      link="gripper_base" />
+      link="link6" />
     <child
       link="link8" />
     <axis

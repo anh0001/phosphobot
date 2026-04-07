@@ -33,6 +33,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { fetcher } from "@/lib/utils";
+import { useLocalStorageState } from "@/lib/hooks";
 import type { ServerStatus } from "@/types";
 import {
   AlertCircle,
@@ -67,10 +68,16 @@ import {
 } from "./GamepadComponents";
 import {
   AnalogValues,
+  CalibrationSamples,
   ConfigMode,
   Control,
   ControllerArmPair,
+  GamepadCalibrationProfiles,
   MultiArmGroup,
+  CALIBRATION_STEP_ORDER,
+  GAMEPAD_CALIBRATION_STORAGE_KEY,
+  detectDominantAxisSample,
+  deriveCalibrationProfileFromSamples,
   getAvailableControllers,
   getAvailableControllersForGroup,
   getAvailableRobots,
@@ -78,6 +85,18 @@ import {
   initRobot,
   robotIDFromName,
 } from "./GamepadUtils";
+
+interface CalibrationSession {
+  controllerIndex: number;
+  controllerId: string;
+  controllerName: string;
+  mapping: string;
+  stepIndex: number;
+  awaitingNeutral: boolean;
+  baselineAxes: number[];
+  samples: CalibrationSamples;
+  error: string | null;
+}
 
 export function GamepadControl() {
   const { data: serverStatus, error: serverError } = useSWR<ServerStatus>(
@@ -101,6 +120,13 @@ export function GamepadControl() {
   const [multiArmGroups, setMultiArmGroups] = useState<MultiArmGroup[]>([]);
 
   const [hasUserMadeSelection, setHasUserMadeSelection] = useState(false);
+  const [gamepadCalibrationProfiles, setGamepadCalibrationProfiles] =
+    useLocalStorageState<GamepadCalibrationProfiles>(
+      GAMEPAD_CALIBRATION_STORAGE_KEY,
+      {},
+    );
+  const [calibrationSession, setCalibrationSession] =
+    useState<CalibrationSession | null>(null);
 
   // Active states for visual feedback - one per pair/group
   const [activeButtonsPerPair, setActiveButtonsPerPair] = useState<
@@ -109,7 +135,7 @@ export function GamepadControl() {
   const [analogValuesPerController, setAnalogValuesPerController] = useState<
     Map<number, AnalogValues>
   >(new Map());
-  const [_, setAnalogValues] = useState<AnalogValues>({
+  const [, setAnalogValues] = useState<AnalogValues>({
     leftTrigger: 0,
     rightTrigger: 0,
     leftStickX: 0,
@@ -123,6 +149,7 @@ export function GamepadControl() {
     configMode,
     controllerArmPairs,
     multiArmGroups,
+    gamepadCalibrationProfiles,
     hasUserMadeSelection,
     setControllerArmPairs,
     setMultiArmGroups,
@@ -135,12 +162,149 @@ export function GamepadControl() {
     controllerArmPairs,
     multiArmGroups,
     selectedSpeed,
+    gamepadCalibrationProfiles,
     serverStatus,
     setActiveButtonsPerPair,
     setAnalogValuesPerController,
     setAnalogValues,
     setMultiArmGroups,
   );
+
+  useEffect(() => {
+    if (!calibrationSession) {
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      const gamepad = navigator.getGamepads()[calibrationSession.controllerIndex];
+
+      if (!gamepad || gamepad.id !== calibrationSession.controllerId) {
+        setCalibrationSession((previous) =>
+          previous
+            ? {
+                ...previous,
+                error:
+                  "Controller disconnected or changed. Reconnect it and restart calibration.",
+              }
+            : null,
+        );
+        return;
+      }
+
+      const currentAxes = Array.from(gamepad.axes);
+      const maxAxisMagnitude = currentAxes.reduce(
+        (max, value) => Math.max(max, Math.abs(value)),
+        0,
+      );
+
+      if (calibrationSession.awaitingNeutral) {
+        if (maxAxisMagnitude < 0.2) {
+          setCalibrationSession((previous) =>
+            previous
+              ? {
+                  ...previous,
+                  awaitingNeutral: false,
+                  baselineAxes: currentAxes,
+                  error: null,
+                }
+              : null,
+          );
+        }
+        return;
+      }
+
+      const detectedSample = detectDominantAxisSample(
+        currentAxes,
+        calibrationSession.baselineAxes,
+      );
+
+      if (!detectedSample) {
+        return;
+      }
+
+      const currentStep = CALIBRATION_STEP_ORDER[calibrationSession.stepIndex];
+      const nextSamples: CalibrationSamples = {
+        ...calibrationSession.samples,
+        [currentStep.id]: detectedSample,
+      };
+
+      if (calibrationSession.stepIndex === CALIBRATION_STEP_ORDER.length - 1) {
+        try {
+          const nextProfile = deriveCalibrationProfileFromSamples(
+            calibrationSession.controllerId,
+            calibrationSession.mapping,
+            nextSamples,
+          );
+          setGamepadCalibrationProfiles({
+            ...gamepadCalibrationProfiles,
+            [calibrationSession.controllerId]: nextProfile,
+          });
+          setCalibrationSession(null);
+          toast.success(
+            `${calibrationSession.controllerName} calibration saved.`,
+          );
+        } catch (error) {
+          setCalibrationSession((previous) =>
+            previous
+              ? {
+                  ...previous,
+                  samples: nextSamples,
+                  error:
+                    error instanceof Error
+                      ? error.message
+                      : "Calibration failed. Please try again.",
+                }
+              : null,
+          );
+        }
+        return;
+      }
+
+      setCalibrationSession((previous) =>
+        previous
+          ? {
+              ...previous,
+              samples: nextSamples,
+              stepIndex: previous.stepIndex + 1,
+              awaitingNeutral: true,
+              baselineAxes: currentAxes,
+              error: null,
+            }
+          : null,
+      );
+    }, 50);
+
+    return () => clearInterval(intervalId);
+  }, [
+    calibrationSession,
+    gamepadCalibrationProfiles,
+    setGamepadCalibrationProfiles,
+  ]);
+
+  const startCalibration = (controllerIndex: number) => {
+    const gamepad = navigator.getGamepads()[controllerIndex];
+
+    if (!gamepad) {
+      toast.error("Selected controller is not available.");
+      return;
+    }
+
+    setCalibrationSession({
+      controllerIndex,
+      controllerId: gamepad.id,
+      controllerName: gamepad.id.split(" ").slice(0, 3).join(" ") || `Controller ${controllerIndex + 1}`,
+      mapping: gamepad.mapping || "unknown",
+      stepIndex: 0,
+      awaitingNeutral: true,
+      baselineAxes: Array.from(gamepad.axes),
+      samples: {},
+      error: null,
+    });
+  };
+
+  const cancelCalibration = () => {
+    setCalibrationSession(null);
+  };
 
   // Auto-select robot when server status loads
   useEffect(() => {
@@ -195,6 +359,18 @@ export function GamepadControl() {
   }, [configMode, serverStatus, multiArmGroups.length]);
 
   const startMoving = async () => {
+    const uncalibratedControllers = getAssignedControllerIndexes()
+      .map((index) => availableGamepads.find((gamepad) => gamepad.index === index))
+      .filter((gamepad): gamepad is NonNullable<typeof gamepad> => Boolean(gamepad))
+      .filter((gamepad) => gamepad.requiresCalibration);
+
+    if (uncalibratedControllers.length > 0) {
+      toast.error(
+        "Calibrate each non-standard controller before starting teleoperation.",
+      );
+      return;
+    }
+
     let robotsToInit: string[] = [];
 
     if (configMode === "individual") {
@@ -227,6 +403,26 @@ export function GamepadControl() {
   const clearTeleopInputs = () => {
     controlStates.current.clear();
     setActiveButtonsPerPair(new Map());
+  };
+
+  const getAssignedControllerIndexes = (): number[] => {
+    const indexes = new Set<number>();
+
+    if (configMode === "individual") {
+      controllerArmPairs.forEach((pair) => {
+        if (pair.controller_index !== null) {
+          indexes.add(pair.controller_index);
+        }
+      });
+    } else {
+      multiArmGroups.forEach((group) => {
+        if (group.controller_index !== null) {
+          indexes.add(group.controller_index);
+        }
+      });
+    }
+
+    return Array.from(indexes);
   };
 
   // Configuration mode switching
@@ -414,6 +610,14 @@ export function GamepadControl() {
     }
   };
 
+  const assignedControllers = getAssignedControllerIndexes()
+    .map((index) => availableGamepads.find((gamepad) => gamepad.index === index))
+    .filter((gamepad): gamepad is (typeof availableGamepads)[number] =>
+      Boolean(gamepad),
+    );
+  const controllersNeedingCalibration = assignedControllers.filter(
+    (gamepad) => gamepad.requiresCalibration,
+  );
   const hasAvailableGamepads = availableGamepads.length > 0;
   const hasAvailableRobots = (serverStatus?.robot_status?.length || 0) > 0;
 
@@ -735,7 +939,8 @@ export function GamepadControl() {
                 isMoving ||
                 !isConfigValid() ||
                 !hasAvailableGamepads ||
-                !hasAvailableRobots
+                !hasAvailableRobots ||
+                controllersNeedingCalibration.length > 0
               }
               variant={isMoving ? "outline" : "default"}
               size="lg"
@@ -784,6 +989,156 @@ export function GamepadControl() {
                 Please complete the configuration below to start control.
               </AlertDescription>
             </Alert>
+          )}
+
+          {controllersNeedingCalibration.length > 0 && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Calibration required</AlertTitle>
+              <AlertDescription>
+                One or more assigned controllers use a non-standard browser
+                mapping. Run calibration below before starting control.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Calibration Section */}
+          {hasAvailableGamepads && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Gamepad2 className="size-4" />
+                  Controller Calibration
+                </CardTitle>
+                <CardDescription>
+                  Standard-layout controllers work immediately. Non-standard
+                  controllers must be calibrated so left/right and up/down map
+                  to the correct canonical axes.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  {availableGamepads.map((controller) => (
+                    <div
+                      key={`calibration-controller-${controller.index}`}
+                      className="flex flex-col gap-3 rounded-lg border p-4 md:flex-row md:items-center md:justify-between"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-medium">
+                            Controller {controller.index + 1}: {controller.name}
+                          </span>
+                          <Badge
+                            variant={
+                              controller.mapping === "standard"
+                                ? "secondary"
+                                : "outline"
+                            }
+                          >
+                            {controller.mapping || "unknown"}
+                          </Badge>
+                          <Badge
+                            variant={
+                              controller.requiresCalibration
+                                ? "destructive"
+                                : "secondary"
+                            }
+                          >
+                            {controller.requiresCalibration
+                              ? "Calibration Required"
+                              : "Ready"}
+                          </Badge>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {controller.id}
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          variant={
+                            calibrationSession?.controllerIndex ===
+                            controller.index
+                              ? "default"
+                              : "outline"
+                          }
+                          size="sm"
+                          onClick={() => startCalibration(controller.index)}
+                          disabled={isMoving}
+                        >
+                          {controller.calibrated && !controller.requiresCalibration
+                            ? "Recalibrate"
+                            : "Calibrate"}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {calibrationSession && (
+                  <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950/30">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-medium">
+                            Calibrating {calibrationSession.controllerName}
+                          </span>
+                          <Badge variant="outline">
+                            Step {calibrationSession.stepIndex + 1} /{" "}
+                            {CALIBRATION_STEP_ORDER.length}
+                          </Badge>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {calibrationSession.awaitingNeutral
+                            ? "Release both sticks to center before the next capture."
+                            : CALIBRATION_STEP_ORDER[calibrationSession.stepIndex]
+                                .description}
+                        </div>
+                        {calibrationSession.error && (
+                          <div className="text-sm text-red-700 dark:text-red-300">
+                            {calibrationSession.error}
+                          </div>
+                        )}
+                      </div>
+                      <Button variant="outline" size="sm" onClick={cancelCalibration}>
+                        Cancel
+                      </Button>
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-4">
+                      {CALIBRATION_STEP_ORDER.map((step, index) => {
+                        const isComplete = Boolean(
+                          calibrationSession.samples[step.id],
+                        );
+                        const isCurrent = index === calibrationSession.stepIndex;
+
+                        return (
+                          <div
+                            key={step.id}
+                            className={`rounded-md border p-2 text-sm ${
+                              isComplete
+                                ? "border-green-500 bg-green-50 dark:border-green-800 dark:bg-green-950/30"
+                                : isCurrent
+                                  ? "border-blue-500 bg-white dark:bg-background"
+                                  : "border-border bg-background"
+                            }`}
+                          >
+                            <div className="font-medium">{step.label}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {isComplete
+                                ? "Captured"
+                                : isCurrent
+                                  ? calibrationSession.awaitingNeutral
+                                    ? "Waiting for neutral"
+                                    : "Waiting for input"
+                                  : "Pending"}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           )}
 
           {/* Configuration Section */}
@@ -1445,6 +1800,7 @@ export function GamepadControl() {
                         <AccordionContent>
                           <GamepadVisualizer
                             gamepadIndex={pair.controller_index}
+                            calibrationProfiles={gamepadCalibrationProfiles}
                           />
                         </AccordionContent>
                       </AccordionItem>
@@ -1545,6 +1901,7 @@ export function GamepadControl() {
 
                             <GamepadVisualizer
                               gamepadIndex={group.controller_index}
+                              calibrationProfiles={gamepadCalibrationProfiles}
                             />
                           </div>
                         </AccordionContent>

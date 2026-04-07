@@ -6,6 +6,7 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 import numpy as np
+import pybullet as p
 from fastapi import HTTPException
 from loguru import logger
 from scipy.spatial.transform import Rotation as R  # type: ignore
@@ -294,8 +295,17 @@ class BaseManipulator(BaseRobot):
             self.sim.get_joint_info(self.p_robot_id, i) for i in range(num_joints)
         ]
 
-        self.lower_joint_limits = [info[8] for info in joint_infos]
-        self.upper_joint_limits = [info[9] for info in joint_infos]
+        # PyBullet IK expects arrays ordered over movable joints only. Keep a
+        # lookup so robots with fixed joints in the URDF can still map the IK
+        # result back to raw joint indices safely.
+        self.ik_joint_indices = [
+            i for i, info in enumerate(joint_infos) if info[2] != p.JOINT_FIXED
+        ]
+        self.ik_joint_index_lookup = {
+            joint_index: idx for idx, joint_index in enumerate(self.ik_joint_indices)
+        }
+        self.lower_joint_limits = [joint_infos[i][8] for i in self.ik_joint_indices]
+        self.upper_joint_limits = [joint_infos[i][9] for i in self.ik_joint_indices]
 
         self.gripper_initial_angle = self.sim.get_joint_state(
             robot_id=self.p_robot_id,
@@ -584,6 +594,44 @@ class BaseManipulator(BaseRobot):
 
         return int(x)
 
+    def _get_preferred_ik_seed(self) -> List[float]:
+        """
+        Prefer the current robot branch for IK seeding.
+
+        When the real robot is connected, use its arm joint readings to seed the
+        solver and keep nearby relative motions on the same IK branch. Fall back
+        to the current simulation state when robot readings are unavailable.
+        """
+        seed = np.array(
+            [
+                self.sim.get_joint_state(robot_id=self.p_robot_id, joint_index=i)[0]
+                for i in self.ik_joint_indices
+            ],
+            dtype=float,
+        )
+
+        if not self.is_connected:
+            return seed.tolist()
+
+        try:
+            current_robot_positions = np.array(
+                self.read_joints_position(unit="rad", source="robot"),
+                dtype=float,
+            )
+        except Exception as exc:
+            logger.debug(
+                f"Failed to read robot joints for IK seed on {self.name}: {exc}"
+            )
+            return seed.tolist()
+
+        arm_joint_count = min(len(self.actuated_joints), len(current_robot_positions))
+        for idx, joint_index in enumerate(self.actuated_joints[:arm_joint_count]):
+            ik_seed_index = self.ik_joint_index_lookup.get(joint_index)
+            if ik_seed_index is not None:
+                seed[ik_seed_index] = current_robot_positions[idx]
+
+        return seed.tolist()
+
     def inverse_kinematics(
         self,
         target_position_cartesian: np.ndarray,
@@ -595,6 +643,8 @@ class BaseManipulator(BaseRobot):
 
         If the IK with the orientation results in the robot not moving, we try without the orientation.
         """
+        rest_poses = self._get_preferred_ik_seed()
+
         if self.name == "koch-v1.1":
             # In the URDF of Koch 1.1, the limits are fucked up. So we add
             # limits in the inverse kinematics to make it work.
@@ -607,7 +657,7 @@ class BaseManipulator(BaseRobot):
                 end_effector_link_index=self.END_EFFECTOR_LINK_INDEX,
                 target_position=target_position_cartesian,
                 target_orientation=target_orientation_quaternions,
-                rest_poses=[0] * len(self.lower_joint_limits),
+                rest_poses=rest_poses,
                 joint_damping=None,
                 lower_limits=self.lower_joint_limits,
                 upper_limits=self.upper_joint_limits,
@@ -625,7 +675,7 @@ class BaseManipulator(BaseRobot):
                 end_effector_link_index=self.END_EFFECTOR_LINK_INDEX,
                 target_position=target_position_cartesian,
                 target_orientation=target_orientation_quaternions,
-                rest_poses=[0] * len(self.lower_joint_limits),
+                rest_poses=rest_poses,
                 lower_limits=self.lower_joint_limits,
                 upper_limits=self.upper_joint_limits,
                 joint_ranges=[
@@ -635,36 +685,6 @@ class BaseManipulator(BaseRobot):
                 max_num_iterations=250,
                 residual_threshold=1e-9,
             )
-        # elif self.name == "agilex-piper":
-        #     # The robot has 7 joints, we map the rx coordinate to the last joint directly
-        #     # This prevents errors in the inverse kinematics that move the robot around
-        #     target_orientation_rad = euler_from_quaternion(
-        #         target_orientation_quaternions, degrees=False
-        #     )
-        #     rx = target_orientation_rad[0]
-        #     target_orientation_rad[0] = 0  # We don't use the rx coordinate in the IK
-        #     target_orientation_quaternions = R.from_euler(
-        #         "xyz", target_orientation_rad
-        #     ).as_quat()
-
-        #     target_q_rad = self.sim.inverse_kinematics(
-        #         robot_id=self.p_robot_id,
-        #         end_effector_link_index=self.END_EFFECTOR_LINK_INDEX,
-        #         target_position=target_position_cartesian,
-        #         target_orientation=target_orientation_quaternions,
-        #         rest_poses=[0] * len(self.lower_joint_limits),
-        #         joint_damping=[0.001] * len(self.lower_joint_limits),
-        #         lower_limits=self.lower_joint_limits,
-        #         upper_limits=self.upper_joint_limits,
-        #         joint_ranges=[
-        #             abs(up - low)
-        #             for up, low in zip(self.upper_joint_limits, self.lower_joint_limits)
-        #         ],
-        #         max_num_iterations=180,
-        #         residual_threshold=1e-6,
-        #     )
-        #     target_q_rad = list(target_q_rad)
-        #     target_q_rad[5] = rx  # Set the rx coordinate
         else:
             # We removed the limits because they made the inverse kinematics fail.
             # The robot couldn't go to its left.
@@ -677,7 +697,7 @@ class BaseManipulator(BaseRobot):
                 end_effector_link_index=self.END_EFFECTOR_LINK_INDEX,
                 target_position=target_position_cartesian,
                 target_orientation=target_orientation_quaternions,
-                rest_poses=[0] * len(self.lower_joint_limits),
+                rest_poses=rest_poses,
                 joint_damping=[0.001] * len(self.lower_joint_limits),
                 lower_limits=self.lower_joint_limits,
                 upper_limits=self.upper_joint_limits,
@@ -689,7 +709,12 @@ class BaseManipulator(BaseRobot):
                 residual_threshold=1e-6,
             )
 
-        return np.array(target_q_rad)[np.array(self.actuated_joints)]
+        return np.array(
+            [
+                target_q_rad[self.ik_joint_index_lookup[joint_index]]
+                for joint_index in self.actuated_joints
+            ]
+        )
 
     def forward_kinematics(
         self, sync_robot_pos: bool = False
@@ -707,10 +732,15 @@ class BaseManipulator(BaseRobot):
             current_motor_positions = self.read_joints_position(
                 unit="rad", source="robot"
             )
+            # Truncate to match actuated joints (some robots like Piper
+            # append a gripper value that is not part of actuated_joints)
+            target_positions = current_motor_positions[
+                : len(self.actuated_joints)
+            ].tolist()
             self.sim.set_joints_states(
                 robot_id=self.p_robot_id,
                 joint_indices=self.actuated_joints,
-                target_positions=current_motor_positions.tolist(),
+                target_positions=target_positions,
             )
             # Update the simulation
             self.sim.step()

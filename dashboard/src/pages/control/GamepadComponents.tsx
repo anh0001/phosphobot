@@ -14,6 +14,8 @@ import {
   ConfigMode,
   ControllerState,
   AnalogValues,
+  GamepadCalibrationProfiles,
+  RelativeTeleopCommand,
   BUTTON_NAMES,
   BASE_URL,
   BUTTON_MAPPINGS,
@@ -24,9 +26,11 @@ import {
   getControlName,
   getRobotsToControl,
   applyControlMode,
+  buildRelativeTeleopCommand,
   postData,
   robotIDFromName,
   extractAnalogValues,
+  normalizeGamepadState,
 } from './GamepadUtils';
 
 // ==================== CUSTOM HOOKS ====================
@@ -36,6 +40,7 @@ export function useGamepadDetection(
   configMode: ConfigMode,
   controllerArmPairs: ControllerArmPair[],
   multiArmGroups: MultiArmGroup[],
+  calibrationProfiles: GamepadCalibrationProfiles,
   hasUserMadeSelection: boolean,
   setControllerArmPairs: React.Dispatch<React.SetStateAction<ControllerArmPair[]>>,
   setMultiArmGroups: React.Dispatch<React.SetStateAction<MultiArmGroup[]>>,
@@ -46,7 +51,7 @@ export function useGamepadDetection(
 
   useEffect(() => {
     const updateGamepadList = () => {
-      const available = getAvailableGamepads();
+      const available = getAvailableGamepads(calibrationProfiles);
       setAvailableGamepads(available);
       setGamepadConnected(available.length > 0);
       
@@ -124,7 +129,7 @@ export function useGamepadDetection(
       window.removeEventListener("gamepadconnected", handleGamepadConnected);
       window.removeEventListener("gamepaddisconnected", handleGamepadDisconnected);
     };
-  }, [hasUserMadeSelection, configMode, controllerArmPairs, multiArmGroups, setControllerArmPairs, setMultiArmGroups, setHasUserMadeSelection]);
+  }, [calibrationProfiles, hasUserMadeSelection, configMode, controllerArmPairs, multiArmGroups, setControllerArmPairs, setMultiArmGroups, setHasUserMadeSelection]);
 
   return { gamepadConnected, availableGamepads };
 }
@@ -136,6 +141,7 @@ export function useGamepadControl(
   controllerArmPairs: ControllerArmPair[],
   multiArmGroups: MultiArmGroup[],
   selectedSpeed: number,
+  calibrationProfiles: GamepadCalibrationProfiles,
   serverStatus: ServerStatus | undefined,
   setActiveButtonsPerPair: React.Dispatch<React.SetStateAction<Map<number, Set<string>>>>,
   setAnalogValuesPerController: React.Dispatch<React.SetStateAction<Map<number, AnalogValues>>>,
@@ -147,7 +153,7 @@ export function useGamepadControl(
   useEffect(() => {
     if (!isMoving) return;
 
-    let activeConfigs: any[] = [];
+    let activeConfigs: Array<ControllerArmPair | MultiArmGroup> = [];
     
     if (configMode === "individual") {
       activeConfigs = controllerArmPairs.filter(
@@ -168,7 +174,10 @@ export function useGamepadControl(
         const gamepad = gamepads[config.controller_index!];
         if (!gamepad) return;
 
-        const configKey = configMode === "individual" ? `individual-${configIndex}` : `group-${config.id}`;
+        const configKey =
+          configMode === "individual" || !("id" in config)
+            ? `individual-${configIndex}`
+            : `group-${config.id}`;
         
         // Get or create control state
         if (!controlStates.current.has(configKey)) {
@@ -290,7 +299,11 @@ export function useGamepadControl(
           });
 
           // Process analog stick inputs
-          const analogMovement = processAnalogSticks(gamepad, state.lastTriggerValue);
+          const analogMovement = processAnalogSticks(
+            gamepad,
+            state.lastTriggerValue,
+            calibrationProfiles,
+          );
           deltaX += analogMovement.x;
           deltaY += analogMovement.y;
           deltaZ += analogMovement.z;
@@ -344,7 +357,7 @@ export function useGamepadControl(
             (analogMovement.gripperValue !== undefined &&
                state.triggerControlActive)
           ) {
-            const data = {
+            const data: RelativeTeleopCommand = buildRelativeTeleopCommand({
               x: deltaX,
               y: deltaY,
               z: deltaZ,
@@ -352,11 +365,11 @@ export function useGamepadControl(
               ry: deltaRY,
               rz: deltaRZ,
               open: gripperValue,
-            };
+            });
 
             // Send commands to appropriate robots based on config mode
             const robotsToControl = getRobotsToControl(config, configMode);
-            robotsToControl.forEach((robotName, _) => {
+            robotsToControl.forEach((robotName) => {
               let finalData = { ...data };
               
               // Apply control mode modifications
@@ -389,7 +402,7 @@ export function useGamepadControl(
         allActiveControllerIndices.forEach(controllerIndex => {
           const gamepad = gamepads[controllerIndex];
           if (gamepad) {
-            const analogValues = extractAnalogValues(gamepad);
+            const analogValues = extractAnalogValues(gamepad, calibrationProfiles);
             newAnalogValuesPerController.set(controllerIndex, analogValues);
           }
         });
@@ -409,7 +422,7 @@ export function useGamepadControl(
     return () => {
       clearInterval(intervalId);
     };
-  }, [isMoving, controllerArmPairs, multiArmGroups, selectedSpeed, serverStatus, configMode, setActiveButtonsPerPair, setAnalogValuesPerController, setAnalogValues, setMultiArmGroups]);
+  }, [isMoving, controllerArmPairs, multiArmGroups, selectedSpeed, calibrationProfiles, serverStatus, configMode, setActiveButtonsPerPair, setAnalogValuesPerController, setAnalogValues, setMultiArmGroups]);
 
   return { controlStates };
 }
@@ -417,13 +430,21 @@ export function useGamepadControl(
 // ==================== UI COMPONENTS ====================
 
 // GamepadVisualizer component
-export function GamepadVisualizer({ gamepadIndex }: { gamepadIndex: number | null }) {
+export function GamepadVisualizer({
+  gamepadIndex,
+  calibrationProfiles,
+}: {
+  gamepadIndex: number | null;
+  calibrationProfiles: GamepadCalibrationProfiles;
+}) {
   const [gamepadState, setGamepadState] = useState<GamepadState>({
     connected: false,
     buttons: [],
     buttonValues: [],
     axes: [],
   });
+  const [gamepadId, setGamepadId] = useState("");
+  const [gamepadMapping, setGamepadMapping] = useState<GamepadMappingType | "">("");
 
   useEffect(() => {
     if (gamepadIndex === null) {
@@ -447,6 +468,8 @@ export function GamepadVisualizer({ gamepadIndex }: { gamepadIndex: number | nul
           buttonValues: Array.from(gamepad.buttons).map((b) => b.value),
           axes: Array.from(gamepad.axes),
         });
+        setGamepadId(gamepad.id);
+        setGamepadMapping(gamepad.mapping || "");
       }
     };
 
@@ -458,30 +481,38 @@ export function GamepadVisualizer({ gamepadIndex }: { gamepadIndex: number | nul
     return null;
   }
 
-  // Get trigger values from either axes or buttons
-  let leftTriggerValue = 0;
-  let rightTriggerValue = 0;
-
-  // First check axes
-  if (gamepadState.axes.length > 6) {
-    leftTriggerValue = gamepadState.axes[6] || 0;
-    rightTriggerValue = gamepadState.axes[7] || 0;
-  }
-
-  // If no trigger values from axes, check buttons 6 and 7
-  if (leftTriggerValue === 0 && gamepadState.buttonValues.length > 6) {
-    leftTriggerValue = gamepadState.buttonValues[6] || 0;
-  }
-  if (rightTriggerValue === 0 && gamepadState.buttonValues.length > 7) {
-    rightTriggerValue = gamepadState.buttonValues[7] || 0;
-  }
+  const normalizedState = normalizeGamepadState(
+    {
+      id: gamepadId,
+      mapping: gamepadMapping,
+      axes: gamepadState.axes,
+      buttons: gamepadState.buttonValues.map((value, index) => ({
+        pressed: gamepadState.buttons[index] || false,
+        touched: gamepadState.buttons[index] || false,
+        value,
+      })),
+    },
+    calibrationProfiles,
+  );
 
   return (
     <Card className="mt-4">
       <CardHeader>
         <CardTitle className="text-sm">Controller {(gamepadIndex ?? 0) + 1} State</CardTitle>
+        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+          <span>ID: {gamepadId || "Unknown controller"}</span>
+          <span>Mapping: {gamepadMapping || "unknown"}</span>
+          <span>
+            Status: {normalizedState.requiresCalibration ? "Calibration Required" : "Ready"}
+          </span>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {normalizedState.requiresCalibration && (
+          <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+            This controller uses a non-standard browser mapping. Run calibration before teleop commands are sent.
+          </div>
+        )}
         <div>
           <h4 className="text-sm font-medium mb-2">Buttons</h4>
           <div className="grid grid-cols-4 gap-2">
@@ -507,7 +538,7 @@ export function GamepadVisualizer({ gamepadIndex }: { gamepadIndex: number | nul
         </div>
 
         <div>
-          <h4 className="text-sm font-medium mb-2">Analog Sticks & Triggers</h4>
+          <h4 className="text-sm font-medium mb-2">Raw Axes</h4>
           <div className="space-y-2">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -549,18 +580,70 @@ export function GamepadVisualizer({ gamepadIndex }: { gamepadIndex: number | nul
                 />
               </div>
             </div>
+          </div>
+        </div>
+
+        <div>
+          <h4 className="text-sm font-medium mb-2">Normalized Controls</h4>
+          <div className="space-y-2">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-xs mb-1">
-                  Left Trigger: {leftTriggerValue.toFixed(2)}
+                  Left Stick X: {normalizedState.leftStickX.toFixed(2)}
                 </p>
-                <Progress value={leftTriggerValue * 100} className="h-2" />
+                <Progress
+                  value={(normalizedState.leftStickX + 1) * 50}
+                  className="h-2"
+                />
               </div>
               <div>
                 <p className="text-xs mb-1">
-                  Right Trigger: {rightTriggerValue.toFixed(2)}
+                  Left Stick Y: {normalizedState.leftStickY.toFixed(2)}
                 </p>
-                <Progress value={rightTriggerValue * 100} className="h-2" />
+                <Progress
+                  value={(normalizedState.leftStickY + 1) * 50}
+                  className="h-2"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs mb-1">
+                  Right Stick X: {normalizedState.rightStickX.toFixed(2)}
+                </p>
+                <Progress
+                  value={(normalizedState.rightStickX + 1) * 50}
+                  className="h-2"
+                />
+              </div>
+              <div>
+                <p className="text-xs mb-1">
+                  Right Stick Y: {normalizedState.rightStickY.toFixed(2)}
+                </p>
+                <Progress
+                  value={(normalizedState.rightStickY + 1) * 50}
+                  className="h-2"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs mb-1">
+                  Left Trigger: {normalizedState.leftTrigger.toFixed(2)}
+                </p>
+                <Progress
+                  value={normalizedState.leftTrigger * 100}
+                  className="h-2"
+                />
+              </div>
+              <div>
+                <p className="text-xs mb-1">
+                  Right Trigger: {normalizedState.rightTrigger.toFixed(2)}
+                </p>
+                <Progress
+                  value={normalizedState.rightTrigger * 100}
+                  className="h-2"
+                />
               </div>
             </div>
           </div>

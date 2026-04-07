@@ -1,4 +1,5 @@
 import asyncio
+import os
 import subprocess
 import time
 from typing import Any, List, Literal, Optional, Union
@@ -17,9 +18,16 @@ class PiperHardware(BaseManipulator):
     name = "agilex-piper"
     device_name = "agilex-piper"
 
-    URDF_FILE_PATH = str(
+    # Default to the Humble new-firmware model (>= S-V1.6-3). The previous
+    # locally tuned model is kept alongside it as a legacy fallback asset.
+    DEFAULT_URDF_FILE_PATH = str(
         get_resources_path() / "urdf" / "piper" / "urdf" / "piper.urdf"
     )
+    LEGACY_URDF_FILE_PATH = str(
+        get_resources_path() / "urdf" / "piper" / "urdf" / "piper_legacy_local.urdf"
+    )
+    URDF_FILE_PATH = DEFAULT_URDF_FILE_PATH
+    URDF_VARIANT_ENV_VAR = "PHOSPHOBOT_PIPER_URDF_VARIANT"
 
     AXIS_ORIENTATION = [0, 0, 0, 1]
 
@@ -87,12 +95,32 @@ class PiperHardware(BaseManipulator):
         axis: Optional[List[float]] = None,
     ) -> None:
         self.can_name = can_name
+        self.URDF_FILE_PATH = self._resolve_urdf_file_path()
         super().__init__(
             only_simulation=only_simulation, axis=axis, enable_self_collision=True
         )
         self.SERIAL_ID = can_name
         self.is_torqued = False
         self._init_sim_gripper()
+
+    @classmethod
+    def _resolve_urdf_file_path(cls) -> str:
+        variant = os.getenv(cls.URDF_VARIANT_ENV_VAR, "default").strip().lower()
+
+        if variant in {"legacy", "piper_legacy_local", "local"}:
+            logger.warning(
+                f"Using legacy Piper URDF from {cls.LEGACY_URDF_FILE_PATH} because "
+                f"{cls.URDF_VARIANT_ENV_VAR}={variant!r}."
+            )
+            return cls.LEGACY_URDF_FILE_PATH
+
+        if variant not in {"", "default", "agilex", "new", "piper"}:
+            logger.warning(
+                f"Unknown {cls.URDF_VARIANT_ENV_VAR}={variant!r}; falling back to "
+                f"{cls.DEFAULT_URDF_FILE_PATH}."
+            )
+
+        return cls.DEFAULT_URDF_FILE_PATH
 
     def _init_sim_gripper(self) -> None:
         """Discover and cache gripper joints + limits in simulation."""
@@ -320,9 +348,7 @@ class PiperHardware(BaseManipulator):
         Load the config file.
         Try saved per-robot config first, then fall back to built-in defaults.
         """
-        saved = BaseRobotConfig.from_serial_id(
-            serial_id=self.SERIAL_ID, name=self.name
-        )
+        saved = BaseRobotConfig.from_serial_id(serial_id=self.SERIAL_ID, name=self.name)
         if saved is not None:
             self.config = saved
             logger.success("Loaded Piper config from saved file.")
