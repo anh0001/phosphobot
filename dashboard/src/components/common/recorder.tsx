@@ -182,11 +182,28 @@ export function Recorder({
 
   const handleRecordStart = async () => {
     if (!isRecording) {
+      const trimmedDatasetName = localSettings.dataset_name.trim();
+      const trimmedTaskInstruction = localSettings.task_instruction.trim();
+      const datasetNameError = validateDatasetName(trimmedDatasetName);
+
+      if (datasetNameError) {
+        setValidationErrors((prev) => ({
+          ...prev,
+          dataset_name: datasetNameError,
+        }));
+        toast.error("Set a valid dataset name before recording.");
+        return;
+      }
+
       const robot_serials_to_ignore = leaderArmSerialIds ?? null;
       console.log(
         `Starting recording. Ignoring robots: ${robot_serials_to_ignore}`,
       );
       await fetchWithBaseUrl(`/recording/start`, "POST", {
+        dataset_name: trimmedDatasetName,
+        ...(trimmedTaskInstruction
+          ? { instruction: trimmedTaskInstruction }
+          : {}),
         robot_serials_to_ignore: robot_serials_to_ignore,
         leader_arm_ids: leaderArmSerialIds,
       });
