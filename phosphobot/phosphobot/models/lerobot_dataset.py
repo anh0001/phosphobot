@@ -1301,6 +1301,9 @@ class LeRobotEpisode(BaseEpisode):
         current_step_in_episode_index = (
             len(self.steps) - 1
         )  # 0-indexed count of steps in this episode
+        normalized_timestamp = self._get_normalized_timestamp(
+            current_step_in_episode_index
+        )
 
         # Update live meta models stored in the dataset_manager
         if self.dataset_manager.format_version == "lerobot_v2.1":
@@ -1309,6 +1312,7 @@ class LeRobotEpisode(BaseEpisode):
                 step=step,
                 episode_index=self.episode_index,  # from self.metadata
                 current_step_index=current_step_in_episode_index,
+                normalized_timestamp=normalized_timestamp,
             )
         elif self.dataset_manager.format_version == "lerobot_v2":
             assert self.dataset_manager.stats_model is not None
@@ -1316,6 +1320,7 @@ class LeRobotEpisode(BaseEpisode):
                 step=step,
                 episode_index=self.episode_index,
                 current_step_index=current_step_in_episode_index,
+                normalized_timestamp=normalized_timestamp,
             )
 
         assert self.dataset_manager.episodes_model is not None
@@ -1326,6 +1331,10 @@ class LeRobotEpisode(BaseEpisode):
         assert self.dataset_manager.tasks_model is not None
         # tasks_model.update will add the instruction as a new task if it's not already present
         self.dataset_manager.tasks_model.update(step=step)
+
+    def _get_normalized_timestamp(self, frame_index: int) -> float:
+        """Return the per-episode timestamp convention used in saved parquet files."""
+        return frame_index / self.freq
 
     def _convert_to_le_robot_episode_model(self) -> "LeRobotEpisodeModel":
         """Converts internal steps to the LeRobotEpisodeModel for Parquet saving."""
@@ -1349,8 +1358,11 @@ class LeRobotEpisode(BaseEpisode):
             for key in self.add_metadata.keys():
                 episode_data_dict[key] = []
 
-        # We rewrite the timestamps based on the frequency to validate LeRobot tests
-        timestamps_for_episode = (np.arange(len(self.steps)) / self.freq).tolist()
+        # Keep parquet timestamps aligned with the values accumulated in stats metadata.
+        timestamps_for_episode = [
+            self._get_normalized_timestamp(frame_index)
+            for frame_index in range(len(self.steps))
+        ]
 
         episode_data_dict["timestamp"] = timestamps_for_episode
 
@@ -2659,16 +2671,22 @@ class StatsModel(BaseModel):
         step: Step,
         episode_index: int,
         current_step_index: int,
+        normalized_timestamp: Optional[float] = None,
     ) -> None:
         """
         Updates the stats with the given step.
         """
+        timestamp = (
+            step.observation.timestamp
+            if normalized_timestamp is None
+            else normalized_timestamp
+        )
 
         self.action.update(
             step.observation.joints_position
         )  # Because action lags behind by one step, we approximate it with the current observation
         self.observation_state.update(step.observation.joints_position)
-        self.timestamp.update(np.array([step.observation.timestamp]))
+        self.timestamp.update(np.array([timestamp]))
         self.index.update(np.array([self.index.count]))
         self.episode_index.update(np.array([episode_index]))
         self.frame_index.update(np.array([current_step_index]))
@@ -3162,7 +3180,13 @@ class EpisodesStatsModel(BaseModel):
     save_cartesian: bool = False
     add_metadata: Optional[Dict[str, list]] = None
 
-    def update(self, step: Step, episode_index: int, current_step_index: int) -> None:
+    def update(
+        self,
+        step: Step,
+        episode_index: int,
+        current_step_index: int,
+        normalized_timestamp: Optional[float] = None,
+    ) -> None:
         """
         Updates the episodes_stats with the given step.
         """
@@ -3176,6 +3200,7 @@ class EpisodesStatsModel(BaseModel):
                 step=step,
                 episode_index=episode_index,
                 current_step_index=current_step_index,
+                normalized_timestamp=normalized_timestamp,
             )
             return
 
@@ -3190,6 +3215,7 @@ class EpisodesStatsModel(BaseModel):
             step=step,
             episode_index=episode_index,
             current_step_index=current_step_index,
+            normalized_timestamp=normalized_timestamp,
         )
         self.episodes_stats.append(new_episode_stats)
 
