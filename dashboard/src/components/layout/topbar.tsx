@@ -92,6 +92,11 @@ function RecordingStatus() {
                 <span className="animate-ping absolute inline-flex size-3 rounded-full bg-red-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full size-3 bg-red-500"></span>
               </span>
+            ) : serverStatus.is_saving ? (
+              <span className="relative inline-block">
+                <span className="animate-ping absolute inline-flex size-3 rounded-full bg-amber-300 opacity-75"></span>
+                <span className="relative inline-flex rounded-full size-3 bg-amber-500"></span>
+              </span>
             ) : (
               <></>
             )}
@@ -99,7 +104,11 @@ function RecordingStatus() {
         </TooltipTrigger>
         <TooltipContent>
           <p className="max-w-xs">
-            {serverStatus.is_recording ? "Recording" : "Not Recording"}
+            {serverStatus.is_recording
+              ? "Recording"
+              : serverStatus.is_saving
+                ? "Saving episode"
+                : "Not Recording"}
           </p>
         </TooltipContent>
       </Tooltip>

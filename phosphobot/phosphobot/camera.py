@@ -669,11 +669,20 @@ try:
         A Realsense camera is an Intel camera that can capture depth and RGB frames.
 
         It's based on infrared technology and can be used to capture 3D images.
+
+        Uses a single background capture loop per physical device so that
+        multiple consumers (preview, recording, virtual cameras) share one
+        ``wait_for_frames()`` call instead of contending on the pipeline.
         """
 
         camera_type: CameraTypes = "realsense"
-        last_rgb_frame: np.ndarray
-        last_depth_frame: np.ndarray
+        _cached_rgb_frame: Optional[np.ndarray]
+        _cached_depth_frame: Optional[np.ndarray]
+        _frame_lock: threading.Lock
+        _capture_thread: Optional[threading.Thread]
+        _stop_event: threading.Event
+        _capture_error_count: int
+        _last_capture_error_log_ts: float
         pipeline: rs.pipeline
         is_connected: bool = False
         device_info: str
@@ -692,6 +701,13 @@ try:
             self.device_index = device_index if device_index is not None else 0
             self.is_connected = False
             self.is_active = False
+            self._cached_rgb_frame = None
+            self._cached_depth_frame = None
+            self._frame_lock = threading.Lock()
+            self._capture_thread = None
+            self._stop_event = threading.Event()
+            self._capture_error_count = 0
+            self._last_capture_error_log_ts = 0.0
 
             if disable:
                 logger.debug(f"{self.camera_name} disabled")
@@ -786,6 +802,9 @@ try:
                     f"{self.camera_name}: Successfully initialized ({self.width}x{self.height} @ {self.fps}fps)"
                 )
 
+                # Start the background capture loop
+                self._start_capture_loop()
+
             except Exception as e:
                 logger.error(f"{self.camera_name}: Failed to initialize - {str(e)}")
                 self.is_connected = False
@@ -796,6 +815,53 @@ try:
                     except:  # noqa: E722
                         pass
 
+        def _start_capture_loop(self) -> None:
+            """Start a daemon thread that continuously reads frames from the
+            RealSense pipeline and caches the latest color + depth frames."""
+            self._stop_event.clear()
+            self._capture_thread = threading.Thread(
+                target=self._capture_loop, daemon=True
+            )
+            self._capture_thread.start()
+
+        def _capture_loop(self) -> None:
+            """Background loop: calls ``wait_for_frames()`` once per iteration
+            and stores both color and depth behind ``_frame_lock``."""
+            while not self._stop_event.is_set() and self.is_active:
+                try:
+                    frameset = self.pipeline.wait_for_frames(timeout_ms=200)
+
+                    color_frame = frameset.get_color_frame()
+                    depth_frame = frameset.get_depth_frame()
+
+                    with self._frame_lock:
+                        if color_frame:
+                            np_bgr = np.asanyarray(color_frame.get_data())
+                            self._cached_rgb_frame = cv2.cvtColor(
+                                np_bgr, cv2.COLOR_BGR2RGB
+                            )
+                        if depth_frame:
+                            self._cached_depth_frame = np.asanyarray(
+                                depth_frame.get_data()
+                            ).copy()
+                    self._capture_error_count = 0
+                except Exception as e:
+                    self._capture_error_count += 1
+                    if self._capture_error_count >= 3:
+                        with self._frame_lock:
+                            self._cached_rgb_frame = None
+                            self._cached_depth_frame = None
+
+                    now = time.monotonic()
+                    if now - self._last_capture_error_log_ts >= 5.0:
+                        logger.warning(
+                            f"{self.camera_name}: capture loop error "
+                            f"({self._capture_error_count} consecutive failures) - {str(e)}"
+                        )
+                        self._last_capture_error_log_ts = now
+                    # Prevent tight spin on repeated errors
+                    time.sleep(0.05)
+
         @property
         def camera_name(self) -> str:
             return f"RealsenseCamera {self.device_index} ({self.device_serial})"
@@ -803,20 +869,14 @@ try:
         def get_rgb_frame(
             self, resize: Optional[Tuple[int, int]] = None
         ) -> Optional[cv2.typing.MatLike]:
-            # To get the video frame, get the couple (video, depth) frame from the wait_for_frames method
             if not self.is_active:
                 logger.warning(f"{self.camera_name} is not active")
                 return None
-            # Wait for a coherent pair of frames: depth and color
-            last_bgr_frame = self.pipeline.wait_for_frames(
-                timeout_ms=200
-            ).get_color_frame()
-            if last_bgr_frame is None:
+            with self._frame_lock:
+                frame = self._cached_rgb_frame.copy() if self._cached_rgb_frame is not None else None
+            if frame is None:
                 logger.warning(f"{self.camera_name} failed to grab frame")
                 return None
-            np_bgr_frame = np.asanyarray(last_bgr_frame.get_data())
-            # Convert frame from BGR to RGB
-            frame = cv2.cvtColor(np_bgr_frame, cv2.COLOR_BGR2RGB)
             if resize is not None:
                 frame = cv2.resize(frame, resize, interpolation=cv2.INTER_AREA)
             return frame
@@ -824,19 +884,15 @@ try:
         def get_depth_frame(
             self, resize: Optional[Tuple[int, int]] = None
         ) -> Optional[cv2.typing.MatLike]:
-            # To get the depth frame, also get the couple (video, depth) frame from the wait_for_frames method
-            # The method get_depth and get_rgb_frame can be called simultaneously without lagging (tested)
-            # One should load them together for recording to be sure that the depth and video frame are coherent
-
             if not self.is_active:
                 logger.warning(f"{self.camera_name} is not active")
                 return None
-            last_bgr_depth_frame = self.pipeline.wait_for_frames().get_depth_frame()
-            if last_bgr_depth_frame is None:
+            with self._frame_lock:
+                frame = self._cached_depth_frame.copy() if self._cached_depth_frame is not None else None
+            if frame is None:
                 logger.warning(f"{self.camera_name} Failed to grab frame")
                 return None
-            np_bgr_depth_frame = np.asanyarray(last_bgr_depth_frame.get_data())
-            frame = cv2.cvtColor(np_bgr_depth_frame, cv2.COLOR_BGR2RGB)
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             if resize is not None:
                 frame = cv2.resize(frame, resize, interpolation=cv2.INTER_AREA)
             return frame
@@ -844,6 +900,10 @@ try:
         def stop(self) -> None:
             if self.is_active:
                 self.is_active = False
+                self._stop_event.set()
+                if self._capture_thread is not None:
+                    self._capture_thread.join(timeout=2.0)
+                    self._capture_thread = None
                 try:
                     time.sleep(0.1)
                     self.pipeline.stop()

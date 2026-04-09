@@ -40,7 +40,7 @@ export function SingleArmReplay() {
           id="invert-gravity-control"
           checked={gravityControl}
           onCheckedChange={handleInvertGravityControl}
-          disabled={serverStatus?.is_recording}
+          disabled={serverStatus?.is_recording || serverStatus?.is_saving}
         />
         <Label className="text-sm font-medium">Gravity Compensation</Label>
         <span

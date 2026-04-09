@@ -41,6 +41,9 @@ class ServerStatus(BaseModel):
     is_recording: bool = Field(
         False, description="Whether the server is currently recording an episode."
     )
+    is_saving: bool = Field(
+        False, description="Whether the server is currently saving an episode."
+    )
     ai_running_status: Literal["stopped", "running", "paused", "waiting"] = Field(
         "stopped",
         description="Whether the robot is currently controlled by an AI model.",

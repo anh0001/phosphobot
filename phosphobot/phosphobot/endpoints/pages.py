@@ -140,14 +140,17 @@ def list_directory_items(path: str, root_dir: str = "") -> list[ItemInfo]:
     username_or_org_id = None
     api = None
     if path.endswith("lerobot_v2") or path.endswith("lerobot_v2.1"):
-        try:
-            api = HfApi()
-            user_info = api.whoami()
-            username_or_org_id = parse_hf_username_or_orgid(user_info)
-        # If we can't get the username or org ID, we can't delete the dataset
-        except Exception as e:
-            logger.debug(f"Error getting Hugging Face username or org ID: {str(e)}")
-            pass
+        token = get_hf_token()
+        if token:
+            try:
+                api = HfApi(token=token)
+                user_info = api.whoami(token=token)
+                username_or_org_id = parse_hf_username_or_orgid(user_info)
+            # If we can't get the username or org ID, we can't build HF links.
+            except Exception as e:
+                logger.debug(
+                    f"Unable to fetch Hugging Face username or org ID for dataset links: {str(e)}"
+                )
 
     for item in items:
         item_path = os.path.join(path, item)

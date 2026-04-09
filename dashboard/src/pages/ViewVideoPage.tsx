@@ -75,22 +75,24 @@ export function ViewVideoPage({ labelText }: { labelText?: string }) {
           </div>
         )}
         {!isRefreshing &&
-          serverStatus?.cameras.video_cameras_ids.map((cameraId) => {
-            return (
-              <CameraStreamCard
-                key={cameraId}
-                id={cameraId}
-                title={`Camera ${cameraId}`}
-                streamPath={`/video/${cameraId}`}
-                alt={`Video Stream ${cameraId}`}
-                icon={<Video className="h-4 w-4" />}
-                isRecording={isCameraEnabled(cameraId)}
-                onRecordingToggle={updateCameraRecording}
-                showRecordingControls={true}
-                labelText={labelText}
-              />
-            );
-          })}
+          serverStatus?.cameras.cameras_status
+            .filter((cam) => cam.camera_type !== "realsense_depth")
+            .map((cam) => {
+              return (
+                <CameraStreamCard
+                  key={cam.camera_id}
+                  id={cam.camera_id}
+                  title={`Camera ${cam.camera_id}`}
+                  streamPath={`/video/${cam.camera_id}`}
+                  alt={`Video Stream ${cam.camera_id}`}
+                  icon={<Video className="h-4 w-4" />}
+                  isRecording={isCameraEnabled(cam.camera_id)}
+                  onRecordingToggle={updateCameraRecording}
+                  showRecordingControls={true}
+                  labelText={labelText}
+                />
+              );
+            })}
       </div>
       <AddZMQCameraModal
         open={isZMQModalOpen}

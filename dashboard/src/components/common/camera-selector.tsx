@@ -133,6 +133,7 @@ export default function CameraSelector({
                       alt={`Video Stream ${cameraId}`}
                       isRecording={false}
                       showRecordingControls={false}
+                      quality={8}
                     />
                   </div>
                   <div className="mt-3 flex justify-center">

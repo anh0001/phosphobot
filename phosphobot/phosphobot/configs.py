@@ -129,20 +129,32 @@ class Configuration(BaseModel):
         """
 
         try:
-            # Read the user_settings as a config
-            user_settings = rename_keys_for_config(user_settings)
-            new_config = Configuration.model_validate(user_settings)
+            # Merge updated user settings into the existing YAML-backed config
+            # instead of rebuilding the whole runtime configuration from a
+            # partial form payload.
+            existing_config: dict = {}
+            config_path = Path(YAML_CONFIG_PATH)
+            if config_path.exists():
+                with open(config_path, "r") as file:
+                    loaded = yaml.safe_load(file)
+                    if isinstance(loaded, dict):
+                        existing_config = loaded
+
+            updated_user_settings = rename_keys_for_config(user_settings)
+            merged_config = {**existing_config, **updated_user_settings}
+            validated_config = Configuration.model_validate(merged_config)
         except Exception as e:
             logger.error(f"Error saving user settings: {e}")
             return
 
-        # If the user_settings are valid, save them to the YAML file
+        # Persist the merged YAML representation so unrelated user config is kept.
         with open(YAML_CONFIG_PATH, "w") as file:
-            yaml.dump(user_settings, file)
+            yaml.dump(merged_config, file)
 
-        # Then, replace inplace the fields of the current instance with the new instance
-        for field in Configuration.model_fields.keys():
-            setattr(self, field, getattr(new_config, field))
+        # Only update the settings that the form is allowed to change.
+        for field in updated_user_settings.keys():
+            if hasattr(validated_config, field):
+                setattr(self, field, getattr(validated_config, field))
 
 
 config = Configuration.from_yaml()
