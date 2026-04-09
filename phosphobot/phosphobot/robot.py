@@ -227,7 +227,7 @@ class RobotConnectionManager:
 
         # If we are not in simulation, we check the ports
         if time.time() - self.last_scan_time > 1:
-            logger.info("Scanning ports.")
+            logger.debug("Scanning ports.")
             ports, can_ports = self._scan_ports()
 
             # If new ports are detected or old ports are deleted, we refresh the list of robots

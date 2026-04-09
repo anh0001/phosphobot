@@ -64,6 +64,7 @@ export function Recorder({
 
   // Set the recording state based on server status
   const isRecording = serverStatus?.is_recording || false;
+  const isSaving = serverStatus?.is_saving || false;
   const [isPlaying, setIsPlaying] = useState(false);
 
   // Recording settings state
@@ -223,7 +224,7 @@ export function Recorder({
     });
     if (data) {
       toast.success(
-        `Recording stopped. Episode saved in ${data.episode_folder_path}`,
+        `Recording stopped. Saving episode in background to ${data.episode_folder_path}`,
       );
     }
     refreshStatus(); // Refresh status after operation
@@ -274,10 +275,10 @@ export function Recorder({
                 onClick={handleRecordStart}
                 variant="outline"
                 className="flex flex-row items-center justify-center"
-                disabled={isPlaying || isRecording}
+                disabled={isPlaying || isRecording || isSaving}
               >
                 <div className="size-4 rounded-full bg-red-500" />
-                <span className="ml-1">REC</span>
+                <span className="ml-1">{isSaving ? "SAVING" : "REC"}</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -294,7 +295,7 @@ export function Recorder({
                 disabled={!isRecording}
               >
                 <Square className="size-4 mr-1" />
-                <span>STOP</span>
+                <span>{isSaving ? "STOPPED" : "STOP"}</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -327,6 +328,7 @@ export function Recorder({
                 className="flex flex-row items-center justify-center"
                 disabled={
                   isRecording ||
+                  isSaving ||
                   isPlaying ||
                   serverStatus?.leader_follower_status ||
                   serverStatus?.ai_running_status === "running"

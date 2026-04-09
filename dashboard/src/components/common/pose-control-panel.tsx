@@ -21,14 +21,14 @@ export function PoseControlPanel({
   onBeforeAction,
 }: PoseControlPanelProps) {
   const [loading, setLoading] = useState<string | null>(null);
-  const isRecording = serverStatus?.is_recording || false;
-  const isDisabled = disabled || isRecording;
+  const isBusy = (serverStatus?.is_recording || false) || (serverStatus?.is_saving || false);
+  const isDisabled = disabled || isBusy;
 
   const robot = serverStatus?.robot_status?.[robotId];
-  const isPiper = robot?.name === "agilex-piper";
+  const isManipulator = robot?.robot_type === "manipulator";
 
-  // Only show for Piper robots (v1)
-  if (!isPiper) return null;
+  // Show pose controls for manipulators, since the backend endpoints are generic.
+  if (!isManipulator) return null;
 
   const postAction = async (endpoint: string, label: string) => {
     onBeforeAction?.();
@@ -88,9 +88,9 @@ export function PoseControlPanel({
               : "Save Current as Ready"}
           </Button>
         </div>
-        {isRecording && (
+        {isBusy && (
           <p className="text-xs text-muted-foreground mt-2">
-            Pose actions are disabled during recording.
+            Pose actions are disabled while recording or saving.
           </p>
         )}
       </CardContent>

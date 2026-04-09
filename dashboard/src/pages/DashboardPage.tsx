@@ -238,9 +238,7 @@ export function DashboardPage() {
     },
   );
   const robotConnected =
-    serverStatus !== undefined &&
-    serverStatus.robots &&
-    serverStatus.robots.length > 0;
+    (serverStatus?.robot_status?.length ?? 0) > 0;
 
   return (
     <div className="flex flex-col gap-4">

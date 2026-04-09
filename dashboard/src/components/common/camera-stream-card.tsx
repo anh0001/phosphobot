@@ -37,16 +37,21 @@ export const CardContentPiece = ({
   alt,
   isRecording,
   showRecordingControls,
+  quality,
 }: {
   id: number;
   streamPath: string;
   alt?: string;
   isRecording: boolean;
   showRecordingControls: boolean;
+  quality: number;
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
+
+  // Whether this card should actually show a live stream
+  const isStreamActive = isRecording || !showRecordingControls;
 
   const handleImageLoad = () => {
     setIsLoading(false);
@@ -58,24 +63,33 @@ export const CardContentPiece = ({
     setHasError(true);
   };
 
+  // Connect / disconnect the MJPEG stream based on active state
   useEffect(() => {
     const img = imgRef.current;
+    if (!img) return;
+
+    if (isStreamActive) {
+      img.src = getStreamUrl(streamPath, quality);
+    } else {
+      img.src = "";
+    }
+
     return () => {
       if (img) {
         img.src = ""; // Disconnect when component unmounts
       }
     };
-  }, []);
+  }, [isStreamActive, streamPath, quality]);
 
   return (
     <div className="relative bg-muted">
-      {hasError && (
+      {hasError && isStreamActive && (
         <div className="flex items-center gap-1">
           <CameraOff className="size-6" />
           Stream Unavailable
         </div>
       )}
-      {!isRecording && showRecordingControls && (
+      {!isStreamActive && (
         <div>
           <div className="flex items-center gap-1">
             <X className="size-6" />
@@ -87,10 +101,9 @@ export const CardContentPiece = ({
       <img
         id={`view-video-${id}`}
         ref={imgRef}
-        src={getStreamUrl(streamPath, highQuality) || "/placeholder.svg"}
         alt={alt}
-        className={`w-full h-full object-cover transition-opacity duration-300 ${
-          isLoading || hasError || (!isRecording && showRecordingControls)
+        className={`w-full max-h-[360px] object-cover transition-opacity duration-300 ${
+          isLoading || hasError || !isStreamActive
             ? "opacity-0"
             : "opacity-100"
         }`}
@@ -140,6 +153,7 @@ export const CameraStreamCard = ({
           alt={alt}
           isRecording={isRecording}
           showRecordingControls={showRecordingControls}
+          quality={quality}
         />
       </CardContent>
       <CardFooter className="justify-between">

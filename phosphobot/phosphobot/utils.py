@@ -855,7 +855,7 @@ def get_hf_username_or_orgid() -> Optional[str]:
 
     # Check the file exists
     if not token_file.exists():
-        logger.info("Token file not found.")
+        logger.debug("Token file not found.")
         return None
 
     with open(token_file, "r") as file:

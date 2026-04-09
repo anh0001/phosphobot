@@ -16,6 +16,8 @@ export type SingleCameraStatus = {
     | "classic"
     | "stereo"
     | "realsense"
+    | "realsense_rgb"
+    | "realsense_depth"
     | "dummy"
     | "dummy_stereo"
     | "zmq"
@@ -49,6 +51,7 @@ export type ServerStatus = {
   cameras: AllCamerasStatus;
   version_id: string;
   is_recording: boolean;
+  is_saving: boolean;
   ai_running_status: "stopped" | "running" | "paused" | "waiting";
   leader_follower_status: boolean;
   server_ip: string;
