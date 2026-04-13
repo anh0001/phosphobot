@@ -8,23 +8,6 @@ The goal here is the simplest local workflow:
 - use a **local dataset path**
 - do **not** depend on the phosphobot hosted "AI & Training" page
 
-## Should I use Miniconda?
-
-No. **Miniconda is optional**, not required.
-
-For this tutorial, the recommended setup is:
-
-- Python `3.10`
-- a normal virtual environment created with `uv`
-
-Use Miniconda only if:
-
-- you already use it for your ML environments
-- you prefer `conda activate ...`
-- your GPU/PyTorch setup is already working well there
-
-If you have no strong preference, use `uv`. It is simpler for this repo.
-
 ## What this tutorial assumes
 
 - You recorded a **Piper** dataset in **LeRobot format** using phosphobot.
@@ -52,8 +35,6 @@ cd phosphobot
 
 ## 2. Create a local Python environment
 
-### Recommended: `uv`
-
 ```bash
 uv venv --python 3.10 smolvla-piper
 source smolvla-piper/bin/activate
@@ -64,17 +45,6 @@ Install phosphobot and SmolVLA training dependencies:
 ```bash
 uv pip install -e ./phosphobot
 uv pip install "lerobot[smolvla]==0.3.3"
-```
-
-### Optional: Miniconda
-
-If you prefer Miniconda, use:
-
-```bash
-conda create -n smolvla-piper python=3.10 -y
-conda activate smolvla-piper
-pip install -e ./phosphobot
-pip install "lerobot[smolvla]==0.3.3"
 ```
 
 ## 3. Check that your dataset looks correct
@@ -180,6 +150,13 @@ In another terminal:
 watch -n 2 nvidia-smi
 ```
 
+If W&B opens but you only see system metrics such as GPU usage and no training charts:
+
+1. open the project or run workspace
+2. click `...` near the top
+3. choose `Reset workspace`
+4. select `Automatic`
+
 If you see an out-of-memory error:
 
 1. stop the run
@@ -246,16 +223,8 @@ This tutorial is a **terminal-only local training flow**. It does not use the da
 
 Your environment is probably not activated.
 
-If you used `uv`:
-
 ```bash
 source smolvla-piper/bin/activate
-```
-
-If you used conda:
-
-```bash
-conda activate smolvla-piper
 ```
 
 ### CUDA OOM
