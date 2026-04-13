@@ -9,6 +9,7 @@ AGENTS.md
 CLAUDE.md
 .codex
 /dataset/
+nohup.out
 
 # C extensions
 *.so
