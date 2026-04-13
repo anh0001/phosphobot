@@ -31,7 +31,7 @@ If you have no strong preference, use `uv`. It is simpler for this repo.
 - Your dataset lives locally, for example:
 
 ```bash
-~/phosphobot/recordings/lerobot_v2.1/piper_pick_place
+dataset/pickup_bottle
 ```
 
 - You have an NVIDIA GPU and recent CUDA drivers.
@@ -55,8 +55,8 @@ cd phosphobot
 ### Recommended: `uv`
 
 ```bash
-uv venv --python 3.10 .venv
-source .venv/bin/activate
+uv venv --python 3.10 smolvla-piper
+source smolvla-piper/bin/activate
 ```
 
 Install phosphobot and SmolVLA training dependencies:
@@ -79,11 +79,14 @@ pip install "lerobot[smolvla]==0.3.3"
 
 ## 3. Check that your dataset looks correct
 
-Set your dataset path:
+Set your dataset path to the **full dataset directory** (including the dataset name):
 
 ```bash
-export DATASET_ROOT=~/phosphobot/recordings/lerobot_v2.1/piper_pick_place
+export DATASET_ROOT=./dataset/pickup_bottle
 ```
+
+> **Important:** `DATASET_ROOT` must point to the dataset folder itself, not its parent.
+> lerobot looks for `$DATASET_ROOT/meta/info.json` directly.
 
 Make sure the expected folders exist:
 
@@ -116,29 +119,48 @@ If training crashes with CUDA OOM, lower the batch size first.
 
 ## 5. Run SmolVLA training locally
 
+### Log in to Weights & Biases
+
+Training uses W&B for logging (`--wandb.enable=true`). Log in before starting:
+
+```bash
+wandb login
+```
+
+You will be prompted to paste your API key from [wandb.ai/authorize](https://wandb.ai/authorize). This only needs to be done once per machine.
+
+### Start training
+
 This is the recommended command for **fine-tuning the pretrained SmolVLA base model** on your Piper dataset:
 
 ```bash
 lerobot-train \
   --policy.path=lerobot/smolvla_base \
-  --dataset.repo_id=local/piper_pick_place \
+  --policy.push_to_hub=false \
+  --dataset.repo_id=pickup_bottle \
   --dataset.root="$DATASET_ROOT" \
   --batch_size=16 \
   --steps=20000 \
   --output_dir=outputs/train/piper_smolvla \
   --job_name=piper_smolvla \
   --policy.device=cuda \
-  --wandb.enable=false
+  --wandb.enable=true
 ```
+
+> `$DATASET_ROOT` must be the full path to the dataset folder (e.g. `./dataset/pickup_bottle`), **not** the parent directory. See step 3.
+
+Once training starts, W&B will print a run URL in the logs (e.g. `wandb: 🚀 View run at https://wandb.ai/<your-entity>/...`). Open that URL in your browser to monitor loss curves and training metrics in real time.
 
 ### What these arguments mean
 
 - `--policy.path=lerobot/smolvla_base`
   loads the public pretrained SmolVLA base model and fine-tunes it
-- `--dataset.repo_id=local/piper_pick_place`
-  gives the dataset an identifier for LeRobot config purposes
+- `--policy.push_to_hub=false`
+  keeps the run fully local and avoids requiring `--policy.repo_id`
+- `--dataset.repo_id=pickup_bottle`
+  the name of the dataset (used for metadata and logging)
 - `--dataset.root="$DATASET_ROOT"`
-  tells LeRobot to read your local dataset files
+  full path to the dataset directory — must contain `meta/info.json`
 - `--batch_size=16`
   safe starting value for many single-GPU machines
 - `--steps=20000`
@@ -147,8 +169,8 @@ lerobot-train \
   writes checkpoints and artifacts locally
 - `--policy.device=cuda`
   uses your GPU
-- `--wandb.enable=false`
-  avoids requiring Weights & Biases
+- `--wandb.enable=true`
+  enables logging to Weights & Biases for tracking training progress
 
 ## 6. Monitor training
 
@@ -169,15 +191,18 @@ Example with a smaller batch size:
 ```bash
 lerobot-train \
   --policy.path=lerobot/smolvla_base \
-  --dataset.repo_id=local/piper_pick_place \
+  --policy.push_to_hub=false \
+  --dataset.repo_id=pickup_bottle \
   --dataset.root="$DATASET_ROOT" \
   --batch_size=8 \
   --steps=20000 \
   --output_dir=outputs/train/piper_smolvla_bs8 \
   --job_name=piper_smolvla_bs8 \
   --policy.device=cuda \
-  --wandb.enable=false
+  --wandb.enable=true
 ```
+
+Where `$DATASET_ROOT=./dataset/pickup_bottle` (see step 3).
 
 ## 7. Where the trained model ends up
 
@@ -196,6 +221,12 @@ Usually, **no**, if:
 - your dataset is local
 - you are not pushing the trained model to the Hub
 - the pretrained base model stays publicly downloadable in your environment
+
+For `lerobot==0.3.3`, make that explicit in the command with:
+
+```bash
+--policy.push_to_hub=false
+```
 
 You only need a Hugging Face account if you want to:
 
@@ -218,7 +249,7 @@ Your environment is probably not activated.
 If you used `uv`:
 
 ```bash
-source .venv/bin/activate
+source smolvla-piper/bin/activate
 ```
 
 If you used conda:
@@ -250,16 +281,19 @@ This is normal on smaller GPUs. Start with:
 Before a full run, do a short test:
 
 ```bash
+export DATASET_ROOT=./dataset/pickup_bottle
+
 lerobot-train \
   --policy.path=lerobot/smolvla_base \
-  --dataset.repo_id=local/piper_pick_place \
+  --policy.push_to_hub=false \
+  --dataset.repo_id=pickup_bottle \
   --dataset.root="$DATASET_ROOT" \
   --batch_size=4 \
   --steps=200 \
   --output_dir=outputs/train/piper_smolvla_smoke \
   --job_name=piper_smolvla_smoke \
   --policy.device=cuda \
-  --wandb.enable=false
+  --wandb.enable=true
 ```
 
 If that works, rerun with your real batch size and step count.

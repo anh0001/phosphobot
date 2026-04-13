@@ -8,6 +8,7 @@ __pycache__/
 AGENTS.md
 CLAUDE.md
 .codex
+/dataset/
 
 # C extensions
 *.so
