@@ -70,6 +70,7 @@ To train an action model on the dataset you recorded, you can:
 
 - train a model directly from the phosphobot webapp (see [this tutorial](https://docs.phospho.ai/basic-usage/training))
 - use your own machine (see [this tutorial](tutorials/00_finetune_gr00t_vla.md) to finetune gr00t n1)
+- use your own machine to finetune SmolVLA locally for Piper (see [this tutorial](tutorials/01_finetune_smolvla_piper.md))
 
 In both cases, you will have a trained model exported to Huggingface.
 
