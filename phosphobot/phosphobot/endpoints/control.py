@@ -1303,6 +1303,8 @@ async def start_ai_control(
         ai_control_signal_id=signal_ai_control.id,
         verify_cameras=query.verify_cameras,
         checkpoint=query.checkpoint,
+        inference_mode=query.inference_mode,
+        inference_base_url=query.inference_base_url,
     )
 
     # Add a flag: successful setup

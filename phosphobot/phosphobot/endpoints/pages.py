@@ -96,6 +96,9 @@ async def get_admin_settings() -> AdminSettingsResponse:
         task_instruction=config.DEFAULT_TASK_INSTRUCTION,
         cameras_to_record=config.DEFAULT_CAMERAS_TO_RECORD,
         hf_private_mode=config.DEFAULT_HF_PRIVATE_MODE,
+        ai_inference_mode=config.DEFAULT_AI_INFERENCE_MODE,
+        ai_remote_inference_base_url=config.DEFAULT_AI_REMOTE_INFERENCE_BASE_URL,
+        ai_remote_inference_timeout_seconds=config.DEFAULT_AI_REMOTE_INFERENCE_TIMEOUT_SECONDS,
     )
 
 

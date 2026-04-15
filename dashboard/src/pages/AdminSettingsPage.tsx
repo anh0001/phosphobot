@@ -32,6 +32,7 @@ import { AdminSettings, AdminTokenSettings } from "@/types";
 import {
   Camera,
   CircleCheck,
+  Cpu,
   Database,
   HelpCircle,
   Key,
@@ -362,6 +363,87 @@ export function AdminPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* AI Inference Settings */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Cpu className="h-5 w-5 text-primary" /> AI Inference Settings
+          </CardTitle>
+          <CardDescription>
+            Choose how AI models run inference during AI control
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Inference Mode</Label>
+            <Select
+              value={adminSettings.ai_inference_mode}
+              onValueChange={(v) =>
+                handleSettingChange(
+                  "ai_inference_mode",
+                  v as "modal" | "remote_url",
+                )
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select mode" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="modal">Hosted Modal</SelectItem>
+                <SelectItem value="remote_url">
+                  Remote URL (Tailscale)
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {adminSettings.ai_inference_mode === "remote_url" && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="ai_remote_url">Remote Inference URL</Label>
+                <Input
+                  id="ai_remote_url"
+                  type="text"
+                  placeholder="http://100.64.0.10:8080"
+                  value={adminSettings.ai_remote_inference_base_url}
+                  onChange={(e) =>
+                    handleSettingChange(
+                      "ai_remote_inference_base_url",
+                      e.target.value,
+                    )
+                  }
+                />
+                <p className="text-xs text-muted-foreground">
+                  Enter the Tailscale IP or MagicDNS hostname of your remote GPU
+                  machine, e.g.{" "}
+                  <code>http://100.64.0.10:8080</code> or{" "}
+                  <code>http://gpu-box.tailnet.ts.net:8080</code>.
+                  Both machines must be on the same Tailscale tailnet. No
+                  port-forwarding is needed.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="ai_remote_timeout">
+                  Request Timeout (seconds)
+                </Label>
+                <Input
+                  id="ai_remote_timeout"
+                  type="number"
+                  value={adminSettings.ai_remote_inference_timeout_seconds}
+                  onChange={(e) =>
+                    handleSettingChange(
+                      "ai_remote_inference_timeout_seconds",
+                      +e.target.value,
+                    )
+                  }
+                />
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

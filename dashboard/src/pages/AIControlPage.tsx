@@ -29,9 +29,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useGlobalStore } from "@/lib/hooks";
+import { useGlobalStore, useLocalStorageState } from "@/lib/hooks";
 import { fetchWithBaseUrl, fetcher } from "@/lib/utils";
-import type { AIStatusResponse, ServerStatus, TrainingsList } from "@/types";
+import type {
+  AdminSettings,
+  AIStatusResponse,
+  ServerStatus,
+  TrainingsList,
+} from "@/types";
 import {
   CameraIcon,
   CameraOff,
@@ -53,8 +58,25 @@ type ModelConfiguration = {
   checkpoints: string[];
 };
 
+type AIControlModelType =
+  | "ACT"
+  | "ACT_BBOX"
+  | "custom"
+  | "gr00t"
+  | "pi0.5"
+  | "smolvla";
+
+type PersistedModelIds = Partial<Record<AIControlModelType, string>>;
+
+const AI_CONTROL_MODEL_IDS_STORAGE_KEY = "ai-control-model-ids";
+
 export function AIControlPage() {
   const [prompt, setPrompt] = useState("");
+  const [persistedModelIds, setPersistedModelIds] =
+    useLocalStorageState<PersistedModelIds>(
+      AI_CONTROL_MODEL_IDS_STORAGE_KEY,
+      {},
+    );
   const modelId = useGlobalStore((state) => state.modelId);
   const setModelId = useGlobalStore((state) => state.setModelId);
 
@@ -104,6 +126,12 @@ export function AIControlPage() {
     ([endpoint]) => fetcher(endpoint, "POST"),
   );
 
+  const { data: adminSettings } = useSWR<AdminSettings>(
+    "/admin/settings",
+    fetcher,
+    { revalidateOnFocus: false },
+  );
+
   const { data: serverStatus, mutate: mutateServerStatus } =
     useSWR<ServerStatus>(["/status"], fetcher);
   const { data: aiStatus, mutate: mutateAIStatus } = useSWR<AIStatusResponse>(
@@ -133,9 +161,10 @@ export function AIControlPage() {
   }, [serverStatus]);
 
   useEffect(() => {
-    setModelId("");
+    const persistedModelId = persistedModelIds[selectedModelType] ?? "";
+    setModelId(persistedModelId);
     setSelectedCheckpoint(null);
-  }, [selectedModelType, setModelId, setSelectedCheckpoint]);
+  }, [persistedModelIds, selectedModelType, setModelId, setSelectedCheckpoint]);
 
   useEffect(() => {
     if (selectedAngleFormat === "radians") {
@@ -182,6 +211,11 @@ export function AIControlPage() {
       angle_format: selectedAngleFormat,
       min_angle: selectedAngleFormat === "other" ? minAngle : undefined,
       max_angle: selectedAngleFormat === "other" ? maxAngle : undefined,
+      inference_mode: adminSettings?.ai_inference_mode ?? "modal",
+      inference_base_url:
+        adminSettings?.ai_inference_mode === "remote_url"
+          ? adminSettings?.ai_remote_inference_base_url
+          : undefined,
     });
 
     if (!response) {
@@ -250,6 +284,14 @@ export function AIControlPage() {
     toast.success("AI control resumed successfully");
   };
 
+  const handleModelIdChange = (nextModelId: string) => {
+    setModelId(nextModelId);
+    setPersistedModelIds({
+      ...persistedModelIds,
+      [selectedModelType]: nextModelId,
+    });
+  };
+
   return (
     <div className="container mx-auto py-8 max-w-4xl">
       <Card>
@@ -269,6 +311,15 @@ export function AIControlPage() {
               <ToggleGroupItem value="pi0.5">pi0.5</ToggleGroupItem>
               <ToggleGroupItem value="smolvla">SmolVLA</ToggleGroupItem>
             </ToggleGroup>
+            {adminSettings?.ai_inference_mode === "remote_url" &&
+              selectedModelType === "smolvla" && (
+                <div className="text-xs text-muted-foreground mt-1">
+                  Using remote inference at{" "}
+                  <code className="text-foreground">
+                    {adminSettings.ai_remote_inference_base_url || "(not set)"}
+                  </code>
+                </div>
+              )}
           </div>
 
           {selectedModelType && (
@@ -317,8 +368,9 @@ export function AIControlPage() {
                         })) ?? []
                     }
                     value={{ value: modelId, label: modelId }}
+                    onInputValueChange={handleModelIdChange}
                     onValueChange={(option: Option) => {
-                      setModelId(option.value);
+                      handleModelIdChange(option.value);
                     }}
                     key={selectedModelType}
                     placeholder="nvidia/GR00T-N1.5-3B"

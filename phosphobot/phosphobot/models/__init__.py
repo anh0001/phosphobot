@@ -791,6 +791,9 @@ class AdminSettingsRequest(BaseModel):
     task_instruction: str
     cameras_to_record: Optional[List[int]] = None
     hf_private_mode: bool = False
+    ai_inference_mode: Literal["modal", "remote_url"] = "modal"
+    ai_remote_inference_base_url: str = ""
+    ai_remote_inference_timeout_seconds: int = 30
 
 
 class AdminSettingsResponse(BaseModel):
@@ -806,6 +809,9 @@ class AdminSettingsResponse(BaseModel):
     task_instruction: str
     cameras_to_record: Optional[List[int]]
     hf_private_mode: bool
+    ai_inference_mode: Literal["modal", "remote_url"] = "modal"
+    ai_remote_inference_base_url: str = ""
+    ai_remote_inference_timeout_seconds: int = 30
 
 
 class AdminSettingsTokenResponse(BaseModel):
@@ -909,6 +915,15 @@ class StartAIControlRequest(BaseModel):
     model_type: Literal["gr00t", "ACT", "ACT_BBOX", "pi0.5", "smolvla"] = Field(
         ...,
         description="Type of model to use. Can be gr00t, act, pi0.5, or smolvla.",
+    )
+    inference_mode: Optional[Literal["modal", "remote_url"]] = Field(
+        None,
+        description="Override the inference mode for this run. If None, uses the saved admin setting (default: modal).",
+    )
+    inference_base_url: Optional[str] = Field(
+        None,
+        description="Override the remote inference base URL for this run. Only used when inference_mode is 'remote_url'.",
+        examples=["http://100.64.0.10:8080", "http://gpu-box.tailnet.ts.net:8080"],
     )
     selected_camera_id: Optional[int] = Field(
         None,

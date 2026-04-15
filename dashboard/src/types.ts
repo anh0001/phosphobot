@@ -134,6 +134,9 @@ export type AdminSettings = {
   task_instruction: string;
   cameras_to_record: number[] | null;
   hf_private_mode: boolean;
+  ai_inference_mode: "modal" | "remote_url";
+  ai_remote_inference_base_url: string;
+  ai_remote_inference_timeout_seconds: number;
 };
 
 export type AIStatusResponse = {

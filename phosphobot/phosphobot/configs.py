@@ -83,6 +83,11 @@ class Configuration(BaseModel):
     DEFAULT_CAMERAS_TO_DISABLE: Optional[List[int]] = None
     DEFAULT_CAMERAS_TO_RECORD: Optional[List[int]] = None
 
+    # AI inference settings
+    DEFAULT_AI_INFERENCE_MODE: Literal["modal", "remote_url"] = "modal"
+    DEFAULT_AI_REMOTE_INFERENCE_BASE_URL: str = ""
+    DEFAULT_AI_REMOTE_INFERENCE_TIMEOUT_SECONDS: int = 30
+
     class Config:
         extra = "ignore"
 

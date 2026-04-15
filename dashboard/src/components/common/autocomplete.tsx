@@ -24,6 +24,7 @@ type AutoCompleteProps = {
   options: Option[];
   emptyMessage: string;
   value?: Option;
+  onInputValueChange?: (value: string) => void;
   onValueChange?: (value: Option) => void;
   isLoading?: boolean;
   disabled?: boolean;
@@ -37,6 +38,7 @@ export const AutoComplete = ({
   placeholder,
   emptyMessage,
   value,
+  onInputValueChange,
   onValueChange,
   disabled,
   isLoading = false,
@@ -111,7 +113,10 @@ export const AutoComplete = ({
         <CommandInput
           ref={inputRef}
           value={inputValue}
-          onValueChange={setInputValue} // Always allow typing, even when loading
+          onValueChange={(nextValue) => {
+            setInputValue(nextValue);
+            onInputValueChange?.(nextValue);
+          }}
           onBlur={handleBlur}
           onFocus={() => setOpen(true)}
           placeholder={placeholder}
