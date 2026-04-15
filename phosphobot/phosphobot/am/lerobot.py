@@ -502,7 +502,7 @@ class LeRobot(ActionModel, ABC):
         action: np.ndarray,
         robots: List["BaseManipulator"],
         robot_size_mapping: Dict[int, int],
-        angle_format: Literal["degrees", "radians", "other"] = "radians",
+        angle_format: Literal["degrees", "rad", "radians", "other"] = "rad",
         min_angle: Optional[float] = None,
         max_angle: Optional[float] = None,
     ) -> None:
@@ -511,7 +511,7 @@ class LeRobot(ActionModel, ABC):
         action_list = action.tolist()
 
         unit: Literal["rad", "motor_units", "degrees", "other"]
-        if angle_format == "radians":
+        if angle_format in {"rad", "radians"}:
             unit = "rad"
         else:
             unit = angle_format
@@ -541,7 +541,7 @@ class LeRobot(ActionModel, ABC):
         cameras_keys_mapping: Optional[Dict[str, int]] = None,
         prompt: Optional[str] = None,
         selected_camera_id: Optional[int] = None,
-        angle_format: Literal["degrees", "radians", "other"] = "radians",
+        angle_format: Literal["degrees", "rad", "radians", "other"] = "rad",
         min_angle: Optional[float] = None,
         max_angle: Optional[float] = None,
         **kwargs: Any,

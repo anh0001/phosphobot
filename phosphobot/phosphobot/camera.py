@@ -35,6 +35,30 @@ from phosphobot.types import CameraTypes
 cameras = None
 
 
+def filter_available_camera_ids(
+    requested_camera_ids: Iterable[int],
+    available_camera_ids: Iterable[int],
+) -> List[int]:
+    """
+    Keep camera ids that are available while preserving the requested order.
+
+    This is used for dataset recording and inference camera selection so that
+    `observation.images.main` keeps referring to the first camera the user
+    actually selected.
+    """
+
+    available_ids = set(available_camera_ids)
+    ordered_camera_ids: List[int] = []
+    seen_camera_ids: set[int] = set()
+
+    for camera_id in requested_camera_ids:
+        if camera_id in available_ids and camera_id not in seen_camera_ids:
+            ordered_camera_ids.append(camera_id)
+            seen_camera_ids.add(camera_id)
+
+    return ordered_camera_ids
+
+
 def get_camera_names() -> List[str]:
     """
     This function returns the list of cameras connected to the computer.
@@ -1592,7 +1616,10 @@ class AllCameras:
         self._main_camera = None
         # Set the camera ids to record to be the intersection with available camera ids
         if camera_ids is not None:
-            self._cameras_ids_to_record = list(set(camera_ids) & set(self.camera_ids))
+            self._cameras_ids_to_record = filter_available_camera_ids(
+                requested_camera_ids=camera_ids,
+                available_camera_ids=self.camera_ids,
+            )
         else:
             # Set to all cameras available
             self._cameras_ids_to_record = self.camera_ids

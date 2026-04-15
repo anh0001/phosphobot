@@ -10,7 +10,7 @@ from fastapi import (
 )
 from loguru import logger
 
-from phosphobot.camera import AllCameras, get_all_cameras
+from phosphobot.camera import AllCameras, filter_available_camera_ids, get_all_cameras
 from phosphobot.configs import config
 from phosphobot.hardware.base import BaseManipulator
 from phosphobot.models import (
@@ -84,9 +84,10 @@ async def start_recording_episode(
         cameras_ids_to_record = cameras.camera_ids
     elif query.cameras_ids_to_record is not None:
         # If the user has specified cameras to record, we remove duplicates
-        # and intersect with the connected cameras
-        cameras_ids_to_record = list(
-            set(query.cameras_ids_to_record).intersection(cameras.camera_ids)
+        # and keep only connected cameras while preserving the requested order
+        cameras_ids_to_record = filter_available_camera_ids(
+            requested_camera_ids=query.cameras_ids_to_record,
+            available_camera_ids=cameras.camera_ids,
         )
     else:
         # Fallback: use all connected cameras

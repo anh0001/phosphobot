@@ -49,9 +49,9 @@ interface GlobalStore {
   setSelectedModelType: (
     modelType: "pi0.5" | "ACT" | "ACT_BBOX" | "gr00t" | "smolvla" | "custom",
   ) => void;
-  selectedAngleFormat: "degrees" | "radians" | "other";
+  selectedAngleFormat: "degrees" | "rad" | "radians" | "other";
   setSelectedAngleFormat: (
-    angleFormat: "degrees" | "radians" | "other",
+    angleFormat: "degrees" | "rad" | "radians" | "other",
   ) => void;
   minAngle: number;
   setMinAngle: (minAngle: number) => void;
@@ -118,8 +118,10 @@ const useGlobalStore = create(
         set(() => ({
           selectedModelType: modelType,
         })),
-      selectedAngleFormat: "radians",
-      setSelectedAngleFormat: (angleFormat: "degrees" | "radians" | "other") =>
+      selectedAngleFormat: "rad",
+      setSelectedAngleFormat: (
+        angleFormat: "degrees" | "rad" | "radians" | "other",
+      ) =>
         set(() => ({
           selectedAngleFormat: angleFormat,
         })),

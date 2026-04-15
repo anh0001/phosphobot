@@ -7,11 +7,12 @@ import { fetcher } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import type { ServerStatus } from "@/types";
 import { Camera, Check, TriangleAlert } from "lucide-react";
+import { useEffect } from "react";
 import useSWR from "swr";
 
 export interface CameraSelectorProps {
   onCameraSelect: (cameraId: number) => void;
-  selectedCameraId: number;
+  selectedCameraId?: number;
   title?: string;
   description?: string;
 }
@@ -31,6 +32,16 @@ export default function CameraSelector({
   });
 
   const cameraIds = serverStatus?.cameras.video_cameras_ids || [];
+
+  useEffect(() => {
+    if (cameraIds.length === 0) {
+      return;
+    }
+
+    if (selectedCameraId === undefined || !cameraIds.includes(selectedCameraId)) {
+      onCameraSelect(cameraIds[0]);
+    }
+  }, [cameraIds, onCameraSelect, selectedCameraId]);
 
   const handleCameraSelect = (cameraId: number) => {
     onCameraSelect?.(cameraId);

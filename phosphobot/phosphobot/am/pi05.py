@@ -447,7 +447,7 @@ class Pi05(ActionModel):
         fps: int = 10,  # Pi0 model family operates at 10 fps
         speed: float = 1.0,
         cameras_keys_mapping: Dict[str, int] | None = None,
-        angle_format: Literal["degrees", "radians", "other"] = "radians",
+        angle_format: Literal["degrees", "rad", "radians", "other"] = "rad",
         min_angle: float | None = None,
         max_angle: float | None = None,
         **kwargs: Any,
@@ -555,7 +555,7 @@ class Pi05(ActionModel):
                 break
 
             unit: Literal["rad", "motor_units", "degrees", "other"]
-            if angle_format == "radians":
+            if angle_format in {"rad", "radians"}:
                 unit = "rad"
             else:
                 unit = angle_format

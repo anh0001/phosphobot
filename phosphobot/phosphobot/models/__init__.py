@@ -2,7 +2,7 @@ import uuid
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 import numpy as np
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from phosphobot._version import __version__
 from phosphobot.types import VideoCodecs
@@ -936,6 +936,16 @@ class StartAIControlRequest(BaseModel):
         None,
         description="If angle_format is 'other', this is the maximum angle value used in the model. If None and angle_format is 'other', will raise an error.",
     )
+
+    @field_validator("angle_format", mode="before")
+    @classmethod
+    def normalize_angle_format(cls, value: str) -> str:
+        """
+        Accept legacy UI values while keeping the public API normalized.
+        """
+        if value == "radians":
+            return "rad"
+        return value
 
     @model_validator(mode="after")
     def check_angle_format(self) -> "StartAIControlRequest":

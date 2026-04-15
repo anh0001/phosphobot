@@ -137,6 +137,12 @@ export function AIControlPage() {
     setSelectedCheckpoint(null);
   }, [selectedModelType, setModelId, setSelectedCheckpoint]);
 
+  useEffect(() => {
+    if (selectedAngleFormat === "radians") {
+      setSelectedAngleFormat("rad");
+    }
+  }, [selectedAngleFormat, setSelectedAngleFormat]);
+
   const startControlByAI = async () => {
     if (
       serverStatus?.robot_status?.length === 1 &&
@@ -500,18 +506,19 @@ export function AIControlPage() {
                     </Tooltip>
                   </TooltipProvider>
                   <AccordionContent>
-                    {selectedModelType === "ACT_BBOX" ? (
-                      <CameraSelector
-                        onCameraSelect={(cameraId) => {
-                          setSelectedCameraId?.(cameraId);
-                        }}
-                        selectedCameraId={selectedCameraId}
-                      />
-                    ) : (
-                      <CameraKeyMapper
-                        modelKeys={modelConfiguration?.video_keys}
-                      />
-                    )}
+                    <div className="space-y-6">
+                      <CameraKeyMapper modelKeys={modelConfiguration?.video_keys} />
+                      {selectedModelType === "ACT_BBOX" && (
+                        <CameraSelector
+                          onCameraSelect={(cameraId) => {
+                            setSelectedCameraId?.(cameraId);
+                          }}
+                          selectedCameraId={selectedCameraId}
+                          title="Select a camera for object detection"
+                          description="This extra camera is used to generate bounding boxes. The regular model image inputs are still mapped above."
+                        />
+                      )}
+                    </div>
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
