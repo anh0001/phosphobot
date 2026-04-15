@@ -330,13 +330,15 @@ async def submit_token(query: HuggingFaceTokenRequest) -> StatusResponse:
 
 @router.post("/admin/wandb", response_model=StatusResponse)
 async def submit_wandb_token(query: WandBTokenRequest) -> StatusResponse:
-    # For now, we don't perform any check on the token
-    # TODO: make sure an invalid token won't crash the training process
+    # Save-time validation is intentionally permissive: this backend does not
+    # depend on wandb, token formats can evolve, and training already verifies
+    # credentials with wandb.login(..., verify=True) before enabling W&B.
+    token = query.token.strip()
 
     # Define the file path where the token will be saved
     file_path = str(get_home_app_path()) + "/wandb.token"
 
-    if query.token == "":
+    if token == "":
         # Delete the token file if the token is empty
         if os.path.exists(file_path):
             try:
@@ -351,16 +353,10 @@ async def submit_wandb_token(query: WandBTokenRequest) -> StatusResponse:
                     message=f"Error removing WandB token: {str(e)}",
                 )
 
-    if len(query.token) != 40:
-        return StatusResponse(
-            status="error",
-            message="Wrong token, make sure to copy/paste the 40 characters long token at https://wandb.ai/authorize",
-        )
-
     try:
         # Open the file in write mode and save the token
         with open(file_path, "w") as token_file:
-            token_file.write(query.token)
+            token_file.write(token)
         # Set secure file permissions (optional, but recommended)
         os.chmod(file_path, 0o600)  # Read and write for owner only
         # Change config
