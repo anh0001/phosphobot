@@ -232,6 +232,7 @@ def _find_cameras(
             )
             == "realsense"
         ):
+            camera.release()
             logger.info("Realsense camera detected, skipping")
             continue
 
@@ -1209,7 +1210,7 @@ class AllCameras:
         self.initialize_realsense_camera()
 
         # Get the available video indexes from a range of 0 to config.MAX_OPENCV_INDEX
-        possible_camera_ids = detect_video_indexes()
+        possible_camera_ids = detect_video_indexes(camera_names=camera_names)
 
         # For every of these index we will try to detect the camera type
         # If it corresponds to a classic or stereo camera, we initialize the camera accordingly
