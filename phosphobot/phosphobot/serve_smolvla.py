@@ -2,7 +2,7 @@
 
 Run on a GPU machine reachable over Tailscale (or any network).
 Usage:
-    phosphobot serve-smolvla --model-id <hf-or-local-path> --host 0.0.0.0 --port 8080
+    phosphobot serve-smolvla --model-id <hf-or-local-path> --host 0.0.0.0 --port 8090
 
 Exposes:
     GET  /health  – readiness probe
@@ -141,7 +141,7 @@ def create_smolvla_app(model_path: str, device: str | None = None) -> FastAPI:
 def run_server(
     model_id: str,
     host: str = "0.0.0.0",
-    port: int = 8080,
+    port: int = 8090,
 ) -> None:
     """Entry point for the CLI command."""
     app = create_smolvla_app(model_id)

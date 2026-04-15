@@ -31,23 +31,33 @@ Use two machines:
 
 ## 1. Set up the remote GPU machine
 
-Clone the repo and enter it:
+Clone the repo:
 
 ```bash
 git clone https://github.com/phospho-app/phosphobot.git
 cd phosphobot
 ```
 
-Create or sync the Python environment:
+Create a Python environment with SmolVLA dependencies:
 
 ```bash
-uv sync
+uv venv --python 3.10 smolvla-piper
+source smolvla-piper/bin/activate
+uv pip install -e ./phosphobot
+uv pip install "lerobot[smolvla]==0.3.3"
+```
+
+If you already completed the [finetuning tutorial](01_finetune_smolvla_piper.md), you can reuse the existing `smolvla-piper` environment:
+
+```bash
+cd phosphobot
+source smolvla-piper/bin/activate
 ```
 
 If you use a private Hugging Face model, log in first:
 
 ```bash
-uv run hf auth login
+hf auth login
 ```
 
 ## 2. Join Tailscale on the remote machine
@@ -77,11 +87,10 @@ Example:
 Run:
 
 ```bash
-cd phosphobot
-uv run --python 3.10 phosphobot serve-smolvla \
+phosphobot serve-smolvla \
   --model-id your-org/your-smolvla-model \
   --host 0.0.0.0 \
-  --port 8080
+  --port 8090
 ```
 
 Replace `your-org/your-smolvla-model` with the actual model ID or local model path.
@@ -89,17 +98,17 @@ Replace `your-org/your-smolvla-model` with the actual model ID or local model pa
 Examples:
 
 ```bash
-uv run --python 3.10 phosphobot serve-smolvla \
+phosphobot serve-smolvla \
   --model-id myname/piper-smolvla \
   --host 0.0.0.0 \
-  --port 8080
+  --port 8090
 ```
 
 ```bash
-uv run --python 3.10 phosphobot serve-smolvla \
-  --model-id /home/user/models/piper_smolvla \
+phosphobot serve-smolvla \
+  --model-id outputs/train/piper_smolvla \
   --host 0.0.0.0 \
-  --port 8080
+  --port 8090
 ```
 
 Keep this process running.
@@ -114,7 +123,7 @@ The server exposes:
 On the remote machine, check that the server responds:
 
 ```bash
-curl http://127.0.0.1:8080/health
+curl http://127.0.0.1:8090/health
 ```
 
 Expected result:
@@ -131,7 +140,7 @@ Clone the repo if needed:
 
 ```bash
 git clone https://github.com/phospho-app/phosphobot.git
-cd phosphobot
+cd phosphobot/phosphobot
 ```
 
 Start Tailscale:
@@ -153,7 +162,7 @@ You should be able to see the remote GPU machine in the same tailnet.
 From the Jetson, call the remote server health endpoint:
 
 ```bash
-curl http://100.64.0.10:8080/health
+curl http://100.64.0.10:8090/health
 ```
 
 Replace `100.64.0.10` with the real Tailscale IP of the remote GPU machine.
@@ -161,7 +170,7 @@ Replace `100.64.0.10` with the real Tailscale IP of the remote GPU machine.
 You can also use a MagicDNS hostname if available:
 
 ```bash
-curl http://gpu-box.tailnet.ts.net:8080/health
+curl http://gpu-box.tailnet.ts.net:8090/health
 ```
 
 If this fails, `Start AI control` will fail too.
@@ -179,8 +188,7 @@ make CAN_INTERFACE=can_piper
 Or run the backend directly:
 
 ```bash
-cd phosphobot
-uv run --python 3.10 phosphobot run --simulation=headless --can-interface can_piper
+phosphobot run --simulation=headless --can-interface can_piper
 ```
 
 Open the dashboard in your browser.
@@ -197,13 +205,13 @@ In the dashboard:
 Example:
 
 ```txt
-http://100.64.0.10:8080
+http://100.64.0.10:8090
 ```
 
 or:
 
 ```txt
-http://gpu-box.tailnet.ts.net:8080
+http://gpu-box.tailnet.ts.net:8090
 ```
 
 5. Save the settings
@@ -225,9 +233,9 @@ Use this order every time:
 
 1. Start Tailscale on the remote GPU machine
 2. Start `phosphobot serve-smolvla` on the remote GPU machine
-3. Verify `curl http://127.0.0.1:8080/health` on the remote machine
+3. Verify `curl http://127.0.0.1:8090/health` on the remote machine
 4. Start Tailscale on the Jetson
-5. Verify `curl http://<remote-tailscale-ip>:8080/health` from the Jetson
+5. Verify `curl http://<remote-tailscale-ip>:8090/health` from the Jetson
 6. Start `phosphobot` on the Jetson
 7. Open the dashboard
 8. Start AI control
@@ -239,14 +247,16 @@ Use this order every time:
 ```bash
 git clone https://github.com/phospho-app/phosphobot.git
 cd phosphobot
-uv sync
+uv venv --python 3.10 smolvla-piper
+source smolvla-piper/bin/activate
+uv pip install -e ./phosphobot
+uv pip install "lerobot[smolvla]==0.3.3"
 sudo tailscale up
 tailscale ip -4
-cd phosphobot
-uv run --python 3.10 phosphobot serve-smolvla \
+phosphobot serve-smolvla \
   --model-id myname/piper-smolvla \
   --host 0.0.0.0 \
-  --port 8080
+  --port 8090
 ```
 
 ### Jetson / robot machine
@@ -255,7 +265,7 @@ uv run --python 3.10 phosphobot serve-smolvla \
 git clone https://github.com/phospho-app/phosphobot.git
 cd phosphobot
 sudo tailscale up
-curl http://100.64.0.10:8080/health
+curl http://100.64.0.10:8090/health
 make CAN_INTERFACE=can_piper
 ```
 
@@ -263,7 +273,7 @@ Then in the dashboard set:
 
 ```txt
 Inference Mode: Remote URL (Tailscale)
-Remote Inference URL: http://100.64.0.10:8080
+Remote Inference URL: http://100.64.0.10:8090
 ```
 
 ## 12. Troubleshooting
@@ -275,7 +285,7 @@ Check:
 - both machines are connected to the same Tailscale tailnet
 - the remote server is still running
 - the remote server is bound to `0.0.0.0`
-- port `8080` is not blocked on the remote machine
+- port `8090` is not blocked on the remote machine
 
 ### `Start AI control` still fails
 
@@ -296,7 +306,7 @@ The server may still start on CPU, but inference will be much slower.
 Run:
 
 ```bash
-uv run hf auth login
+hf auth login
 ```
 
 on the remote machine, then restart the server.

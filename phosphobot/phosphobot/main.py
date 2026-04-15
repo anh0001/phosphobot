@@ -347,13 +347,13 @@ def serve_smolvla(
     ] = "0.0.0.0",
     port: Annotated[
         int, typer.Option(help="Port to bind the inference server to.")
-    ] = 8080,
+    ] = 8090,
 ) -> None:
     """
     Start a standalone SmolVLA inference server.
 
     Run this on a GPU machine reachable over Tailscale, then point the
-    Jetson's admin settings to this server's URL (e.g. http://100.x.y.z:8080).
+    Jetson's admin settings to this server's URL (e.g. http://100.x.y.z:8090).
     """
     from phosphobot.serve_smolvla import run_server
 
