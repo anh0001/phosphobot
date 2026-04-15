@@ -7,15 +7,20 @@ Covers:
 - setup_ai_control mode routing (remote_url vs modal)
 """
 
+from types import SimpleNamespace
+
 import pytest
+from fastapi import BackgroundTasks
 
 from phosphobot.ai_control import (
     _resolve_inference_mode,
     validate_remote_inference_url,
 )
+from phosphobot.endpoints import control
 from phosphobot.models import (
     AdminSettingsRequest,
     AdminSettingsResponse,
+    ServerInfoResponse,
     StartAIControlRequest,
 )
 
@@ -203,3 +208,134 @@ class TestStartAIControlRequest:
             inference_mode="remote_url",
         )
         assert req.inference_mode == "remote_url"
+
+
+class TestRemoteServerInfo:
+    def test_server_id_defaults_to_none(self) -> None:
+        info = ServerInfoResponse(
+            url="http://100.64.0.10:8080",
+            port=8080,
+            tcp_socket=("100.64.0.10", 8080),
+            model_id="test/model",
+            timeout=30,
+        )
+        assert info.server_id is None
+
+
+class _FakeTableQuery:
+    def __init__(self, table_name: str, calls: list[tuple]) -> None:
+        self.table_name = table_name
+        self.calls = calls
+
+    def upsert(self, payload: dict) -> "_FakeTableQuery":
+        self.calls.append(("upsert", self.table_name, payload))
+        return self
+
+    def update(self, payload: dict) -> "_FakeTableQuery":
+        self.calls.append(("update", self.table_name, payload))
+        return self
+
+    def eq(self, key: str, value: str) -> "_FakeTableQuery":
+        self.calls.append(("eq", self.table_name, key, value))
+        return self
+
+    async def execute(self) -> SimpleNamespace:
+        self.calls.append(("execute", self.table_name))
+        return SimpleNamespace(data=None)
+
+
+class _FakeSupabaseClient:
+    def __init__(self) -> None:
+        self.calls: list[tuple] = []
+        self.auth = SimpleNamespace(get_user=self._get_user)
+
+    async def _get_user(self) -> SimpleNamespace:
+        return SimpleNamespace(
+            user=SimpleNamespace(id="user-123", email="user@example.com")
+        )
+
+    def table(self, table_name: str) -> _FakeTableQuery:
+        return _FakeTableQuery(table_name, self.calls)
+
+
+class _FakeStatusSignal:
+    def is_in_loop(self) -> bool:
+        return False
+
+
+class _FakeAIControlSignal(_FakeStatusSignal):
+    def __init__(self) -> None:
+        self.id = "initial-id"
+        self.status = "stopped"
+
+    def new_id(self) -> None:
+        self.id = "remote-ai-control-id"
+
+    def start(self) -> None:
+        self.status = "waiting"
+
+
+class _FakeRCM:
+    @property
+    def robots(self):  # type: ignore[no-untyped-def]
+        async def _robots() -> list[object]:
+            return []
+
+        return _robots()
+
+
+class _FakeModel:
+    async def control_loop(self, **kwargs: object) -> None:
+        return None
+
+
+@pytest.mark.asyncio
+async def test_start_ai_control_remote_url_skips_server_id_update(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake_client = _FakeSupabaseClient()
+
+    async def fake_get_client() -> _FakeSupabaseClient:
+        return fake_client
+
+    async def fake_setup_ai_control(**kwargs: object) -> tuple[object, object, ServerInfoResponse]:
+        return (
+            _FakeModel(),
+            object(),
+            ServerInfoResponse(
+                url="http://100.64.0.10:8080",
+                port=8080,
+                tcp_socket=("100.64.0.10", 8080),
+                model_id="test/model",
+                timeout=30,
+            ),
+        )
+
+    monkeypatch.setattr(control, "get_client", fake_get_client)
+    monkeypatch.setattr(control, "setup_ai_control", fake_setup_ai_control)
+    monkeypatch.setattr(control, "signal_ai_control", _FakeAIControlSignal())
+    monkeypatch.setattr(control, "signal_gravity_control", _FakeStatusSignal())
+    monkeypatch.setattr(control, "signal_leader_follower", _FakeStatusSignal())
+
+    response = await control.start_ai_control(
+        query=StartAIControlRequest(
+            model_id="test/model",
+            model_type="smolvla",
+            inference_mode="remote_url",
+            inference_base_url="http://100.64.0.10:8080",
+            angle_format="rad",
+        ),
+        background_tasks=BackgroundTasks(),
+        rcm=_FakeRCM(),  # type: ignore[arg-type]
+        all_cameras=SimpleNamespace(),  # type: ignore[arg-type]
+        session=SimpleNamespace(),  # type: ignore[arg-type]
+    )
+
+    update_calls = [
+        call
+        for call in fake_client.calls
+        if call[0] == "update" and call[1] == "ai_control_sessions"
+    ]
+    assert update_calls == [("update", "ai_control_sessions", {"setup_success": True})]
+    assert response.server_info is not None
+    assert response.server_info.server_id is None

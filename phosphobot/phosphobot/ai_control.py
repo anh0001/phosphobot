@@ -239,7 +239,6 @@ async def setup_ai_control(
         parsed = urlparse(validated_url)
         port = parsed.port or (443 if parsed.scheme == "https" else 80)
         server_info = ServerInfoResponse(
-            server_id=0,
             url=validated_url,
             port=port,
             tcp_socket=(parsed.hostname or "", port),

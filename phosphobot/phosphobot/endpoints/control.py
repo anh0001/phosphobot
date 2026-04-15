@@ -2,7 +2,7 @@ import asyncio
 import json
 import traceback
 from copy import copy
-from typing import List, Optional, cast
+from typing import Any, List, Optional, cast
 
 import httpx
 import json_numpy  # type: ignore
@@ -1308,14 +1308,13 @@ async def start_ai_control(
     )
 
     # Add a flag: successful setup
+    session_update: dict[str, Any] = {"setup_success": True}
+    if server_info.server_id is not None:
+        session_update["server_id"] = server_info.server_id
+
     await (
         supabase_client.table("ai_control_sessions")
-        .update(
-            {
-                "setup_success": True,
-                "server_id": server_info.server_id,
-            }
-        )
+        .update(session_update)
         .eq("id", signal_ai_control.id)
         .execute()
     )

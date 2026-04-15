@@ -447,7 +447,7 @@ class TrainingInfoResponse(BaseModel):
 
 
 class ServerInfoResponse(BaseModel):
-    server_id: int
+    server_id: Optional[int] = None
     url: str
     port: int
     tcp_socket: tuple[str, int]
