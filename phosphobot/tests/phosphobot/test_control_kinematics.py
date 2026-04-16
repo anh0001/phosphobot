@@ -201,6 +201,60 @@ def test_move_relative_without_orientation_delta_holds_current_orientation(
     np.testing.assert_allclose(target_orient, np.round(current_orientation, 3), atol=1e-6)
 
 
+def test_move_relative_maps_controller_pitch_to_piper_pitch_axis(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Piper relative controls should treat rx as pitch, not yaw."""
+    robot = create_autospec(BaseManipulator, instance=True)
+    robot.name = "agilex-piper"
+    robot.initial_position = np.zeros(3)
+    robot.initial_orientation_rad = np.zeros(3)
+
+    current_position = np.array([0.20, -0.04, 0.31])
+    current_orientation = np.array([0.12, -0.08, 0.05])
+
+    def forward_kinematics(sync_robot_pos: bool = False):
+        return current_position.copy(), current_orientation.copy()
+
+    robot.forward_kinematics.side_effect = forward_kinematics
+
+    captured_targets: list[tuple[np.ndarray, np.ndarray]] = []
+
+    async def fake_execute_world_frame_move(
+        robot: object,
+        target_position: np.ndarray,
+        target_orientation_rad: np.ndarray,
+        **kwargs: object,
+    ) -> None:
+        captured_targets.append((target_position.copy(), target_orientation_rad.copy()))
+
+    monkeypatch.setattr(
+        control, "_execute_world_frame_move", fake_execute_world_frame_move
+    )
+
+    run_async(
+        control.move_relative(
+            data=RelativeEndEffectorPosition(
+                x=0,
+                y=0,
+                z=0,
+                rx=10,
+                ry=0,
+                rz=0,
+                open=None,
+            ),
+            background_tasks=BackgroundTasks(),
+            rcm=FakeRCM(robot),
+        )
+    )
+
+    _, target_orient = captured_targets[0]
+    expected_orientation = np.round(current_orientation, 3) + np.deg2rad(
+        np.array([0.0, 10.0, 0.0])
+    )
+    np.testing.assert_allclose(target_orient, expected_orientation, atol=1e-6)
+
+
 def test_inverse_kinematics_prefers_current_robot_joint_seed(
     so100: SO100Hardware,
     monkeypatch: pytest.MonkeyPatch,

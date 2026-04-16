@@ -109,6 +109,18 @@ def _read_control_forward_kinematics(
     return robot_with_fk.forward_kinematics(sync_robot_pos=sync_robot_pos)
 
 
+def _map_controller_orientation_for_robot(
+    robot: object, orientation_deg: np.ndarray
+) -> np.ndarray:
+    """Translate controller pitch/yaw/roll into the robot's Euler convention."""
+    if getattr(robot, "name", None) == "agilex-piper":
+        return np.array(
+            [orientation_deg[1], orientation_deg[0], orientation_deg[2]],
+            dtype=object,
+        )
+    return orientation_deg
+
+
 async def _execute_world_frame_move(
     robot: object,
     target_position: np.ndarray,
@@ -369,6 +381,10 @@ async def move_relative(
         data.x = data.x / 100 if data.x is not None else None
         data.y = data.y / 100 if data.y is not None else None
         data.z = data.z / 100 if data.z is not None else None
+        controller_orientation_euler_degrees = _map_controller_orientation_for_robot(
+            robot,
+            np.array([data.rx, data.ry, data.rz], dtype=object),
+        )
 
         if (
             data.x is None
@@ -389,7 +405,7 @@ async def move_relative(
             target_orientation_rad = np.array(
                 [
                     np.deg2rad(u) if u is not None else None
-                    for u in [data.rx, data.ry, data.rz]
+                    for u in controller_orientation_euler_degrees
                 ]
             )
             await robot.move_robot_relative(
@@ -412,7 +428,7 @@ async def move_relative(
 
         delta_position = np.array([data.x, data.y, data.z])
         has_orientation_delta = any(v is not None for v in (data.rx, data.ry, data.rz))
-        delta_orientation_euler_degrees = np.array([data.rx, data.ry, data.rz])
+        delta_orientation_euler_degrees = controller_orientation_euler_degrees
 
         # Read the current world-frame pose (synced with real motors)
         current_position_raw, current_orientation_raw = _read_control_forward_kinematics(
