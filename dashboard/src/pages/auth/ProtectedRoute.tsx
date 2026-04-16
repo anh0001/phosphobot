@@ -3,7 +3,11 @@ import { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 
 export function ProtectedRoute({ children }: { children: ReactNode }) {
-  const { session } = useAuth();
+  const { session, isLoading } = useAuth();
+
+  if (isLoading) {
+    return null;
+  }
 
   if (!session) {
     return <Navigate to="/sign-up" />;

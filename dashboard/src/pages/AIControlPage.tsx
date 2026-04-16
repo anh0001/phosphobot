@@ -69,6 +69,8 @@ type AIControlModelType =
 type PersistedModelIds = Partial<Record<AIControlModelType, string>>;
 
 const AI_CONTROL_MODEL_IDS_STORAGE_KEY = "ai-control-model-ids";
+const AI_CONTROL_STEP_SPEED_STORAGE_KEY = "ai-control-step-speed";
+const DEFAULT_AI_CONTROL_STEP_SPEED = 0.4;
 
 export function AIControlPage() {
   const [prompt, setPrompt] = useState("");
@@ -77,11 +79,14 @@ export function AIControlPage() {
       AI_CONTROL_MODEL_IDS_STORAGE_KEY,
       {},
     );
+  const [speed, setSpeed] = useLocalStorageState<number>(
+    AI_CONTROL_STEP_SPEED_STORAGE_KEY,
+    DEFAULT_AI_CONTROL_STEP_SPEED,
+  );
   const modelId = useGlobalStore((state) => state.modelId);
   const setModelId = useGlobalStore((state) => state.setModelId);
 
   const [showCassette, setShowCassette] = useState(false);
-  const [speed, setSpeed] = useState(0.4);
   const [selectedCheckpoint, setSelectedCheckpoint] = useState<number | null>(
     null,
   );
@@ -597,7 +602,7 @@ export function AIControlPage() {
                   )}
                   <SpeedSelect
                     onChange={setSpeed}
-                    defaultValue={0.4}
+                    defaultValue={speed}
                     disabled={aiStatus?.status !== "stopped"}
                     title="Step Speed"
                   />

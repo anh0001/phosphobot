@@ -25,11 +25,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem("session");
     return stored ? JSON.parse(stored) : null;
   });
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(() => {
+    const stored = localStorage.getItem("session");
+    return Boolean(stored);
+  });
   const [proUser, setProUser] = useState<boolean | null>(() => {
     const stored = localStorage.getItem("proUser");
     return stored ? JSON.parse(stored) : null;
   });
+
+  const clearSessionState = () => {
+    localStorage.removeItem("session");
+    localStorage.removeItem("proUser");
+    setSession(null);
+    setProUser(null);
+  };
 
   const login = async (
     email: string,
@@ -76,10 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async (): Promise<void> => {
     await fetchWithBaseUrl("/auth/logout", "POST");
-    localStorage.removeItem("session");
-    localStorage.removeItem("proUser");
-    setSession(null);
-    setProUser(null);
+    clearSessionState();
     // Redirect to main page if we're on a protected route
     if (
       window.location.pathname === "/train" ||
@@ -113,21 +120,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         authenticated: boolean;
         session: Session;
         is_pro_user: boolean;
-      } = await fetchWithBaseUrl("/auth/check-auth", "GET");
-      if (!response.authenticated) {
-        setProUser(null);
-        localStorage.removeItem("proUser");
-        logout();
+      } | undefined = await fetchWithBaseUrl("/auth/check-auth", "GET");
+      if (!response?.authenticated) {
+        clearSessionState();
+        return;
       }
       // Update pro user status
       setProUser(response.is_pro_user);
       localStorage.setItem("proUser", JSON.stringify(response.is_pro_user));
     } catch (e) {
       console.error("Session validation failed:", e);
-      // Reset pro user status on validation failure
-      setProUser(null);
-      localStorage.removeItem("proUser");
-      logout();
+      clearSessionState();
     } finally {
       setIsLoading(false);
     }
