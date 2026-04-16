@@ -81,7 +81,7 @@ export function AIControlPage() {
   const setModelId = useGlobalStore((state) => state.setModelId);
 
   const [showCassette, setShowCassette] = useState(false);
-  const [speed, setSpeed] = useState(1.0);
+  const [speed, setSpeed] = useState(0.4);
   const [selectedCheckpoint, setSelectedCheckpoint] = useState<number | null>(
     null,
   );
@@ -597,7 +597,7 @@ export function AIControlPage() {
                   )}
                   <SpeedSelect
                     onChange={setSpeed}
-                    defaultValue={1.0}
+                    defaultValue={0.4}
                     disabled={aiStatus?.status !== "stopped"}
                     title="Step Speed"
                   />
