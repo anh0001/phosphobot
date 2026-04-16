@@ -14,10 +14,21 @@ import type React from "react";
 // Default parameters for the streams (these can be passed as props or come from config)
 const defaultQuality = 8;
 const highQuality = 80;
+let streamInstanceCounter = 0;
 
 // Helper to compute stream URL based on current hostname, port, and query parameters
-const getStreamUrl = (streamPath: string, quality: number) =>
-  `http://${window.location.hostname}:${window.location.port}${streamPath}?quality=${quality}`;
+export const createStreamInstanceToken = () => {
+  streamInstanceCounter += 1;
+  return `${Date.now()}-${streamInstanceCounter}`;
+};
+
+export const getStreamUrl = (
+  streamPath: string,
+  quality: number,
+  streamInstance: string,
+  locationOverride: Pick<Location, "hostname" | "port"> = window.location,
+) =>
+  `http://${locationOverride.hostname}:${locationOverride.port}${streamPath}?quality=${quality}&streamInstance=${encodeURIComponent(streamInstance)}`;
 
 export interface CameraStreamProps {
   id: number;
@@ -69,8 +80,27 @@ export const CardContentPiece = ({
     if (!img) return;
 
     if (isStreamActive) {
-      img.src = getStreamUrl(streamPath, quality);
+      setIsLoading(true);
+      setHasError(false);
+      const streamInstance = createStreamInstanceToken();
+      const nextStreamUrl = getStreamUrl(streamPath, quality, streamInstance);
+
+      img.src = "";
+      img.removeAttribute("src");
+
+      const timeoutId = window.setTimeout(() => {
+        if (imgRef.current === img) {
+          img.src = nextStreamUrl;
+        }
+      }, 0);
+
+      return () => {
+        window.clearTimeout(timeoutId);
+        img.src = "";
+      };
     } else {
+      setIsLoading(false);
+      setHasError(false);
       img.src = "";
     }
 

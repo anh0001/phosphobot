@@ -1,21 +1,46 @@
 import { describe, expect, it } from "vitest";
 
+import {
+  createStreamInstanceToken,
+  getStreamUrl,
+} from "@/components/common/camera-stream-card";
 import type { SingleCameraStatus } from "@/types";
-
-// Re-create the getStreamUrl helper logic from the component for unit-testing
-// (the component uses window.location which isn't available here).
-const getStreamUrl = (streamPath: string, quality: number) =>
-  `http://localhost:8080${streamPath}?quality=${quality}`;
 
 describe("getStreamUrl", () => {
   it("should include the quality parameter in the URL", () => {
-    const url = getStreamUrl("/video/0", 8);
-    expect(url).toBe("http://localhost:8080/video/0?quality=8");
+    const url = getStreamUrl("/video/0", 8, "stream-1", {
+      hostname: "localhost",
+      port: "8080",
+    });
+    expect(url).toContain("quality=8");
   });
 
-  it("should reflect high quality when toggled", () => {
-    const url = getStreamUrl("/video/1", 80);
-    expect(url).toBe("http://localhost:8080/video/1?quality=80");
+  it("should include the stream instance parameter", () => {
+    const url = getStreamUrl("/video/1", 80, "stream-2", {
+      hostname: "localhost",
+      port: "8080",
+    });
+    expect(url).toContain("streamInstance=stream-2");
+  });
+
+  it("should produce distinct URLs for reconnects of the same camera", () => {
+    const firstUrl = getStreamUrl("/video/0", 8, createStreamInstanceToken(), {
+      hostname: "localhost",
+      port: "8080",
+    });
+    const secondUrl = getStreamUrl(
+      "/video/0",
+      8,
+      createStreamInstanceToken(),
+      {
+        hostname: "localhost",
+        port: "8080",
+      },
+    );
+
+    expect(firstUrl).not.toBe(secondUrl);
+    expect(firstUrl).toContain("/video/0");
+    expect(secondUrl).toContain("/video/0");
   });
 });
 
@@ -73,7 +98,10 @@ describe("disabled card stream behaviour", () => {
 
     // When not active, the component sets img.src = "" — model that here
     const streamSrc = isStreamActive
-      ? getStreamUrl("/video/0", 8)
+      ? getStreamUrl("/video/0", 8, "stream-3", {
+          hostname: "localhost",
+          port: "8080",
+        })
       : "";
     expect(streamSrc).toBe("");
   });
@@ -84,8 +112,12 @@ describe("disabled card stream behaviour", () => {
     const isStreamActive = isRecording || !showRecordingControls;
 
     const streamSrc = isStreamActive
-      ? getStreamUrl("/video/0", 8)
+      ? getStreamUrl("/video/0", 8, "stream-4", {
+          hostname: "localhost",
+          port: "8080",
+        })
       : "";
-    expect(streamSrc).toBe("http://localhost:8080/video/0?quality=8");
+    expect(streamSrc).toContain("http://localhost:8080/video/0?quality=8");
+    expect(streamSrc).toContain("streamInstance=stream-4");
   });
 });

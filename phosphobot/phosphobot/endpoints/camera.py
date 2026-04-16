@@ -80,6 +80,11 @@ def video_feed_for_camera(
             target_size=target_size, quality=quality, request=request
         ),
         media_type="multipart/x-mixed-replace; boundary=frame",
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
     )
 
 
