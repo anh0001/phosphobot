@@ -1,44 +1,38 @@
 # Development Workflow
 
-> This file extends [common/git-workflow.md](./git-workflow.md) with the full feature development process that happens before git operations.
+> This file extends [common/git-workflow.md](./git-workflow.md) with the repo-specific workflow that happens before git operations.
 
-The Feature Implementation Workflow describes the development pipeline: research, planning, TDD, code review, and then committing to git.
+The feature implementation workflow for `phosphobot` is: inspect local context, choose the smallest safe change, verify with the narrowest relevant checks, then prepare git operations.
 
 ## Feature Implementation Workflow
 
-0. **Research & Reuse** _(mandatory before any new implementation)_
-   - **GitHub code search first:** Run `gh search repos` and `gh search code` to find existing implementations, templates, and patterns before writing anything new.
-   - **Library docs second:** Use Context7 or primary vendor docs to confirm API behavior, package usage, and version-specific details before implementing.
-   - **Exa only when the first two are insufficient:** Use Exa for broader web research or discovery after GitHub search and primary docs.
-   - **Check package registries:** Search npm, PyPI, crates.io, and other registries before writing utility code. Prefer battle-tested libraries over hand-rolled solutions.
-   - **Search for adaptable implementations:** Look for open-source projects that solve 80%+ of the problem and can be forked, ported, or wrapped.
-   - Prefer adopting or porting a proven approach over writing net-new code when it meets the requirement.
+0. **Inspect Before Editing** _(mandatory)_
+   - Read `AGENTS.md`, `CLAUDE.md`, and the relevant local package/app first.
+   - Check whether a similar endpoint, hardware driver, model integration, or frontend component already exists.
+   - Prefer reusing repo patterns over importing new abstractions.
 
-1. **Plan First**
-   - Use **planner** agent to create implementation plan
-   - Generate planning docs before coding: PRD, architecture, system_design, tech_doc, task_list
-   - Identify dependencies and risks
-   - Break down into phases
+1. **Plan to the Right Depth**
+   - For larger or riskier changes, create a short implementation plan before editing.
+   - Call out integration points across backend, frontend, simulation, and packaged assets when relevant.
+   - Surface safety risks early for hardware-facing changes.
 
-2. **TDD Approach**
-   - Use **tdd-guide** agent
-   - Write tests first (RED)
-   - Implement to pass tests (GREEN)
-   - Refactor (IMPROVE)
-   - Verify 80%+ coverage
+2. **Implementation**
+   - Prefer the smallest coherent change that satisfies the request.
+   - Keep backend, dashboard, and hardware concerns separated unless the feature requires coordinated edits.
+   - Do not manually edit generated dashboard output in `phosphobot/resources/dist`.
 
-3. **Code Review**
-   - Use **code-reviewer** agent immediately after writing code
-   - Address CRITICAL and HIGH issues
-   - Fix MEDIUM issues when possible
+3. **Verification**
+   - Backend logic: run the narrowest relevant `pytest` target first.
+   - Type-sensitive Python changes: run `make types`.
+   - Dashboard changes: run `npm run build`, and `npm run test` when utilities/state logic changed.
+   - Next.js app changes: run `npm run build`.
+   - Hardware/control changes: validate in simulation first.
 
-4. **Commit & Push**
-   - Detailed commit messages
-   - Follow conventional commits format
-   - See [git-workflow.md](./git-workflow.md) for commit message format and PR process
+4. **Review**
+   - Review the actual diff, not just changed snippets in isolation.
+   - Focus on behavior regressions, safety issues, missing tests, and packaging/integration fallout.
 
-5. **Pre-Review Checks**
-   - Verify all automated checks (CI/CD) are passing
-   - Resolve any merge conflicts
-   - Ensure branch is up to date with target branch
-   - Only request review after these checks pass
+5. **Pre-PR Checks**
+   - Match local checks to the touched surfaces and CI expectations.
+   - Rebuild dashboard assets when backend-shipped UI changed.
+   - See [git-workflow.md](./git-workflow.md) for commit message and PR process details.

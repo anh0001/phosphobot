@@ -33,7 +33,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "f=$(python3 -c 'import sys,json; print(json.load(sys.stdin).get(\"tool_input\",{}).get(\"file_path\",\"\"))'); REPO=/home/robofi/codes/phosphobot; case \"$f\" in \"$REPO\"/phosphobot/*.py) (cd \"$REPO/phosphobot\" && uv run --quiet ruff check --fix --quiet \"$f\" && uv run --quiet ruff format --quiet \"$f\") ;; \"$REPO\"/dashboard/*.ts|\"$REPO\"/dashboard/*.tsx|\"$REPO\"/dashboard/*.js|\"$REPO\"/dashboard/*.jsx|\"$REPO\"/dashboard/*.json|\"$REPO\"/dashboard/*.css|\"$REPO\"/dashboard/*.md) (cd \"$REPO/dashboard\" && npx --no-install prettier --write --log-level=warn \"$f\") ;; esac",
+            "command": "f=$(python3 -c 'import sys,json; print(json.load(sys.stdin).get(\"tool_input\",{}).get(\"file_path\", \"\"))'); REPO=/home/robofi/codes/phosphobot; case \"$f\" in \"$REPO\"/phosphobot/*.py|\"$REPO\"/phosphobot/**/*.py) (cd \"$REPO/phosphobot\" && uv run --quiet ruff check --fix --quiet \"$f\" && uv run --quiet ruff format --quiet \"$f\") ;; \"$REPO\"/dashboard/*|\"$REPO\"/dashboard/**/*|\"$REPO\"/dataset-viewer/*|\"$REPO\"/dataset-viewer/**/*|\"$REPO\"/cloud/frontend/*|\"$REPO\"/cloud/frontend/**/*) case \"$f\" in *.ts|*.tsx|*.js|*.jsx|*.json|*.css|*.md) d=$(dirname \"$f\"); while [ \"$d\" != \"$REPO\" ] && [ ! -f \"$d/package.json\" ]; do d=$(dirname \"$d\"); done; [ -f \"$d/package.json\" ] && (cd \"$d\" && npx --no-install prettier --write --log-level=warn \"$f\") ;; esac ;; esac",
             "timeout": 30
           }
         ]

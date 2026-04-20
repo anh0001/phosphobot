@@ -52,26 +52,21 @@ Use `/python-review` when:
 - Not using f-strings for formatting
 - Unnecessary list creation
 
-## Automated Checks Run
+## Repo-Native Checks
 
 ```bash
 # Type checking
-mypy .
+make types
 
-# Linting and formatting
-ruff check .
-black --check .
-isort --check-only .
+# Linting / import sorting
+make sort
 
-# Security scanning
-bandit -r .
+# Backend tests
+make tests
 
-# Dependency audit
-pip-audit
-safety check
-
-# Testing
-pytest --cov=app --cov-report=term-missing
+# API tests when endpoints changed
+make test_server
+cd phosphobot && uv run pytest tests/api/ -s -v
 ```
 
 ## Example Usage

@@ -15,14 +15,15 @@ If no PR is specified, review the current branch's PR. If no focus is specified,
 1. Identify the PR:
    - use `gh pr view` to get PR details, changed files, and diff
 2. Find project guidance:
-   - look for `CLAUDE.md`, lint config, TypeScript config, repo conventions
+   - read `AGENTS.md`, `CLAUDE.md`, and relevant repo rules first
 3. Run specialized review agents:
    - `code-reviewer`
-   - `comment-analyzer`
+   - `python-reviewer` for Python-heavy diffs
+   - `typescript-reviewer` for frontend or TS-heavy diffs
    - `pr-test-analyzer`
    - `silent-failure-hunter`
-   - `type-design-analyzer`
-   - `code-simplifier`
+   - `security-reviewer`
+   - `vla-reviewer` when inference, robotics, or VLA integration code changed
 4. Aggregate results:
    - dedupe overlapping findings
    - rank by severity
@@ -33,5 +34,5 @@ If no PR is specified, review the current branch's PR. If no focus is specified,
 Only report issues with confidence >= 80:
 
 - Critical: bugs, security, data loss
-- Important: missing tests, quality problems, style violations
+- Important: missing tests, safety problems, packaging/integration fallout
 - Advisory: suggestions only when explicitly requested
