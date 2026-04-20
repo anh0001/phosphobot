@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "Bash(make *)",
+      "Bash(uv run pytest *)",
+      "Bash(uv run mypy *)",
+      "Bash(uv run ruff *)",
+      "Bash(npm test)",
+      "Bash(npm run test)",
+      "Bash(npm run build)",
+      "Bash(npm run lint)",
+      "Bash(npm run dev)",
+      "Bash(npm run *:*)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(wc:*)",
+      "Bash(tree:*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(python3 -c 'import sys,json; print(json.load(sys.stdin).get(\"tool_input\",{}).get(\"file_path\",\"\"))'); REPO=/home/robofi/codes/phosphobot; case \"$f\" in \"$REPO\"/phosphobot/*.py) (cd \"$REPO/phosphobot\" && uv run --quiet ruff check --fix --quiet \"$f\" && uv run --quiet ruff format --quiet \"$f\") ;; \"$REPO\"/dashboard/*.ts|\"$REPO\"/dashboard/*.tsx|\"$REPO\"/dashboard/*.js|\"$REPO\"/dashboard/*.jsx|\"$REPO\"/dashboard/*.json|\"$REPO\"/dashboard/*.css|\"$REPO\"/dashboard/*.md) (cd \"$REPO/dashboard\" && npx --no-install prettier --write --log-level=warn \"$f\") ;; esac",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

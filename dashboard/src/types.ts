@@ -122,7 +122,10 @@ export type TrainingRequest = {
   dataset_name: string;
   model_name: string;
   wandb_api_key?: string;
-  training_params?: TrainingParamsACT | TrainingParamsGR00T | TrainingParamsSmolVLA;
+  training_params?:
+    | TrainingParamsACT
+    | TrainingParamsGR00T
+    | TrainingParamsSmolVLA;
 };
 
 export type AdminSettings = {

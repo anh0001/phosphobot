@@ -5,9 +5,6 @@ __pycache__/
 
 # Mac Specific
 .DS_Store
-AGENTS.md
-CLAUDE.md
-.codex
 /dataset/
 nohup.out
 
