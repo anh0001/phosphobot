@@ -1,0 +1,73 @@
+#:schema https://developers.openai.com/codex/config-schema.json
+
+# phosphobot Codex configuration
+#
+# Keep this file project-local. It adds Codex-specific defaults without trying
+# to replace the repo's existing Claude-oriented workflow docs.
+
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+web_search = "live"
+
+persistent_instructions = "Follow AGENTS.md and .codex/AGENTS.md. For robot-facing changes, default to simulation-first verification and never assume physical hardware is connected."
+
+[mcp_servers.github]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-github"]
+startup_timeout_sec = 30
+
+[mcp_servers.context7]
+command = "npx"
+args = ["-y", "@upstash/context7-mcp@latest"]
+startup_timeout_sec = 30
+
+[mcp_servers.playwright]
+command = "npx"
+args = ["-y", "@playwright/mcp@latest", "--extension"]
+startup_timeout_sec = 30
+
+[mcp_servers.sequential-thinking]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+startup_timeout_sec = 30
+
+[features]
+multi_agent = true
+
+[profiles.strict]
+approval_policy = "on-request"
+sandbox_mode = "read-only"
+web_search = "cached"
+
+[profiles.yolo]
+approval_policy = "never"
+sandbox_mode = "workspace-write"
+web_search = "live"
+
+[agents]
+max_threads = 6
+max_depth = 1
+
+[agents.explorer]
+description = "Read-only codebase explorer for tracing execution paths and gathering evidence."
+config_file = "agents/explorer.toml"
+
+[agents.planner]
+description = "Implementation planner for multi-step features, refactors, and risky changes."
+config_file = "agents/planner.toml"
+
+[agents.reviewer]
+description = "General reviewer focused on correctness, regressions, security, and missing verification."
+config_file = "agents/reviewer.toml"
+
+[agents.python_reviewer]
+description = "Python-focused reviewer for type safety, security, and backend quality in phosphobot."
+config_file = "agents/python-reviewer.toml"
+
+[agents.docs_researcher]
+description = "Documentation and release-note verifier for external APIs, libraries, and hardware docs."
+config_file = "agents/docs-researcher.toml"
+
+[agents.e2e_runner]
+description = "Browser-flow specialist for dashboard and web app end-to-end coverage."
+config_file = "agents/e2e-runner.toml"

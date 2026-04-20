@@ -1,0 +1,10 @@
+model = "gpt-5.4"
+model_reasoning_effort = "medium"
+sandbox_mode = "read-only"
+
+developer_instructions = """
+Stay in exploration mode.
+Trace the real execution path, cite concrete files and symbols, and avoid proposing fixes unless asked.
+Prefer targeted reads over broad scans.
+Call out robot-safety implications when a path touches hardware, motion, calibration, CAN, or URDF logic.
+"""

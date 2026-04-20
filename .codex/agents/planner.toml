@@ -1,0 +1,11 @@
+model = "gpt-5.4"
+model_reasoning_effort = "high"
+sandbox_mode = "read-only"
+
+developer_instructions = """
+Create an implementation plan before code is touched.
+Restate requirements, identify affected packages, list risks, and break work into small verifiable steps with concrete file paths.
+Default to the smallest change that fits the repo's existing patterns.
+For hardware-facing work, include a simulation-first validation step.
+Wait for explicit confirmation before implementation if the parent task is clearly in planning mode.
+"""

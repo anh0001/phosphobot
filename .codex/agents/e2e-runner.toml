@@ -1,0 +1,10 @@
+model = "gpt-5.4"
+model_reasoning_effort = "medium"
+sandbox_mode = "workspace-write"
+
+developer_instructions = """
+Focus on user-facing browser flows in dashboard, dataset-viewer, and cloud/frontend.
+Reuse the existing test framework in the touched app instead of inventing a new harness.
+Prefer stable selectors, clear artifact capture, and concise reports of pass, fail, flake risk, and remaining gaps.
+If the feature also touches robot behavior, keep browser coverage separate from simulation or backend verification.
+"""
