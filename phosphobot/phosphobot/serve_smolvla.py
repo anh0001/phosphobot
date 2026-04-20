@@ -68,7 +68,7 @@ def create_smolvla_app(model_path: str, device: str | None = None) -> FastAPI:
 
     @app.get("/health")
     async def health() -> dict[str, str]:
-        return {"status": "ok"}
+        return {"status": "ok", "model_id": model_path, "device": device}
 
     @app.post("/act")
     async def act(request: InferenceRequest) -> Any:
@@ -129,8 +129,14 @@ def create_smolvla_app(model_path: str, device: str | None = None) -> FastAPI:
                     actions = policy.predict_action_chunk(batch)
             result = actions.cpu().numpy()
         except Exception as e:
-            logger.error(f"Inference error: {e}", exc_info=True)
-            raise HTTPException(status_code=500, detail=f"Inference failed: {e}")
+            logger.error(
+                f"Inference error for SmolVLA model '{model_path}': {e}",
+                exc_info=True,
+            )
+            raise HTTPException(
+                status_code=500,
+                detail=f"Inference failed for remote model '{model_path}': {e}",
+            )
 
         return json_numpy.dumps(result)
 

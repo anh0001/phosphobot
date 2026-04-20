@@ -44,6 +44,8 @@ class TestHealthEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "ok"
+        assert data["model_id"] == "mock/model"
+        assert data["device"] == "cpu"
 
 
 class TestActEndpoint:

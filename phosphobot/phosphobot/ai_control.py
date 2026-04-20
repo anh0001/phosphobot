@@ -223,16 +223,48 @@ async def setup_ai_control(
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
 
-        # Verify the remote server is reachable
+        # Verify the remote server is reachable and, when possible, that it
+        # serves the model selected in the UI.
         timeout = config.DEFAULT_AI_REMOTE_INFERENCE_TIMEOUT_SECONDS
         try:
             async with httpx.AsyncClient(timeout=timeout) as client:
                 health = await client.get(f"{validated_url}/health")
                 health.raise_for_status()
+                health_payload = health.json()
         except Exception as e:
             raise HTTPException(
                 status_code=502,
                 detail=f"Remote inference server at {validated_url} is not reachable: {e}",
+            )
+
+        remote_model_id = None
+        if isinstance(health_payload, dict):
+            raw_remote_model = health_payload.get("model_id")
+            if isinstance(raw_remote_model, str) and raw_remote_model.strip():
+                remote_model_id = raw_remote_model.strip()
+
+        if remote_model_id is None:
+            logger.warning(
+                "Remote inference server at '{}' did not report a model_id in /health. "
+                "Unable to verify the requested model '{}' before starting control.",
+                validated_url,
+                model_id,
+            )
+        elif remote_model_id != model_id:
+            logger.error(
+                "Remote inference model mismatch at '{}': requested='{}', remote='{}'",
+                validated_url,
+                model_id,
+                remote_model_id,
+            )
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Remote inference server at {validated_url} is serving "
+                    f"'{remote_model_id}', but phosphobot is configured to use "
+                    f"'{model_id}'. Start the remote server with '--model-id {model_id}' "
+                    "or select the matching model in the dashboard."
+                ),
             )
 
         # Build a synthetic ServerInfoResponse (no Modal spawn needed)

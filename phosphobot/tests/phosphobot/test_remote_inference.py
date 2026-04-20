@@ -11,12 +11,15 @@ from types import SimpleNamespace
 
 import pytest
 from fastapi import BackgroundTasks
+from fastapi import HTTPException
 
 from phosphobot.ai_control import (
     _resolve_inference_mode,
+    setup_ai_control,
     validate_remote_inference_url,
 )
 from phosphobot.endpoints import control
+from phosphobot.am.smolvla import SmolVLA
 from phosphobot.models import (
     AdminSettingsRequest,
     AdminSettingsResponse,
@@ -220,6 +223,58 @@ class TestRemoteServerInfo:
             timeout=30,
         )
         assert info.server_id is None
+
+
+@pytest.mark.asyncio
+async def test_setup_ai_control_remote_url_rejects_model_mismatch(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class _FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict[str, str]:
+            return {
+                "status": "ok",
+                "model_id": "wrong/model",
+                "device": "cuda",
+            }
+
+    class _FakeAsyncClient:
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            pass
+
+        async def __aenter__(self) -> "_FakeAsyncClient":
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb) -> None:  # type: ignore[no-untyped-def]
+            return None
+
+        async def get(self, url: str) -> _FakeResponse:
+            assert url == "http://100.64.0.10:8080/health"
+            return _FakeResponse()
+
+    monkeypatch.setattr(
+        SmolVLA,
+        "fetch_and_verify_config",
+        classmethod(lambda cls, **kwargs: SimpleNamespace(model_dump=lambda: {})),
+    )
+    monkeypatch.setattr("phosphobot.ai_control.httpx.AsyncClient", _FakeAsyncClient)
+
+    with pytest.raises(HTTPException) as exc_info:
+        await setup_ai_control(
+            robots=[],
+            all_cameras=SimpleNamespace(video_cameras=[]),  # type: ignore[arg-type]
+            ai_control_signal_id="session-id",
+            model_type="smolvla",
+            model_id="expected/model",
+            inference_mode="remote_url",
+            inference_base_url="http://100.64.0.10:8080",
+        )
+
+    assert exc_info.value.status_code == 400
+    assert "wrong/model" in exc_info.value.detail
+    assert "expected/model" in exc_info.value.detail
 
 
 class _FakeTableQuery:
