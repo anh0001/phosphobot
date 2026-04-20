@@ -21,7 +21,7 @@
     {
       "label": "Serve SmolVLA (remote inference)",
       "type": "shell",
-      "command": "source smolvla-piper/bin/activate && phosphobot serve-smolvla --model-id anhrisn/piper-smolvla --host 0.0.0.0 --port 8090",
+      "command": "source smolvla-piper/bin/activate && phosphobot serve-smolvla --model-id anhrisn/piper-smolvla-001 --host 0.0.0.0 --port 8090",
       "options": {
         "cwd": "${workspaceFolder}/phosphobot"
       },
