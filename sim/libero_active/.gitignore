@@ -1,0 +1,8 @@
+.venv/
+.deps/
+results/
+*.log
+__pycache__/
+*.pyc
+wandb/
+outputs/
