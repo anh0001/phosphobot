@@ -121,12 +121,16 @@ def run_active_loop(cfg: ExperimentConfig) -> dict:
         if len(pool.budget) >= cfg.loop.max_demos:
             break
 
-        # Score candidates and grow the budget.
+        # Score candidates and grow the budget. Subsample to bound inference cost.
+        candidates = pool.candidates
+        if cfg.loop.max_candidates_per_round and len(candidates) > cfg.loop.max_candidates_per_round:
+            picked_idx = rng.choice(len(candidates), cfg.loop.max_candidates_per_round, replace=False)
+            candidates = [candidates[i] for i in sorted(picked_idx)]
         scores = score_candidate_episodes(
             method,
-            candidates=pool.candidates,
+            candidates=candidates,
             checkpoint_dir=train_res.checkpoint_dir,
-            dataset_repo_id="HuggingFaceVLA/libero",
+            dataset_repo_id=LIBERO_DATASET,
             n_action_samples=cfg.conformal.n_action_samples,
             rng=rng,
         )

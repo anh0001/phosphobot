@@ -60,6 +60,10 @@ class ActiveLoopConfig:
     max_demos: int = 40
     eval_episodes: int = 20  # rollouts per evaluation point
     recalibrate_each_round: bool = True  # conformal must recalibrate after each LoRA update
+    # Random subsample of candidates to score each round; None == score the whole pool.
+    # Used to bound the cost of policy-inference-based scoring; the smoke and the PS.6
+    # sweep both rely on this to stay tractable on a single GPU.
+    max_candidates_per_round: int | None = None
 
 
 @dataclass(frozen=True)
