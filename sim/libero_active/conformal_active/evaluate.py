@@ -51,8 +51,13 @@ def evaluate_checkpoint(
     n_episodes: int = 20,
     batch_size: int = 1,
     seed: int = 1000,
+    task_ids: list[int] | None = None,
 ) -> EvalResult:
-    """Evaluate a checkpoint on one LIBERO suite over `n_episodes` rollouts."""
+    """Evaluate a checkpoint on a LIBERO suite over `n_episodes` rollouts.
+
+    If `task_ids` is given, evaluation is restricted to those task indices (the PS.4
+    single-task gate); otherwise the whole suite is evaluated.
+    """
     checkpoint_dir = Path(checkpoint_dir).resolve()
     output_dir = Path(output_dir).resolve()
     # Do not pre-create output_dir — LeRobot scripts may refuse an existing dir.
@@ -69,6 +74,8 @@ def evaluate_checkpoint(
         f"--output_dir={output_dir}",
         f"--seed={seed}",
     ]
+    if task_ids is not None:
+        cmd.append(f"--env.task_ids={json.dumps(task_ids, separators=(',', ':'))}")
 
     log_path = output_dir.parent / f"{output_dir.name}.eval.log"
     with log_path.open("w") as log:

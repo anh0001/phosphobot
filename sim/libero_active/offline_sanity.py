@@ -23,6 +23,7 @@ from pathlib import Path
 
 from conformal_active.config import TrainConfig
 from conformal_active.evaluate import evaluate_checkpoint
+from conformal_active.suite_episodes import task_episode_indices
 from conformal_active.train import train_smolvla_lora
 
 GATE_SUCCESS_PCT = 80.0
@@ -32,6 +33,7 @@ GATE_EVAL_EPISODES = 20
 def run_offline_sanity(
     *,
     suite: str,
+    task_id: int,
     n_demos: int,
     steps: int,
     results_dir: Path,
@@ -42,10 +44,18 @@ def run_offline_sanity(
     results_dir.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
 
-    # "Collect": use the first n_demos episodes of the LIBERO suite as the demo budget.
-    # (In the active loop these indices are chosen by a query method instead.)
-    episodes = list(range(n_demos))
-    print(f"[PS.4] suite={suite} demos={n_demos} steps={steps} seed={seed}", flush=True)
+    # Single-task gate: train on N demos of ONE task and evaluate THAT task only.
+    # The combined LIBERO dataset interleaves 4 suites x 10 tasks, so demos must be
+    # drawn from the specific (suite, task) — range(n) silently picked the wrong
+    # suite entirely (the PS.4 v1 0%-success bug). Train and eval scope must match:
+    # training on one task but evaluating all 10 would cap success near 10%.
+    task_eps = task_episode_indices(suite, task_id)
+    if n_demos > len(task_eps):
+        raise ValueError(
+            f"requested {n_demos} demos but {suite} task {task_id} has {len(task_eps)}")
+    episodes = task_eps[:n_demos]
+    print(f"[PS.4] suite={suite} task={task_id} demos={n_demos} "
+          f"(ep {episodes[0]}..{episodes[-1]}) steps={steps} seed={seed}", flush=True)
 
     train_out = results_dir / "train"
     train_res = train_smolvla_lora(
@@ -57,7 +67,7 @@ def run_offline_sanity(
         seed=seed,
     )
     if not train_res.ok:
-        return _verdict(suite, n_demos, float("nan"), t0, results_dir,
+        return _verdict(suite, task_id, n_demos, float("nan"), t0, results_dir,
                         passed=False, note=f"training failed rc={train_res.returncode}")
 
     print(f"[PS.4] training done -> {train_res.checkpoint_dir}", flush=True)
@@ -67,20 +77,22 @@ def run_offline_sanity(
         suite=suite,
         output_dir=results_dir / "eval",
         n_episodes=eval_episodes,
+        task_ids=[task_id],  # evaluate only the trained task
     )
     if not eval_res.ok:
-        return _verdict(suite, n_demos, float("nan"), t0, results_dir,
+        return _verdict(suite, task_id, n_demos, float("nan"), t0, results_dir,
                         passed=False, note=f"eval failed rc={eval_res.returncode}")
 
     passed = eval_res.pc_success >= GATE_SUCCESS_PCT
-    return _verdict(suite, n_demos, eval_res.pc_success, t0, results_dir,
+    return _verdict(suite, task_id, n_demos, eval_res.pc_success, t0, results_dir,
                     passed=passed, note="ok")
 
 
-def _verdict(suite, n_demos, pc, t0, results_dir, *, passed, note) -> dict:
+def _verdict(suite, task_id, n_demos, pc, t0, results_dir, *, passed, note) -> dict:
     verdict = {
         "phase": "PS.4_offline_sanity",
         "suite": suite,
+        "task_id": task_id,
         "n_demos": n_demos,
         "pc_success": pc,
         "gate_pct": GATE_SUCCESS_PCT,
@@ -95,8 +107,10 @@ def _verdict(suite, n_demos, pc, t0, results_dir, *, passed, note) -> dict:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--suite", default="libero_spatial")
-    ap.add_argument("--n-demos", type=int, default=40)
-    ap.add_argument("--steps", type=int, default=60000)
+    ap.add_argument("--task-id", type=int, default=0,
+                    help="single task within the suite to train+eval (gate is single-task)")
+    ap.add_argument("--n-demos", type=int, default=30)
+    ap.add_argument("--steps", type=int, default=15000)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--eval-episodes", type=int, default=GATE_EVAL_EPISODES)
     ap.add_argument("--results-dir", default="results/ps4_offline_sanity")
@@ -110,6 +124,7 @@ def main() -> int:
 
     verdict = run_offline_sanity(
         suite=args.suite,
+        task_id=args.task_id,
         n_demos=args.n_demos,
         steps=args.steps,
         results_dir=Path(args.results_dir),

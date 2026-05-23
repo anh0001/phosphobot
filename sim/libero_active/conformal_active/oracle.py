@@ -28,30 +28,34 @@ from .query_methods import QueryMethod, StepContext
 
 @dataclass
 class DemoPool:
-    """The fixed pool of LIBERO demonstration episodes.
+    """The fixed pool of demonstration episodes for ONE LIBERO suite.
 
-    `total_episodes` is read from the LeRobot dataset metadata (see active_loop.py).
-    The pool is partitioned into `budget` (in training) and `candidates` (selectable).
+    `pool` is the list of episode indices that belong to the target suite (from
+    `suite_episodes.suite_episode_indices`) — NOT range(total), because the combined
+    LIBERO dataset interleaves four suites. The pool is partitioned into `budget`
+    (in training) and `candidates` (selectable).
     """
 
-    total_episodes: int
+    pool: list[int]
     budget: list[int]
 
     @classmethod
-    def with_seed(cls, total_episodes: int, seed_size: int, rng: np.random.Generator) -> "DemoPool":
-        """Initialise with a random seed budget of `seed_size` episodes."""
-        order = rng.permutation(total_episodes).tolist()
-        return cls(total_episodes=total_episodes, budget=sorted(order[:seed_size]))
+    def with_seed(cls, pool: list[int], seed_size: int, rng: np.random.Generator) -> "DemoPool":
+        """Initialise with a random seed budget of `seed_size` episodes drawn from `pool`."""
+        if seed_size > len(pool):
+            raise ValueError(f"seed_size {seed_size} exceeds pool size {len(pool)}")
+        order = rng.permutation(np.asarray(pool)).tolist()
+        return cls(pool=sorted(pool), budget=sorted(int(i) for i in order[:seed_size]))
 
     @property
     def candidates(self) -> list[int]:
         in_budget = set(self.budget)
-        return [i for i in range(self.total_episodes) if i not in in_budget]
+        return [i for i in self.pool if i not in in_budget]
 
     def add(self, episode_indices: list[int]) -> "DemoPool":
         """Return a new pool with `episode_indices` moved into the budget (immutable)."""
         return DemoPool(
-            total_episodes=self.total_episodes,
+            pool=self.pool,
             budget=sorted(set(self.budget) | set(episode_indices)),
         )
 

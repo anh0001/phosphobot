@@ -28,19 +28,12 @@ from pathlib import Path
 
 import numpy as np
 
-from .config import ExperimentConfig
+from .config import LIBERO_DATASET, ExperimentConfig
 from .evaluate import evaluate_checkpoint
 from .oracle import DemoPool, select_episodes
 from .query_methods import QueryMethod, build_query_method
+from .suite_episodes import suite_episode_indices
 from .train import TrainResult, train_smolvla_lora
-
-
-def _dataset_episode_count(dataset_repo_id: str) -> int:
-    """Read the total episode count from the LeRobot dataset metadata."""
-    from lerobot.datasets.lerobot_dataset import LeRobotDatasetMetadata
-
-    meta = LeRobotDatasetMetadata(dataset_repo_id)
-    return int(meta.total_episodes)
 
 
 def score_candidate_episodes(
@@ -92,8 +85,8 @@ def run_active_loop(cfg: ExperimentConfig) -> dict:
     results_dir.mkdir(parents=True, exist_ok=True)
     rng = np.random.default_rng(cfg.seed)
 
-    total_eps = _dataset_episode_count(cfg.train.policy_path and "HuggingFaceVLA/libero")
-    pool = DemoPool.with_seed(total_eps, cfg.loop.seed_demos, rng)
+    suite_eps = suite_episode_indices(cfg.suite, LIBERO_DATASET)
+    pool = DemoPool.with_seed(suite_eps, cfg.loop.seed_demos, rng)
     method = build_query_method(cfg.method, seed=cfg.seed, conformal=cfg.conformal)
 
     curve: list[dict] = []
