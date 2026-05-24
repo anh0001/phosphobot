@@ -44,38 +44,44 @@ def score_candidate_episodes(
     dataset_repo_id: str,
     n_action_samples: int,
     rng: np.random.Generator,
+    budget_features: list[np.ndarray] | None = None,
 ) -> dict[int, float]:
-    """Score each candidate episode by how informative it is to add.
+    """Score each candidate episode by how informative it is to add (pool-based AL).
 
-    random  -> random score (no inference).
-    knn     -> dataset state-feature novelty (no policy inference).
-    others  -> mean policy action-sample dispersion over the episode's states.
-
-    This is the integration point with live SmolVLA inference; see module docstring.
+    random      -> uniform random (no policy load)
+    knn         -> mean L2 distance to the budget's episode features (no policy load)
+    entropy     -> raw mean policy loss on the episode
+    conformal   -> threshold-normalised policy loss (calibrated by the loop)
+    human_gated -> falls back to raw loss in sim (no live human signal)
     """
     if method.name == "random":
         return {idx: float(rng.random()) for idx in candidates}
 
-    # Policy-inference path (entropy / conformal / human_gated / knn-with-features).
-    # Implemented lazily so random-method sweeps need no GPU policy load.
-    from .policy_runner import episode_signals  # local import: heavy deps
+    from .policy_runner import episode_signals  # heavy deps, loaded lazily
 
     scores: dict[int, float] = {}
     for idx in candidates:
-        signals = episode_signals(
+        sig = episode_signals(
             checkpoint_dir=checkpoint_dir,
             dataset_repo_id=dataset_repo_id,
             episode_index=idx,
             n_action_samples=n_action_samples,
         )
-        from .oracle import episode_uncertainty
-
-        scores[idx] = episode_uncertainty(
-            method,
-            action_samples_per_step=signals.action_samples,
-            features_per_step=signals.features,
-            oracle_disagreement_per_step=signals.oracle_disagreement,
-        )
+        if method.name == "knn":
+            if not budget_features:
+                scores[idx] = 1.0  # nothing in the budget yet -> max novelty
+            else:
+                feats = np.stack(budget_features)
+                dists = np.linalg.norm(feats - sig.feature[None, :feats.shape[1]], axis=1)
+                scores[idx] = float(np.sort(dists)[: min(5, len(dists))].mean())
+        elif method.name == "conformal":
+            from .query_methods import ConformalQuery  # narrow runtime cast
+            assert isinstance(method, ConformalQuery)
+            method.uncertainty.add_calibration(sig.loss_mean)  # opportunistic calib
+            raw = sig.loss_mean
+            scores[idx] = method.uncertainty.normalized(raw) if method.uncertainty.is_calibrated else raw
+        else:  # entropy / human_gated proxy
+            scores[idx] = sig.loss_mean
     return scores
 
 
@@ -88,11 +94,15 @@ def run_active_loop(cfg: ExperimentConfig) -> dict:
     suite_eps = suite_episode_indices(cfg.suite, LIBERO_DATASET)
     pool = DemoPool.with_seed(suite_eps, cfg.loop.seed_demos, rng)
     method = build_query_method(cfg.method, seed=cfg.seed, conformal=cfg.conformal)
+    budget_features: list[np.ndarray] = []  # populated as candidates are accepted
 
     curve: list[dict] = []
     round_idx = 0
     while True:
         method.reset_round()
+        # The trained checkpoint changes every round; clear the policy-loader cache.
+        from .policy_runner import reset_policy_cache
+        reset_policy_cache()
         round_dir = results_dir / f"round{round_idx}_N{len(pool.budget)}"
 
         train_res: TrainResult = train_smolvla_lora(
@@ -133,10 +143,20 @@ def run_active_loop(cfg: ExperimentConfig) -> dict:
             dataset_repo_id=LIBERO_DATASET,
             n_action_samples=cfg.conformal.n_action_samples,
             rng=rng,
+            budget_features=budget_features,
         )
         picked = select_episodes(scores, cfg.loop.demos_per_round)
-        for idx in picked:
-            method.register_demo_state(np.zeros(1))  # kNN bookkeeping; features set in runner
+        # Cache the picked episodes' features for next round's kNN scoring.
+        if cfg.method == "knn":
+            from .policy_runner import episode_signals
+            for idx in picked:
+                sig = episode_signals(
+                    checkpoint_dir=train_res.checkpoint_dir,
+                    dataset_repo_id=LIBERO_DATASET,
+                    episode_index=idx,
+                    n_action_samples=1,
+                )
+                budget_features.append(sig.feature)
         pool = pool.add(picked)
         round_idx += 1
 

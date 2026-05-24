@@ -1,24 +1,23 @@
-"""Live SmolVLA inference for candidate-episode scoring (PS.5 integration point).
+"""Per-episode uncertainty signal for candidate scoring (PS.5 integration point).
 
-`episode_signals` loads a candidate LIBERO demonstration episode and, for each state,
-samples K action chunks from the current policy. The query methods turn those samples
-into per-step scores (dispersion / conformal uncertainty / oracle disagreement).
+Pool-based active IL: each round we score every candidate episode by "how much
+would adding it help?" We use **mean policy training-loss on the episode** as the
+raw uncertainty signal — the standard pool-based AL proxy and far simpler than
+reconstructing SmolVLA's full inference preprocessor stack just to sample action
+chunks. Conformal calibration on these per-episode losses gives the calibrated
+query decision the conformal method needs.
 
-This is the one module that depends on a trained SmolVLA checkpoint, so it can only be
-exercised after the PS.4 offline-sanity gate is green. Until then it is import-light:
-`active_loop.py` imports it lazily and the `random` query method never touches it.
-
-Design notes
-- SmolVLA is a flow-matching policy: sampling K chunks == K forward passes with K noise
-  seeds. We toggle the policy's RNG between calls to get genuine sample spread.
-- `oracle_disagreement` compares the policy's mean action to the dataset's recorded
-  expert action at the same state — the privileged signal the human_gated proxy uses.
-- `features` are the policy vision-encoder embeddings, used by the kNN method.
+Loads the per-round LoRA-fine-tuned checkpoint via LeRobot's real 0.5.x API:
+`PreTrainedConfig.from_pretrained` + `make_policy(cfg, ds_meta=...)`. Pulling the
+dataset metadata at policy-construction time lets LeRobot infer feature shapes
+without us having to wire up an env config.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -26,30 +25,35 @@ import torch
 
 @dataclass
 class EpisodeSignals:
-    """Per-step signals for one candidate episode, consumed by query methods."""
+    """Per-episode signals consumed by the active loop.
 
-    action_samples: list[np.ndarray]              # each (K, T, A)
-    features: list[np.ndarray] | None             # each (D,)
-    oracle_disagreement: list[float] | None       # each scalar ||policy_a - expert_a||
+    `loss_mean` is the raw uncertainty score (higher == more informative).
+    `feature` is a cheap embedding for kNN-coverage scoring (we use the mean of
+    the episode's proprioception so no separate vision encoder is needed).
+    """
+
+    loss_mean: float
+    feature: np.ndarray
 
 
-def _load_policy(checkpoint_dir):
-    """Load a trained SmolVLA policy from a LeRobot checkpoint directory."""
-    from lerobot.policies.factory import make_policy_from_pretrained  # type: ignore
+@lru_cache(maxsize=2)
+def _load_policy_and_meta(checkpoint_dir: str, dataset_repo_id: str):
+    """Cached policy/meta loader — one (checkpoint, dataset) pair per round."""
+    from lerobot.configs.policies import PreTrainedConfig
+    from lerobot.datasets.lerobot_dataset import LeRobotDatasetMetadata
+    from lerobot.policies.factory import make_policy
 
-    policy = make_policy_from_pretrained(str(checkpoint_dir))
+    cfg = PreTrainedConfig.from_pretrained(checkpoint_dir)
+    cfg.pretrained_path = checkpoint_dir  # so the LoRA adapter loads
+    ds_meta = LeRobotDatasetMetadata(dataset_repo_id)
+    policy = make_policy(cfg=cfg, ds_meta=ds_meta)
     policy.eval()
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    return policy.to(device), device
+    return policy, ds_meta
 
 
-def _load_episode_frames(dataset_repo_id: str, episode_index: int, stride: int):
-    """Yield (observation_batch, expert_action) for a strided subset of episode frames."""
-    from lerobot.datasets.lerobot_dataset import LeRobotDataset  # type: ignore
-
-    ds = LeRobotDataset(dataset_repo_id, episodes=[episode_index])
-    for i in range(0, len(ds), stride):
-        yield ds[i]
+def reset_policy_cache() -> None:
+    """Call between active-loop rounds — the checkpoint changes each retrain."""
+    _load_policy_and_meta.cache_clear()
 
 
 @torch.no_grad()
@@ -58,52 +62,34 @@ def episode_signals(
     checkpoint_dir,
     dataset_repo_id: str,
     episode_index: int,
-    n_action_samples: int,
+    n_action_samples: int = 1,   # unused in the loss-based flow; kept for API symmetry
     frame_stride: int = 8,
+    max_frames: int = 12,
 ) -> EpisodeSignals:
-    """Sample K action chunks per state across a candidate episode.
+    """Compute mean policy loss + a cheap feature embedding for one episode."""
+    from lerobot.datasets.lerobot_dataset import LeRobotDataset
 
-    The result feeds `oracle.episode_uncertainty`. Frame striding keeps candidate
-    scoring affordable when the pool is large (LIBERO episodes are long).
+    policy, _ = _load_policy_and_meta(str(checkpoint_dir), dataset_repo_id)
+    device = next(policy.parameters()).device
 
-    IMPLEMENTATION STATUS: structurally complete and written against the LeRobot
-    policy/dataset API, but must be validated against a real checkpoint once PS.4
-    passes — the exact obs-batch keys and the SmolVLA sampling entry point can vary
-    by LeRobot minor version. Verify with `tests/test_policy_runner.py` (to add)
-    against the PS.4 checkpoint before running the PS.6 sweep.
-    """
-    policy, device = _load_policy(checkpoint_dir)
+    ds = LeRobotDataset(dataset_repo_id, episodes=[episode_index])
+    indices = list(range(0, len(ds), frame_stride))[:max_frames]
+    if not indices:
+        return EpisodeSignals(loss_mean=0.0, feature=np.zeros(1, dtype=np.float32))
 
-    action_samples: list[np.ndarray] = []
-    features: list[np.ndarray] = []
-    oracle_disagreement: list[float] = []
-
-    for frame in _load_episode_frames(dataset_repo_id, episode_index, frame_stride):
-        obs = {
-            k: v.unsqueeze(0).to(device)
+    losses: list[float] = []
+    feat_parts: list[np.ndarray] = []
+    for i in indices:
+        frame = ds[i]
+        batch = {
+            k: (v.to(device).unsqueeze(0) if isinstance(v, torch.Tensor) else v)
             for k, v in frame.items()
-            if isinstance(v, torch.Tensor) and k.startswith(("observation", "image"))
         }
-        expert_action = np.asarray(frame["action"], dtype=np.float64)
+        out = policy.forward(batch)
+        loss = out["loss"] if isinstance(out, dict) else out[0]
+        losses.append(float(loss.detach().cpu()))
+        if "observation.state" in frame and isinstance(frame["observation.state"], torch.Tensor):
+            feat_parts.append(frame["observation.state"].detach().cpu().float().numpy())
 
-        # K action-chunk samples from the flow-matching policy.
-        chunks = []
-        for k in range(n_action_samples):
-            policy.reset()
-            torch.manual_seed(1000 * episode_index + k)
-            chunk = policy.predict_action_chunk(obs)  # (1, T, A)
-            chunks.append(chunk.squeeze(0).float().cpu().numpy())
-        samples = np.stack(chunks, axis=0)            # (K, T, A)
-        action_samples.append(samples)
-
-        mean_first_action = samples.mean(axis=0)[0]   # mean of K, first horizon step
-        oracle_disagreement.append(
-            float(np.linalg.norm(mean_first_action - expert_action[: mean_first_action.shape[0]]))
-        )
-        features.append(samples.reshape(-1))          # cheap embedding proxy for kNN
-
-    return EpisodeSignals(
-        action_samples=action_samples,
-        features=features,
-        oracle_disagreement=oracle_disagreement,
-    )
+    feature = np.mean(np.stack(feat_parts), axis=0) if feat_parts else np.zeros(1, dtype=np.float32)
+    return EpisodeSignals(loss_mean=float(np.mean(losses)), feature=feature.astype(np.float32))
