@@ -23,7 +23,9 @@ FREE_MIB_MAX=${FREE_MIB_MAX:-2000}
 FREE_UTIL_MAX=${FREE_UTIL_MAX:-5}
 
 ts() { date '+%Y-%m-%d %H:%M:%S'; }
-log() { echo "[$(ts)] $*"; }
+# Logs go to stderr so they do NOT leak into command substitution
+# (e.g. `GPU=$(wait_for_free_gpu)` must capture ONLY the GPU index).
+log() { echo "[$(ts)] $*" >&2; }
 
 # -- pick the first GPU index that is free RIGHT NOW (0 == found, prints index) --
 pick_free_gpu() {
