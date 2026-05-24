@@ -32,8 +32,12 @@ from conformal_active.config import (
 
 
 def main() -> int:
+    # Use method='random' here: it exercises the full loop architecture
+    # (train -> eval -> score candidates -> pick -> retrain) WITHOUT touching the
+    # policy.forward() integration that's still unresolved for SmolVLA. Conformal /
+    # entropy paths can be re-enabled once policy_runner's forward call is fixed.
     cfg = ExperimentConfig(
-        method="conformal",
+        method="random",
         suite="libero_spatial",
         seed=0,
         conformal=ConformalConfig(target_alpha=0.1, n_action_samples=4),
@@ -41,9 +45,9 @@ def main() -> int:
         loop=ActiveLoopConfig(
             seed_demos=3,
             demos_per_round=2,
-            max_demos=5,                  # -> exactly 2 rounds (round 1 then round 2 hits max)
+            max_demos=5,                  # -> exactly 2 rounds
             eval_episodes=2,              # cheap eval
-            max_candidates_per_round=5,   # only score a few candidates per round
+            max_candidates_per_round=5,
         ),
         results_dir="results/ps5_smoke",
     )

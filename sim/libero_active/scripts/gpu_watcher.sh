@@ -78,7 +78,7 @@ run_smoke() {
 
 run_ps5_cell() {
   local gpu="$1"
-  log "launching PS.5 single cell on GPU $gpu (conformal, spatial task 0, seed 0, max_demos=20)"
+  log "launching PS.5 single cell on GPU $gpu (random method, spatial, seed 0, max_demos=20)"
   rm -rf results/ps5_single_cell results/ps5_single_cell.log
   # shellcheck disable=SC1090
   source "$VENV"
@@ -91,7 +91,7 @@ from conformal_active.config import (
     ActiveLoopConfig, ConformalConfig, ExperimentConfig, TrainConfig,
 )
 cfg = ExperimentConfig(
-    method="conformal",
+    method="random",   # produces the random baseline curve (real PS.6 contributor)
     suite="libero_spatial",
     seed=0,
     conformal=ConformalConfig(target_alpha=0.1, n_action_samples=4),
