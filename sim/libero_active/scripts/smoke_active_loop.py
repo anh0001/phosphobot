@@ -32,12 +32,11 @@ from conformal_active.config import (
 
 
 def main() -> int:
-    # Use method='random' here: it exercises the full loop architecture
-    # (train -> eval -> score candidates -> pick -> retrain) WITHOUT touching the
-    # policy.forward() integration that's still unresolved for SmolVLA. Conformal /
-    # entropy paths can be re-enabled once policy_runner's forward call is fixed.
+    # method='conformal' exercises the live SmolVLA forward path through
+    # policy_runner.episode_signals — the full integration we now have working
+    # via lerobot_collate_fn + resolve_delta_timestamps.
     cfg = ExperimentConfig(
-        method="random",
+        method="conformal",
         suite="libero_spatial",
         seed=0,
         conformal=ConformalConfig(target_alpha=0.1, n_action_samples=4),
