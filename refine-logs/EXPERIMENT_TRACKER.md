@@ -38,4 +38,18 @@ Code: `sim/libero_active/`
 6. `num2words` is an undeclared SmolVLM-processor dependency
 7. eval metrics live under `eval_info.json["overall"]`, not `["aggregated"]`
 
+## PS.5 single-cell runs
+
+| Method | Suite | Seed | Curve (n_demos -> pc_success) | Note |
+|--------|-------|------|-------------------------------|------|
+| random | libero_spatial | 0 | 5 -> 9.0%, 10 -> 22.5%, 15 -> 33.0%, 20 -> 35.0% | First real active-loop curve; monotonic, diminishing returns by N=20 |
+
+## Outstanding blockers for the conformal/entropy methods
+
+- `policy_runner.episode_signals` hits a SmolVLA forward-shape mismatch when
+  passed batches built manually outside LeRobot's training collate_fn. Smoke
+  & PS.5 use `method=random` to validate the loop architecture without that
+  integration. Fix scope: rebuild candidate-episode batches through LeRobot's
+  training DataLoader / collate so shapes match exactly.
+
 ## Real-Piper transfer (Stage B) — not started
