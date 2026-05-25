@@ -44,12 +44,21 @@ Code: `sim/libero_active/`
 |--------|-------|------|-------------------------------|------|
 | random | libero_spatial | 0 | 5 -> 9.0%, 10 -> 22.5%, 15 -> 33.0%, 20 -> 35.0% | First real active-loop curve; monotonic, diminishing returns by N=20 |
 
-## Outstanding blockers for the conformal/entropy methods
+## Outstanding blockers for the conformal/entropy methods — RESOLVED
 
-- `policy_runner.episode_signals` hits a SmolVLA forward-shape mismatch when
-  passed batches built manually outside LeRobot's training collate_fn. Smoke
-  & PS.5 use `method=random` to validate the loop architecture without that
-  integration. Fix scope: rebuild candidate-episode batches through LeRobot's
-  training DataLoader / collate so shapes match exactly.
+The SmolVLA 227-vs-178 attention-mask mismatch was rooted in two missing pieces
+of LeRobot's training pipeline: `delta_timestamps` (so the dataset returns
+50-step action chunks instead of single actions) and `lerobot_collate_fn` (so
+language tokens are padded to the model's max length). Both are now wired into
+`policy_runner.episode_signals`. Standalone verification against the PS.4
+checkpoint produced reasonable per-episode losses (0.02-0.04). The conformal
+smoke (c42bff21) passed `[smoke] active loop OK (rounds=2)`.
+
+## In-flight runs
+
+- GPU 0: PS.5 conformal cell (method=conformal, libero_spatial, seed 0,
+  max_demos=20, 4 rounds x 4000 steps). First real conformal data point.
+- GPU 1: PS.5 random cell (method=random, libero_spatial, seed 1,
+  max_demos=20). Second seed of the random baseline.
 
 ## Real-Piper transfer (Stage B) — not started
