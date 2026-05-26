@@ -43,6 +43,8 @@ Code: `sim/libero_active/`
 | Method | Suite | Seed | Curve (n_demos -> pc_success) | Note |
 |--------|-------|------|-------------------------------|------|
 | random | libero_spatial | 0 | 5 -> 9.0%, 10 -> 22.5%, 15 -> 33.0%, 20 -> 35.0% | First real active-loop curve; monotonic, diminishing returns by N=20 |
+| conformal | libero_spatial | 0 | 5 -> 9.0%, 10 -> 21.0%, 15 -> 24.5%, 20 -> 28.0% | First real conformal curve; monotonic but flatter than random seed 0 — single seed, not conclusive |
+| random | libero_spatial | 1 | 5 -> 10.5%, 10 -> 31.0%, 15 -> 32.5%, 20 -> NaN | N=20 OOM'd (co-tenant process consumed 45 GiB on the visible GPU); re-launching alone |
 
 ## Outstanding blockers for the conformal/entropy methods — RESOLVED
 
@@ -56,9 +58,8 @@ smoke (c42bff21) passed `[smoke] active loop OK (rounds=2)`.
 
 ## In-flight runs
 
-- GPU 0: PS.5 conformal cell (method=conformal, libero_spatial, seed 0,
-  max_demos=20, 4 rounds x 4000 steps). First real conformal data point.
-- GPU 1: PS.5 random cell (method=random, libero_spatial, seed 1,
-  max_demos=20). Second seed of the random baseline.
+- GPU 0: PS.5 random seed 1 re-launch (the previous attempt lost the N=20 round
+  to an OOM when the conformal run on a sibling GPU spilled memory; both GPUs
+  are now idle so this is solo).
 
 ## Real-Piper transfer (Stage B) — not started
