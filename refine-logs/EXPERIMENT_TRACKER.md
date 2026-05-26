@@ -44,7 +44,7 @@ Code: `sim/libero_active/`
 |--------|-------|------|-------------------------------|------|
 | random | libero_spatial | 0 | 5 -> 9.0%, 10 -> 22.5%, 15 -> 33.0%, 20 -> 35.0% | First real active-loop curve; monotonic, diminishing returns by N=20 |
 | conformal | libero_spatial | 0 | 5 -> 9.0%, 10 -> 21.0%, 15 -> 24.5%, 20 -> 28.0% | First real conformal curve; monotonic but flatter than random seed 0 — single seed, not conclusive |
-| random | libero_spatial | 1 | 5 -> 10.5%, 10 -> 31.0%, 15 -> 32.5%, 20 -> NaN | N=20 OOM'd (co-tenant process consumed 45 GiB on the visible GPU); re-launching alone |
+| random | libero_spatial | 1 | 5 -> 10.5%, 10 -> 31.0%, 15 -> 32.5%, 20 -> 40.5% | First attempt OOM'd at N=20 (GPU co-tenant); solo re-run completed cleanly. Second seed of the random baseline. |
 
 ## Outstanding blockers for the conformal/entropy methods — RESOLVED
 
@@ -58,8 +58,21 @@ smoke (c42bff21) passed `[smoke] active loop OK (rounds=2)`.
 
 ## In-flight runs
 
-- GPU 0: PS.5 random seed 1 re-launch (the previous attempt lost the N=20 round
-  to an OOM when the conformal run on a sibling GPU spilled memory; both GPUs
-  are now idle so this is solo).
+- None of ours. Both GPUs currently occupied by an unrelated user
+  (HMDB51 ConvGRU training). Next launches (conformal seed 1, then entropy)
+  are queued until the GPUs free up.
+
+## Method comparison so far (libero_spatial, max_demos=20)
+
+| N  | random s0 | random s1 | conformal s0 |
+|----|-----------|-----------|--------------|
+| 5  | 9.0%      | 10.5%     | 9.0%         |
+| 10 | 22.5%     | 31.0%     | 21.0%        |
+| 15 | 33.0%     | 32.5%     | 24.5%        |
+| 20 | 35.0%     | 40.5%     | 28.0%        |
+
+Random (2 seeds, mean@N=20 ≈ 37.8%) currently beats conformal seed 0 (28.0%).
+Single conformal seed is not conclusive — need ≥2 seeds before claiming
+direction. Worth a sanity check of the conformal scoring before scaling up.
 
 ## Real-Piper transfer (Stage B) — not started
