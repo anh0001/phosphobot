@@ -45,6 +45,8 @@ Code: `sim/libero_active/`
 | random | libero_spatial | 0 | 5 -> 9.0%, 10 -> 22.5%, 15 -> 33.0%, 20 -> 35.0% | First real active-loop curve; monotonic, diminishing returns by N=20 |
 | conformal | libero_spatial | 0 | 5 -> 9.0%, 10 -> 21.0%, 15 -> 24.5%, 20 -> 28.0% | First real conformal curve; monotonic but flatter than random seed 0 — single seed, not conclusive |
 | random | libero_spatial | 1 | 5 -> 10.5%, 10 -> 31.0%, 15 -> 32.5%, 20 -> 40.5% | First attempt OOM'd at N=20 (GPU co-tenant); solo re-run completed cleanly. Second seed of the random baseline. |
+| conformal | libero_spatial | 1 | 5 -> 10.5%, 10 -> 16.0%, 15 -> 18.5%, 20 -> 25.0% | Second conformal seed; **flatter than seed 0 and below random at every N>=10**. |
+| entropy | libero_spatial | 0 | 5 -> 9.0%, 10 -> 15.5%, 15 -> 25.5%, 20 -> 29.0% | First entropy curve; mid-pack, beats conformal at N=15/20, still trails random. |
 
 ## Outstanding blockers for the conformal/entropy methods — RESOLVED
 
@@ -58,21 +60,72 @@ smoke (c42bff21) passed `[smoke] active loop OK (rounds=2)`.
 
 ## In-flight runs
 
-- None of ours. Both GPUs currently occupied by an unrelated user
-  (HMDB51 ConvGRU training). Next launches (conformal seed 1, then entropy)
-  are queued until the GPUs free up.
+- None.
 
-## Method comparison so far (libero_spatial, max_demos=20)
+## Method comparison (libero_spatial, max_demos=20)
 
-| N  | random s0 | random s1 | conformal s0 |
-|----|-----------|-----------|--------------|
-| 5  | 9.0%      | 10.5%     | 9.0%         |
-| 10 | 22.5%     | 31.0%     | 21.0%        |
-| 15 | 33.0%     | 32.5%     | 24.5%        |
-| 20 | 35.0%     | 40.5%     | 28.0%        |
+| N  | random s0 | random s1 | conformal s0 | conformal s1 | entropy s0 |
+|----|-----------|-----------|--------------|--------------|------------|
+| 5  | 9.0%      | 10.5%     | 9.0%         | 10.5%        | 9.0%       |
+| 10 | 22.5%     | 31.0%     | 21.0%        | 16.0%        | 15.5%      |
+| 15 | 33.0%     | 32.5%     | 24.5%        | 18.5%        | 25.5%      |
+| 20 | 35.0%     | 40.5%     | 28.0%        | 25.0%        | 29.0%      |
 
-Random (2 seeds, mean@N=20 ≈ 37.8%) currently beats conformal seed 0 (28.0%).
-Single conformal seed is not conclusive — need ≥2 seeds before claiming
-direction. Worth a sanity check of the conformal scoring before scaling up.
+Random (mean@N=20 = 37.75%) beats both uncertainty methods (conformal mean
+26.5%, entropy 29.0%) by ~9-12 absolute success points. Same paired eval init
+states across methods (seed = 1000+run_seed) so the gap is not eval noise.
+
+## Conformal-scoring bug (found 2026-05-28)
+
+External code review + offline selection-trace audit (per codex GPT-5.2's
+"invariant check": rank should equal entropy's if conformal score is just
+loss/qhat globally) revealed a real bug at `active_loop.py:77-82`:
+
+```
+elif method.name == "conformal":
+    method.uncertainty.add_calibration(sig.loss_mean)
+    raw = sig.loss_mean
+    scores[idx] = method.uncertainty.normalized(raw) if method.uncertainty.is_calibrated else raw
+```
+
+Three compounding issues:
+1. **Self-referential calibration.** Each candidate's own loss is added to the
+   calibration buffer *before* it is scored. The candidate is normalized against
+   statistics that already include itself.
+2. **Buffer reset every round.** `ConformalQuery.reset_round` clears `_calib`.
+   With `calib_min=20` and `max_candidates_per_round=30`, candidates 0..19 are
+   returned as raw loss (typical 0.02-0.04) while candidates 20..29 are returned
+   as `loss/qhat` (typical 0.5-1.5). The two scales differ by ~20-30x, so the
+   top-5 selection is dominated by whichever candidates happen to be iterated
+   after calibration kicks in.
+3. **Iteration order = sorted episode index.** `rng.choice` is followed by
+   `sorted(picked_idx)`. Combined with (2), conformal is structurally biased
+   toward picking the *highest-indexed candidates in the random subsample*.
+
+Empirical confirmation: seed-0 N=5->10, conformal new picks
+{1394, 1447, 1458, 1493, 1523} vs entropy new picks
+{1394, 1458, 1567, 1574, 1579} — overlap 2/5 despite both methods being driven
+by the same `sig.loss_mean`. Rank invariant is violated.
+
+Implication: the published methods comparison so far is between random vs
+*broken conformal* and entropy vs broken conformal. The conformal cells need
+to be re-run after the bug fix before any direction-claim is defensible.
+
+## Codex critical-read (2026-05-28)
+
+External GPT-5.2 review, given the table above:
+- "Uncertainty-beats-random" is *not* a safe prior for VLA + LoRA + 5..20 demos.
+  Random's main contribution is task/layout coverage; loss-based uncertainty
+  selects outliers/long-trajectory/contact-heavy episodes that don't improve
+  sample efficiency.
+- Conformal calibration provides coverage guarantees for a chosen nonconformity
+  score; it does not make the score useful for acquisition. For a flow-matching
+  action head, teacher-forced loss is a weak acquisition signal; the more
+  defensible signal is action-chunk dispersion, ideally constrained by task
+  coverage or embedding diversity.
+- Bet on the cleanest publishable direction: "naive loss uncertainty is
+  anti-informative in low-demo VLA adaptation; need diversity + calibrated
+  epistemic disagreement". *Not* "conformal once debugged" — fixing the bug
+  will likely make conformal rank-equivalent to entropy.
 
 ## Real-Piper transfer (Stage B) — not started
