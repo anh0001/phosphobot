@@ -1,0 +1,217 @@
+% Tracking deck for the LIBERO active-demo-selection project.
+% Personal progress doc, not a conference talk. Clarity > polish.
+% Compile: latexmk -pdf tracking_deck.tex
+
+\documentclass[aspectratio=169]{beamer}
+
+\usepackage{xcolor}
+\definecolor{primary}{HTML}{1F3A8A}     % deep blue
+\definecolor{accent}{HTML}{D97706}      % amber
+\definecolor{good}{HTML}{059669}        % green
+\definecolor{bad}{HTML}{DC2626}         % red
+\definecolor{muted}{HTML}{6B7280}       % gray
+
+\usetheme{default}
+\usecolortheme{default}
+\setbeamercolor{frametitle}{fg=primary}
+\setbeamercolor{title}{fg=primary}
+\setbeamercolor{structure}{fg=accent}
+\setbeamercolor{itemize item}{fg=primary}
+\setbeamercolor{itemize subitem}{fg=accent}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}{%
+  \hfill\textcolor{muted}{\insertframenumber\,/\,\inserttotalframenumber}\hspace{2mm}\vspace{1mm}%
+}
+
+\usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,backgrounds}
+\usepackage{array}
+
+\newcommand{\good}[1]{\textcolor{good}{#1}}
+\newcommand{\bad}[1]{\textcolor{bad}{#1}}
+\newcommand{\muted}[1]{\textcolor{muted}{#1}}
+
+\title{Active Demo Selection for VLA Fine-Tuning}
+\subtitle{Project tracking deck \textemdash{} LIBERO/SmolVLA pipeline}
+\author{anh0001 \quad\muted{\textbar}\quad branch \texttt{research/conformal-active-demo-budgeting}}
+\date{updated 2026-05-28}
+
+\begin{document}
+
+% --------------------------------------------------------------------
+\begin{frame}
+\titlepage
+\centering
+\textbf{Question}: which 20 demos should I label so a fine-tuned\\
+SmolVLA reaches the highest LIBERO-Spatial success rate?
+\end{frame}
+
+% --------------------------------------------------------------------
+\begin{frame}{Pipeline at a glance}
+\centering
+\begin{tikzpicture}[
+  font=\footnotesize,
+  >={Stealth[length=2mm]},
+  node distance=4mm and 6mm,
+  box/.style={draw, rounded corners=2pt, align=center, inner sep=4pt, minimum height=7mm, fill=primary!8},
+  io/.style={draw, rounded corners=2pt, align=center, inner sep=4pt, minimum height=7mm, fill=accent!15, font=\footnotesize\bfseries},
+]
+% Inputs
+\node[io] (pool) {Candidate pool\\$\approx$432 LIBERO-Spatial demos};
+\node[io, below=of pool] (backbone) {SmolVLA-450M + LoRA};
+\node[io, below=of backbone] (budget) {Budget schedule\\$N=5\rightarrow 10\rightarrow 15\rightarrow 20$};
+
+% Loop boxes
+\node[box, right=14mm of pool] (train) {1. LoRA fine-tune\\(4000 steps)};
+\node[box, below=of train] (eval) {2. Eval 20 episodes\\$\to$ \textbf{pc\_success}};
+\node[box, below=of eval] (score) {3. Score 30 random\\candidate episodes};
+\node[box, below=of score] (add) {4. Add top-5\\(by query method)};
+
+% Output
+\node[io, right=14mm of train, fill=good!18] (curve) {Output:\\sample-efficiency curve\\$N \mapsto $ success\,\%};
+
+\draw[->] (pool.east) -- (train.west);
+\draw[->] (backbone.east) -- (train.west);
+\draw[->] (budget.east) -- (train.west);
+
+\draw[->] (train) -- (eval);
+\draw[->] (eval) -- (score);
+\draw[->] (score) -- (add);
+\draw[->] (add.east) .. controls +(2,0) and +(2,0) .. node[right, font=\scriptsize]{loop $N{+}5$} (train.east);
+
+\draw[->] (eval.east) -- ($(curve.west)+(0,-0.4)$);
+\draw[->] (eval.east) -- ($(curve.west)+(0,0.0)$) node[midway, above, font=\scriptsize]{record (N, succ)};
+\end{tikzpicture}
+\vfill
+\muted{\footnotesize 4 rounds per cell. One cell = (method, suite, seed). $\approx$5\,h wall on one RTX\,6000.}
+\end{frame}
+
+% --------------------------------------------------------------------
+\begin{frame}{Query method 1: \texttt{random}}
+\begin{itemize}
+  \item \textbf{Input signal}: none.
+  \item \textbf{Scoring rule}: score $=$ \texttt{rng.random()} per candidate.
+  \item \textbf{Selection rule}: top-5 by score (i.e.\ uniform pick of 5 from 30).
+  \item \textbf{Expected failure mode}: bad demos by chance; high seed variance.
+  \item \textbf{Why it matters}: the de-facto baseline; if a learner doesn't beat this on a well-pretrained VLA, the acquisition signal is anti-informative.
+\end{itemize}
+\end{frame}
+
+% --------------------------------------------------------------------
+\begin{frame}{Query method 2: \texttt{conformal} \quad\bad{[BROKEN]}}
+\begin{itemize}
+  \item \textbf{Input signal}: teacher-forced policy loss per candidate episode (12 stride-8 frames, 1 forward pass each).
+  \item \textbf{Scoring rule (as implemented)}: per candidate,
+    \begin{enumerate}
+      \item add its own loss to the calibration buffer,
+      \item return \texttt{loss/qhat} if buffer $\geq 20$, else raw \texttt{loss}.
+    \end{enumerate}
+  \item \textbf{Selection rule}: top-5 by score.
+  \item \bad{\textbf{Failure mode (confirmed)}}: self-referential calibration $+$ per-candidate threshold $+$ sorted candidate order $\Rightarrow$ structurally picks \emph{highest-indexed} episodes in the random subsample, not the most uncertain.
+  \item See ``Conformal bug'' slide for the full diagnosis.
+\end{itemize}
+\end{frame}
+
+% --------------------------------------------------------------------
+\begin{frame}{Query method 3: \texttt{entropy}}
+\begin{itemize}
+  \item \textbf{Input signal}: same teacher-forced loss as conformal.
+  \item \textbf{Scoring rule}: score $=$ mean loss over sampled frames.
+  \item \textbf{Selection rule}: top-5 by score.
+  \item \textbf{Expected failure mode}: loss is dominated by nuisance (trajectory length, contact noise, gripper switches), not epistemic uncertainty. Picks redundant ``hard'' demos.
+  \item \textbf{Empirical}: trails random by 6-12\,pp at $N{=}20$ (1 seed). Consistent with the nuisance hypothesis.
+\end{itemize}
+\end{frame}
+
+% --------------------------------------------------------------------
+\begin{frame}{Query method 4: \texttt{dispersion}}
+\begin{itemize}
+  \item \textbf{Input signal}: $K{=}4$ samples from SmolVLA's flow-matching action head per frame; mean per-(step, dim) std across samples.
+  \item \textbf{Scoring rule}: score $=$ mean dispersion over sampled frames.
+  \item \textbf{Selection rule}: top-5 by score.
+  \item \textbf{Why this should help}: measures self-disagreement in \emph{action space}, not next-token likelihood. On a saved checkpoint: dispersion stayed in $[0.037, 0.043]$ while teacher-forced loss spanned $[0.04, 8.69]$ across 4 episodes \textemdash{} loss is mostly nuisance.
+  \item \textbf{Failure mode (also confirmed empirically)}: regresses at $N{=}15$ (29\,$\to$\,22\,\%). Without coverage, dispersion overselects from one visually-busy task.
+\end{itemize}
+\end{frame}
+
+% --------------------------------------------------------------------
+\begin{frame}{Query method 5: \texttt{dispersion\_quota}}
+\begin{itemize}
+  \item \textbf{Input signal}: same as \texttt{dispersion}.
+  \item \textbf{Scoring rule}: same as \texttt{dispersion}.
+  \item \textbf{Selection rule}: greedy round-robin under per-task coverage. For each pick, choose the candidate from the task with the smallest (budget $+$ already-picked) count; break ties by score.
+  \item \textbf{Why this should help}: forces task diversity; prevents the redundant-task collapse that pure dispersion shows.
+  \item \textbf{Status (1 seed, 3 rounds)}: holds 29\,$\to$\,31\,\% at $N{=}15$ where pure dispersion drops to 22\,\%; within $\sim$2\,pp of random at $N{=}15$.
+\end{itemize}
+\end{frame}
+
+% --------------------------------------------------------------------
+\begin{frame}{Current results: libero\_spatial, max\_demos $= 20$}
+\centering
+\begin{tabular}{l|cc|cc|c|cc}
+\toprule
+$N$ & rand s0 & rand s1 & \muted{conf s0} & \muted{conf s1} & ent s0 & disp s0 & disp+q s0 \\
+\midrule
+5  & 9.0  & 10.5 & \muted{9.0}  & \muted{10.5} & 9.0  & 9.0          & 9.0 \\
+10 & 22.5 & 31.0 & \muted{21.0} & \muted{16.0} & 15.5 & \good{29.0}  & \good{29.0} \\
+15 & 33.0 & 32.5 & \muted{24.5} & \muted{18.5} & 25.5 & \bad{22.0}   & \good{31.0} \\
+20 & 35.0 & 40.5 & \muted{28.0} & \muted{25.0} & 29.0 & \bad{OOM}    & \bad{OOM} \\
+\bottomrule
+\end{tabular}
+
+\vspace{1.5em}
+\begin{itemize}
+  \item Eval is \emph{paired} across methods (env seed $= 1000 + $ run seed). Gaps are not eval noise.
+  \item \muted{Grayed conformal columns}: implementation is broken; kept for reproducibility, not direction-claim.
+  \item \bad{OOM}: GPU co-tenant returned mid-N$=$20-train; partial curve only.
+\end{itemize}
+\end{frame}
+
+% --------------------------------------------------------------------
+\begin{frame}{Conformal bug \textemdash{} how scoring went wrong}
+\textbf{Codex's invariant check}:\\
+if conformal score $=$ \texttt{loss/qhat} with a \emph{global} \texttt{qhat}, ranking $=$ entropy ranking.
+\vspace{0.5em}
+
+\textbf{Empirical}: seed-0 $N{=}5{\to}10$ new picks
+\begin{itemize}
+  \item conformal: $\{1394, 1447, 1458, 1493, 1523\}$
+  \item entropy:\hspace{1.05em} $\{1394, 1458, 1567, 1574, 1579\}$
+\end{itemize}
+Overlap $2/5$. \bad{Invariant violated.}
+\vspace{0.5em}
+
+\textbf{Smoking gun in \texttt{active\_loop.py:77\textendash 82}}:
+\begin{itemize}
+  \item Each candidate's own loss is added to the buffer \emph{before} it is scored (self-reference).
+  \item Buffer resets every round; \texttt{calib\_min}$=20$, \texttt{max\_candidates}$=30$.
+  \item Candidates $0{-}19$ return raw loss ($\sim$0.03); $20{-}29$ return \texttt{loss/qhat} ($\sim$1.0). 20\,$\times$ scale gap.
+  \item Top-5 always lands in the last $\sim$10 iterated candidates $=$ highest-indexed in the sorted subsample.
+\end{itemize}
+\textbf{Implication}: conformal in this top-$k$ pool setting reduces to a monotone transform; ranking $\equiv$ entropy. The branding adds no acquisition signal.
+\end{frame}
+
+% --------------------------------------------------------------------
+\begin{frame}{Status \& next decision}
+\textbf{Done}
+\begin{itemize}
+  \item Phase S.0\textendash S.5 brought up. PS.4 single-task gate passed (80\,\% on libero\_spatial task 0).
+  \item 5 methods $\times$ 1\textendash 2 seeds each, full curves for 5 cells; 2 cells partial (N\,=\,5/10/15) due to OOM.
+  \item Conformal bug found and committed in the tracker (\texttt{05549edf}).
+\end{itemize}
+
+\textbf{Blocked}
+\begin{itemize}
+  \item Both GPUs occupied by an unrelated user (HMDB51 ConvGRU, RTX\,6000 $\times$2).
+  \item Pending: \texttt{dispersion}$/$\texttt{dispersion\_quota} re-runs to fill the $N{=}20$ point, then seed-1 of each method.
+\end{itemize}
+
+\textbf{Next decision after the ablation completes}
+\begin{itemize}
+  \item If \texttt{dispersion\_quota} cleanly beats random at $N{=}15{-}20$ across seeds: pivot the paper to ``diversity-aware action-space uncertainty,'' bury conformal as a negative-result diagnostic.
+  \item If quota only matches random: the publishable story is the \emph{acquisition-signal pathology} itself (loss is anti-informative for low-demo VLA), plus the corrected recipe.
+\end{itemize}
+\end{frame}
+
+\end{document}
