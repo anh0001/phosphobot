@@ -137,6 +137,25 @@
 \end{frame}
 
 % --------------------------------------------------------------------
+\begin{frame}{Pipeline glossary (what those words mean)}
+\footnotesize
+\begin{description}
+  \setlength{\itemsep}{0.35em}
+  \item[Episode] One complete recorded demonstration of a single task attempt \textemdash{} a sequence of (camera images, robot state, action) tuples saved by a human teleop session. LIBERO-Spatial ships $\sim$430 such episodes across 10 tasks (``put X on Y'' variants).
+
+  \item[Candidate pool] All episodes \emph{not yet} in the current training budget. Each round, we pick from this pool.
+
+  \item[Budget schedule \boldmath$N{=}5\to10\to15\to20$] We don't train once at $N{=}20$. We train \emph{four times}: first on 5 demos, then 10, then 15, then 20, adding 5 demos per round. The result is a curve $N \mapsto $ success\,\%. This lets us see \emph{when} the active method beats random, not just whether at one $N$.
+
+  \item[Why subsample 30 random candidates?] Scoring all $\sim$430 candidates needs $\sim$430 SmolVLA forward passes per round (or $4\times$ that for dispersion). Subsampling 30 keeps cost bounded; randomness rotates coverage across rounds.
+
+  \item[Why add top-5 each round?] \texttt{demos\_per\_round=5}. Smaller increments would be invisible eval noise; larger increments would skip past the budgets where active selection matters.
+
+  \item[\texttt{pc\_success}] \emph{Percent-success} on the held-out eval suite: fraction of 20 LIBERO rollouts the trained policy completes, $\times 100$. Range $[0, 100]$. This is the number we plot.
+\end{description}
+\end{frame}
+
+% --------------------------------------------------------------------
 \begin{frame}{Query method 1: \texttt{random}}
 \begin{itemize}
   \item \textbf{Input signal}: none.
