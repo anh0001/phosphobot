@@ -47,6 +47,8 @@ Code: `sim/libero_active/`
 | random | libero_spatial | 1 | 5 -> 10.5%, 10 -> 31.0%, 15 -> 32.5%, 20 -> 40.5% | First attempt OOM'd at N=20 (GPU co-tenant); solo re-run completed cleanly. Second seed of the random baseline. |
 | conformal | libero_spatial | 1 | 5 -> 10.5%, 10 -> 16.0%, 15 -> 18.5%, 20 -> 25.0% | Second conformal seed; **flatter than seed 0 and below random at every N>=10**. |
 | entropy | libero_spatial | 0 | 5 -> 9.0%, 10 -> 15.5%, 15 -> 25.5%, 20 -> 29.0% | First entropy curve; mid-pack, beats conformal at N=15/20, still trails random. |
+| dispersion | libero_spatial | 0 | 5 -> 9.0%, 10 -> 29.0%, 15 -> 22.0%, 20 -> NaN | Action-chunk dispersion (K=4 flow samples, std of action). Beats random_s0 at N=10 (29 vs 22.5) but **regresses at N=15** — classic unconstrained-uncertainty failure (picks redundant high-dispersion outliers as budget grows). N=20 OOM'd: GPU co-tenant returned mid-round. |
+| dispersion_quota | libero_spatial | 0 | 5 -> 9.0%, 10 -> 29.0%, 15 -> 31.0%, 20 -> NaN | Same dispersion score + per-task quota selector (greedy round-robin under coverage). Same N=10 as pure dispersion (29.0); at N=15 the quota constraint prevents the regression that pure dispersion shows (31.0 vs 22.0). Approaches random_s0 (33.0) at N=15. N=20 OOM'd from same co-tenant. |
 
 ## Outstanding blockers for the conformal/entropy methods — RESOLVED
 
@@ -60,16 +62,18 @@ smoke (c42bff21) passed `[smoke] active loop OK (rounds=2)`.
 
 ## In-flight runs
 
-- None.
+- None. Both GPUs occupied by an unrelated user (HMDB51 ConvGRU training, ~47
+  min in as of the last OOM). Re-runs of dispersion / dispersion_quota at N=20
+  + seed-1 cells of each are blocked until the GPUs free up.
 
 ## Method comparison (libero_spatial, max_demos=20)
 
-| N  | random s0 | random s1 | conformal s0 | conformal s1 | entropy s0 |
-|----|-----------|-----------|--------------|--------------|------------|
-| 5  | 9.0%      | 10.5%     | 9.0%         | 10.5%        | 9.0%       |
-| 10 | 22.5%     | 31.0%     | 21.0%        | 16.0%        | 15.5%      |
-| 15 | 33.0%     | 32.5%     | 24.5%        | 18.5%        | 25.5%      |
-| 20 | 35.0%     | 40.5%     | 28.0%        | 25.0%        | 29.0%      |
+| N  | random s0 | random s1 | conformal s0 | conformal s1 | entropy s0 | dispersion s0 | dispersion_quota s0 |
+|----|-----------|-----------|--------------|--------------|------------|---------------|---------------------|
+| 5  | 9.0%      | 10.5%     | 9.0%         | 10.5%        | 9.0%       | 9.0%          | 9.0%                |
+| 10 | 22.5%     | 31.0%     | 21.0%        | 16.0%        | 15.5%      | 29.0%         | 29.0%               |
+| 15 | 33.0%     | 32.5%     | 24.5%        | 18.5%        | 25.5%      | 22.0% ⬇️       | 31.0%               |
+| 20 | 35.0%     | 40.5%     | 28.0%        | 25.0%        | 29.0%      | OOM           | OOM                 |
 
 Random (mean@N=20 = 37.75%) beats both uncertainty methods (conformal mean
 26.5%, entropy 29.0%) by ~9-12 absolute success points. Same paired eval init
@@ -110,6 +114,26 @@ by the same `sig.loss_mean`. Rank invariant is violated.
 Implication: the published methods comparison so far is between random vs
 *broken conformal* and entropy vs broken conformal. The conformal cells need
 to be re-run after the bug fix before any direction-claim is defensible.
+
+## Preliminary read after the dispersion ablation (3-round data only)
+
+Three observations from seed 0 at N=10/15 (N=20 OOM'd):
+
+1. **Pure dispersion beats both conformal seeds and random_s0 at N=10** (29.0 vs
+   16.0-22.5). The action-space signal looks materially better than teacher-forced
+   loss when the budget is small.
+
+2. **Pure dispersion regresses at N=15** (29.0 -> 22.0). Coverage matters at
+   larger budget — without a coverage constraint, dispersion overselects from
+   one or two visually-busy tasks, redundantly. This is the textbook
+   unconstrained-uncertainty failure mode that codex flagged.
+
+3. **Per-task quota fixes the regression** (29.0 at N=10, 31.0 at N=15) and gets
+   within ~2 points of random_s0 at N=15 (31.0 vs 33.0). Quota alone is enough
+   to recover the lost ground from pure dispersion.
+
+The "diversity-aware uncertainty" hypothesis is consistent with the data so far.
+Next decision points need the N=20 numbers + seed-1 runs to confirm.
 
 ## Codex critical-read (2026-05-28)
 
