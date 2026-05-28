@@ -59,6 +59,8 @@ def score_candidate_episodes(
 
     from .policy_runner import episode_signals  # heavy deps, loaded lazily
 
+    needs_dispersion = method.name in ("dispersion", "dispersion_quota")
+
     scores: dict[int, float] = {}
     for idx in candidates:
         sig = episode_signals(
@@ -66,6 +68,7 @@ def score_candidate_episodes(
             dataset_repo_id=dataset_repo_id,
             episode_index=idx,
             n_action_samples=n_action_samples,
+            compute_dispersion=needs_dispersion,
         )
         if method.name == "knn":
             if not budget_features:
@@ -75,14 +78,58 @@ def score_candidate_episodes(
                 dists = np.linalg.norm(feats - sig.feature[None, :feats.shape[1]], axis=1)
                 scores[idx] = float(np.sort(dists)[: min(5, len(dists))].mean())
         elif method.name == "conformal":
+            # NOTE: this path has a self-referential-calibration anti-pattern (each
+            # candidate's own loss enters the buffer before it is scored). Kept here
+            # for reproducibility of the broken-conformal cells already in the
+            # tracker; the corrected story is in the dispersion / dispersion_quota
+            # methods below. Do NOT use for new results without a fix.
             from .query_methods import ConformalQuery  # narrow runtime cast
             assert isinstance(method, ConformalQuery)
-            method.uncertainty.add_calibration(sig.loss_mean)  # opportunistic calib
+            method.uncertainty.add_calibration(sig.loss_mean)
             raw = sig.loss_mean
             scores[idx] = method.uncertainty.normalized(raw) if method.uncertainty.is_calibrated else raw
+        elif needs_dispersion:
+            scores[idx] = sig.dispersion_mean
         else:  # entropy / human_gated proxy
             scores[idx] = sig.loss_mean
     return scores
+
+
+def select_with_task_quota(
+    scores: dict[int, float],
+    *,
+    task_of: dict[int, int],
+    budget_task_counts: dict[int, int],
+    demos_per_round: int,
+) -> list[int]:
+    """Greedy per-task quota selection.
+
+    At each pick: among unpicked candidates, find the task with the smallest
+    (budget + already-picked-this-round) count; within that task, take the
+    highest-scoring candidate. Ties broken by score.
+
+    This enforces coverage without forbidding repeat picks from any task — the
+    least-covered task simply gets first refusal each round.
+    """
+    from collections import Counter
+
+    picked: list[int] = []
+    picked_counts: Counter[int] = Counter()
+    remaining: dict[int, float] = dict(scores)
+
+    while remaining and len(picked) < demos_per_round:
+        # min by (combined task count, -score) — lower count wins, then higher score
+        best_idx = min(
+            remaining,
+            key=lambda i: (
+                budget_task_counts.get(task_of[i], 0) + picked_counts[task_of[i]],
+                -remaining[i],
+            ),
+        )
+        picked.append(best_idx)
+        picked_counts[task_of[best_idx]] += 1
+        del remaining[best_idx]
+    return picked
 
 
 def run_active_loop(cfg: ExperimentConfig) -> dict:
@@ -145,7 +192,21 @@ def run_active_loop(cfg: ExperimentConfig) -> dict:
             rng=rng,
             budget_features=budget_features,
         )
-        picked = select_episodes(scores, cfg.loop.demos_per_round)
+        if cfg.method == "dispersion_quota":
+            from .suite_episodes import episode_to_task
+            from collections import Counter
+            task_of = episode_to_task(cfg.suite, LIBERO_DATASET)
+            budget_task_counts: dict[int, int] = dict(
+                Counter(task_of[e] for e in pool.budget if e in task_of)
+            )
+            picked = select_with_task_quota(
+                scores,
+                task_of=task_of,
+                budget_task_counts=budget_task_counts,
+                demos_per_round=cfg.loop.demos_per_round,
+            )
+        else:
+            picked = select_episodes(scores, cfg.loop.demos_per_round)
         # Cache the picked episodes' features for next round's kNN scoring.
         if cfg.method == "knn":
             from .policy_runner import episode_signals

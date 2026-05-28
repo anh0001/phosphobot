@@ -9,7 +9,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field, replace
 from typing import Literal
 
-QueryMethodName = Literal["random", "entropy", "knn", "human_gated", "conformal"]
+QueryMethodName = Literal[
+    "random", "entropy", "knn", "human_gated", "conformal",
+    "dispersion", "dispersion_quota",
+]
 
 # LIBERO suites used as the main-results benchmark (PS.6).
 LIBERO_SUITES: tuple[str, ...] = ("libero_spatial", "libero_object")

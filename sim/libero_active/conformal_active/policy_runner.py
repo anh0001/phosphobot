@@ -27,13 +27,21 @@ import torch
 class EpisodeSignals:
     """Per-episode signals consumed by the active loop.
 
-    `loss_mean` is the raw uncertainty score (higher == more informative).
-    `feature` is a cheap embedding for kNN-coverage scoring (we use the mean of
-    the episode's proprioception so no separate vision encoder is needed).
+    `loss_mean` is the teacher-forced loss aggregated over the episode (higher
+    == policy struggled). `dispersion_mean` is the mean self-disagreement of
+    the flow-matching action head across K sampled action chunks at each frame
+    (higher == policy is uncertain in *action* space, not just in next-token
+    likelihood). `feature` is a cheap embedding for kNN-coverage scoring.
+
+    `dispersion_mean` is only populated when `episode_signals` is called with
+    `compute_dispersion=True` — sampling K action chunks costs ~K extra forward
+    passes per frame, so the active loop only pays for it when a dispersion-
+    based query method needs it.
     """
 
     loss_mean: float
     feature: np.ndarray
+    dispersion_mean: float = 0.0
 
 
 @lru_cache(maxsize=2)
@@ -68,16 +76,23 @@ def episode_signals(
     checkpoint_dir,
     dataset_repo_id: str,
     episode_index: int,
-    n_action_samples: int = 1,   # unused in the loss-based flow; kept for API symmetry
+    n_action_samples: int = 1,
     frame_stride: int = 8,
     max_frames: int = 12,
+    compute_dispersion: bool = False,
 ) -> EpisodeSignals:
-    """Compute mean policy loss + a cheap feature embedding for one episode.
+    """Compute mean policy loss (+ optional action-chunk dispersion) for one episode.
 
     Uses LeRobot's own DataLoader + `lerobot_collate_fn` so the batches match the
     exact shapes the policy saw during training (action chunks with action_is_pad,
     language tokens padded to the model's max length). Skipping that collate is
     what produced the SmolVLA 227-vs-178 attention-mask mismatch in v3.
+
+    When `compute_dispersion=True`, additionally sample `n_action_samples` action
+    chunks per frame from SmolVLA's flow-matching head (each call draws fresh noise)
+    and report the mean per-(step, dim) std across samples as the dispersion signal
+    — i.e. self-disagreement in *action* space rather than teacher-forced
+    next-token likelihood.
     """
     from lerobot.datasets.factory import resolve_delta_timestamps
     from lerobot.datasets.lerobot_dataset import LeRobotDataset
@@ -107,6 +122,7 @@ def episode_signals(
 
     losses: list[float] = []
     feat_parts: list[np.ndarray] = []
+    dispersions: list[float] = []
     for batch in loader:
         batch = preprocessor(batch)  # tokenise language, normalise images, move to device
         out = policy.forward(batch)
@@ -114,6 +130,21 @@ def episode_signals(
         losses.append(float(loss.detach().cpu()))
         if "observation.state" in batch and isinstance(batch["observation.state"], torch.Tensor):
             feat_parts.append(batch["observation.state"].detach().cpu().float().numpy().reshape(-1))
+        if compute_dispersion and n_action_samples >= 2:
+            # Sample K action chunks with fresh noise each call. predict_action_chunk
+            # populates an internal queue using the batch's observation; calling it
+            # repeatedly on the same observation is intentional and idempotent.
+            chunks: list[np.ndarray] = []
+            for _ in range(n_action_samples):
+                policy.reset()  # clear queues so each call resamples from scratch
+                a = policy.predict_action_chunk(batch)  # (1, T, A) or (T, A)
+                chunks.append(a.detach().cpu().float().numpy().squeeze(0))
+            stacked = np.stack(chunks)  # (K, T, A)
+            dispersions.append(float(stacked.std(axis=0).mean()))
 
     feature = np.mean(np.stack(feat_parts), axis=0) if feat_parts else np.zeros(1, dtype=np.float32)
-    return EpisodeSignals(loss_mean=float(np.mean(losses)), feature=feature.astype(np.float32))
+    return EpisodeSignals(
+        loss_mean=float(np.mean(losses)),
+        feature=feature.astype(np.float32),
+        dispersion_mean=float(np.mean(dispersions)) if dispersions else 0.0,
+    )

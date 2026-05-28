@@ -152,6 +152,30 @@ class ConformalQuery(QueryMethod):
         self.uncertainty.observe_label(miscovered)
 
 
+class DispersionQuery(QueryMethod):
+    """Action-space self-disagreement. Score = mean per-(step, dim) std across K
+    sampled action chunks at each frame. Avoids the teacher-forced loss pathology
+    by measuring uncertainty in the policy's output distribution directly.
+    """
+
+    name = "dispersion"
+
+    def score(self, ctx: StepContext) -> float:
+        return raw_dispersion(ctx.action_samples)
+
+
+class DispersionQuotaQuery(QueryMethod):
+    """Same score as `DispersionQuery`; the active loop applies a per-task quota
+    at the selection step (round-robin under coverage). This class is a marker
+    for the loop's dispatch — it carries no extra state.
+    """
+
+    name = "dispersion_quota"
+
+    def score(self, ctx: StepContext) -> float:
+        return raw_dispersion(ctx.action_samples)
+
+
 def build_query_method(method: QueryMethodName, *, seed: int,
                        conformal: ConformalConfig) -> QueryMethod:
     """Factory used by the sweep runner."""
@@ -165,4 +189,8 @@ def build_query_method(method: QueryMethodName, *, seed: int,
         return HumanGatedQuery()
     if method == "conformal":
         return ConformalQuery(cfg=conformal)
+    if method == "dispersion":
+        return DispersionQuery()
+    if method == "dispersion_quota":
+        return DispersionQuotaQuery()
     raise ValueError(f"unknown query method: {method}")

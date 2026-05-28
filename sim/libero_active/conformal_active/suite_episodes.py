@@ -82,3 +82,18 @@ def task_episode_indices(
     if not eps:
         raise RuntimeError(f"no episodes for suite '{suite}' task {task_id}")
     return eps
+
+
+def episode_to_task(
+    suite: str, dataset_repo_id: str = LIBERO_DATASET
+) -> dict[int, int]:
+    """Inverse map: episode_index -> task_id (within `suite`). Used by quota selectors."""
+    suite_map = _suite_map_cached(dataset_repo_id)
+    if suite not in suite_map:
+        raise ValueError(f"unknown suite '{suite}'; known: {sorted(suite_map)}")
+    out: dict[int, int] = {}
+    for task_id_str, eps in suite_map[suite].items():
+        tid = int(task_id_str)
+        for e in eps:
+            out[e] = tid
+    return out
