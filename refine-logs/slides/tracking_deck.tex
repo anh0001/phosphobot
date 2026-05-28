@@ -25,7 +25,7 @@
 
 \usepackage{booktabs}
 \usepackage{tikz}
-\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,backgrounds}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,backgrounds,calc}
 \usepackage{array}
 
 \newcommand{\good}[1]{\textcolor{good}{#1}}
@@ -43,8 +43,57 @@
 \begin{frame}
 \titlepage
 \centering
-\textbf{Question}: which 20 demos should I label so a fine-tuned\\
-SmolVLA reaches the highest LIBERO-Spatial success rate?
+\textbf{One-line goal}: collect fewer robot demos, train a better policy.
+\end{frame}
+
+% --------------------------------------------------------------------
+\begin{frame}{What we are trying to solve, in plain terms}
+\textbf{Setting.} A pretrained robot policy (SmolVLA) is great at \emph{many} tasks out of the box, but it still has to be fine-tuned for a \emph{new} task using human-teleoperated demonstrations.
+\vspace{0.4em}
+
+\textbf{The pain.} Each demo is expensive \textemdash{} a person physically teleops the robot through the task. In sim we get demos for free, but the lesson should transfer to real Piper arms where demos cost minutes of human time.
+\vspace{0.4em}
+
+\textbf{The question.}
+\begin{itemize}
+  \item You have a pool of $\sim$430 candidate demos (LIBERO-Spatial, 10 tasks).
+  \item You have budget to train on \textbf{only 20}.
+  \item \textbf{Which 20 should you pick?}
+\end{itemize}
+\vspace{0.3em}
+
+\textbf{The hypothesis.} Pick the demos the policy is \emph{least sure} about $\Rightarrow$ same success rate at fewer demos.
+\vspace{0.3em}
+
+\textbf{The reality check.} If active selection can't beat \emph{random} on a strong pretrained model, the uncertainty signal is wrong \textemdash{} so far random is hard to beat, and that's the story this deck tracks.
+\end{frame}
+
+% --------------------------------------------------------------------
+\begin{frame}{What ``input'' and ``output'' actually mean here}
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\textbf{INPUT}
+\begin{itemize}
+  \item A pretrained policy (SmolVLA-450M)
+  \item A pool of $\sim$430 unlabeled candidate episodes
+  \item A budget schedule: $N=5,10,15,20$
+  \item A query method (the thing we compare)
+\end{itemize}
+\end{column}
+\begin{column}{0.48\textwidth}
+\textbf{OUTPUT}
+\begin{itemize}
+  \item A \emph{sample-efficiency curve}: success rate at each $N$.
+  \item Plus a record of \emph{which} episodes the method picked $\Rightarrow$ diagnostic for \emph{why} it won or lost.
+\end{itemize}
+\end{column}
+\end{columns}
+\vspace{1em}
+
+\textbf{The query method is the only thing that changes between cells.} Same backbone, same training recipe, same eval episodes. So if curves differ, the difference is the picking rule.
+
+\vspace{0.5em}
+\muted{\footnotesize One ``cell'' $=$ one (method, suite, seed). 4 training rounds per cell. $\approx$5\,h wall-clock on one RTX\,6000.}
 \end{frame}
 
 % --------------------------------------------------------------------
