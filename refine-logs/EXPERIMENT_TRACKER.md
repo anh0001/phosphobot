@@ -81,6 +81,37 @@ result on a single seed). But s1 is materially under random at N=10. If the s1
 trajectory holds, the 47.5 % was very likely a single-seed task-coverage fluke.
 Need full seed-1 curves before any direction claim is defensible.
 
+## N=10 robustness stress test (codex-recommended, 2026-05-30)
+
+Fixed-N=10 cells (2 rounds each) for random + dispersion_quota on seeds 2, 3,
+to break the 1-1 quota-vs-random tie. **kubotal+ returned a 4th time and OOM'd
+both quota cells at round 1** (they were co-located on GPU 1; kubotal landed
+there). The random cells were on GPU 0 and survived.
+
+Salvaged random N=10: s2 -> 28.5 %, s3 -> 12.5 %. Quota s2/s3 dead (no paired
+comparison for the new seeds).
+
+Quota-vs-random at N=10 over the seeds we have:
+
+| seed | random | quota | delta |
+|------|--------|-------|-------|
+| 0    | 22.5   | 25.0  | +2.5  |
+| 1    | 31.0   | 21.5  | -9.5  |
+| 2    | 28.5   | dead  | ?     |
+| 3    | 12.5   | dead  | ?     |
+
+Two clean pairs, split and leaning negative. Random's own N=10 swings 12.5->31.0
+across 4 seeds -- seed variance dominates this regime (consistent with codex's
+prior that random is hard to beat for VLA + LoRA + 5..20 demos).
+
+**Blocker is now resourcing, not research.** GPU contention with an unrelated
+user (kubotal+, HMDB51 ConvGRU, 43-46 GiB on both RTX6000s, returns every
+1-2 h) has wiped the decisive N>=10 rounds 4 times. Cannot reliably complete a
+multi-round cell while they hold both cards. Options on the table: (1) add
+checkpoint/resume to the active loop, (2) move runs to a dedicated cloud GPU
+(vast.ai / Modal), (3) coordinate a GPU window with the other user, (4) stop and
+write the methodological-anti-pattern paper on existing evidence.
+
 ## Method comparison (libero_spatial, max_demos=20)
 
 Best per row in **bold**; partial cells (OOM at N=20) shown as the last reached point.
