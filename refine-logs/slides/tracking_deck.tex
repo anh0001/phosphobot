@@ -210,29 +210,34 @@
   \item \textbf{Scoring rule}: same as \texttt{dispersion}.
   \item \textbf{Selection rule}: greedy round-robin under per-task coverage. For each pick, choose the candidate from the task with the smallest (budget $+$ already-picked) count; break ties by score.
   \item \textbf{Why this should help}: forces task diversity; prevents the redundant-task collapse that pure dispersion shows.
-  \item \textbf{Status (1 seed, 3 rounds)}: holds 29\,$\to$\,31\,\% at $N{=}15$ where pure dispersion drops to 22\,\%; within $\sim$2\,pp of random at $N{=}15$.
+  \item \good{\textbf{Seed 0}}: full curve, $N{=}20 \to \mathbf{47.5\,\%}$ \textemdash{} beats every other method by 7\textendash 22\,pp. Looked like the win.
+  \item \bad{\textbf{Seed 1}}: $N{=}10 \to 21.5\,\%$, which is \bad{9.5\,pp \emph{under} random} at the same budget (OOM'd before $N{=}20$).
+  \item \textbf{Current read}: the 47.5\,\% is likely single-seed lucky task coverage, not a robust effect. Headline \bad{not yet defensible}.
 \end{itemize}
 \end{frame}
 
 % --------------------------------------------------------------------
 \begin{frame}{Current results: libero\_spatial, max\_demos $= 20$}
 \centering
-\begin{tabular}{l|cc|cc|c|cc}
+\footnotesize
+\begin{tabular}{l|cc|cc|c|cc|cc}
 \toprule
-$N$ & rand s0 & rand s1 & \muted{conf s0} & \muted{conf s1} & ent s0 & disp s0 & disp+q s0 \\
+$N$ & rand s0 & rand s1 & \muted{conf s0} & \muted{conf s1} & ent s0 & disp s0 & d+q s0 & disp s1 & d+q s1 \\
 \midrule
-5  & 9.0  & 10.5 & \muted{9.0}  & \muted{10.5} & 9.0  & 9.0          & 9.0 \\
-10 & 22.5 & 31.0 & \muted{21.0} & \muted{16.0} & 15.5 & \good{29.0}  & \good{29.0} \\
-15 & 33.0 & 32.5 & \muted{24.5} & \muted{18.5} & 25.5 & \bad{22.0}   & \good{31.0} \\
-20 & 35.0 & 40.5 & \muted{28.0} & \muted{25.0} & 29.0 & \bad{OOM}    & \bad{OOM} \\
+5  & 9.0  & 10.5 & \muted{9.0}  & \muted{10.5} & 9.0  & 9.0          & 9.0          & 10.5 & 10.5 \\
+10 & 22.5 & 31.0 & \muted{21.0} & \muted{16.0} & 15.5 & 29.0         & 25.0         & \bad{16.5} & \bad{21.5} \\
+15 & 33.0 & 32.5 & \muted{24.5} & \muted{18.5} & 25.5 & \bad{25.0}   & 29.5         & \bad{OOM} & \bad{OOM} \\
+20 & 35.0 & 40.5 & \muted{28.0} & \muted{25.0} & 29.0 & \bad{OOM}    & \good{\textbf{47.5}} & \bad{OOM} & \bad{OOM} \\
 \bottomrule
 \end{tabular}
 
-\vspace{1.5em}
+\vspace{1.0em}
+\footnotesize
 \begin{itemize}
   \item Eval is \emph{paired} across methods (env seed $= 1000 + $ run seed). Gaps are not eval noise.
-  \item \muted{Grayed conformal columns}: implementation is broken; kept for reproducibility, not direction-claim.
-  \item \bad{OOM}: GPU co-tenant returned mid-N$=$20-train; partial curve only.
+  \item \good{d+q s0 $=47.5$ at $N{=}20$} was the candidate win\textemdash{} but \bad{d+q s1 is under random at $N{=}10$ (21.5 vs 31.0)}. One seed up, one seed down.
+  \item \muted{Grayed conformal columns}: implementation broken; kept for reproducibility only.
+  \item \bad{OOM}: GPU co-tenant returned mid-train; partial curve only.
 \end{itemize}
 \end{frame}
 
@@ -261,25 +266,54 @@ Overlap $2/5$. \bad{Invariant violated.}
 \end{frame}
 
 % --------------------------------------------------------------------
-\begin{frame}{Status \& next decision}
+\begin{frame}{Status}
 \textbf{Done}
 \begin{itemize}
-  \item Phase S.0\textendash S.5 brought up. PS.4 single-task gate passed (80\,\% on libero\_spatial task 0).
-  \item 5 methods $\times$ 1\textendash 2 seeds each, full curves for 5 cells; 2 cells partial (N\,=\,5/10/15) due to OOM.
-  \item Conformal bug found and committed in the tracker (\texttt{05549edf}).
+  \item PS.4 single-task gate passed (80\,\% on libero\_spatial task 0).
+  \item 5 methods on libero\_spatial; conformal bug found (rank-invariant violated).
+  \item Pure \texttt{dispersion} regresses at $N{=}15$ \good{reproducibly} (both seeds, both runs).
+  \item \texttt{dispersion\_quota} s0 hit 47.5\,\% at $N{=}20$, but s1 is under random at $N{=}10$.
 \end{itemize}
 
-\textbf{Blocked}
+\textbf{Open question}
 \begin{itemize}
-  \item Both GPUs occupied by an unrelated user (HMDB51 ConvGRU, RTX\,6000 $\times$2).
-  \item Pending: \texttt{dispersion}$/$\texttt{dispersion\_quota} re-runs to fill the $N{=}20$ point, then seed-1 of each method.
+  \item Is \texttt{dispersion\_quota} a \emph{robust} low-budget learner, or was 47.5\,\% a one-seed fluke?
 \end{itemize}
 
-\textbf{Next decision after the ablation completes}
+\textbf{Recurring blocker}
 \begin{itemize}
-  \item If \texttt{dispersion\_quota} cleanly beats random at $N{=}15{-}20$ across seeds: pivot the paper to ``diversity-aware action-space uncertainty,'' bury conformal as a negative-result diagnostic.
-  \item If quota only matches random: the publishable story is the \emph{acquisition-signal pathology} itself (loss is anti-informative for low-demo VLA), plus the corrected recipe.
+  \item A co-tenant (HMDB51 ConvGRU) keeps grabbing both RTX\,6000s mid-run and OOM-killing the $N{=}15$\textendash $20$ rounds. 3 cells lost this way so far.
 \end{itemize}
+\end{frame}
+
+% --------------------------------------------------------------------
+\begin{frame}{Next experiment (codex-recommended): cheap N=10 stress test}
+\textbf{Plan}: skip full curves. Run \texttt{random} and \texttt{dispersion\_quota} at \emph{fixed} $N{=}10$ (2 rounds, $\sim$2.5\,h/cell) on \textbf{two new seeds} (s2, s3), paired demos + paired eval. Pure \texttt{dispersion} dropped \textemdash{} already failed the robustness test.
+
+\vspace{0.6em}
+\textbf{Decision rule} (set before looking):
+\begin{itemize}
+  \item quota \bad{loses} to random on both s2, s3 $\Rightarrow$ drop the method-win claim.
+  \item quota \good{ties/wins} on both $\Rightarrow$ s1 was the outlier; run full $N{=}20$ curves for quota only.
+  \item \textbf{split} $\Rightarrow$ no method win; pivot to the methodological paper.
+\end{itemize}
+
+\vspace{0.6em}
+\textbf{Caveat}: $N{=}10$ tests \emph{robustness}, not the $N{=}20$ headline (s0 was mediocre early, spiked late \textemdash{} a possible coverage-threshold effect $N{=}10$ can't rule out).
+\end{frame}
+
+% --------------------------------------------------------------------
+\begin{frame}{The honest paper, if the method win doesn't hold}
+The fallback is \emph{not} a failed project \textemdash{} it is a sharper, more defensible claim:
+
+\vspace{0.6em}
+\begin{quote}
+\small
+For low-demo VLA fine-tuning, acquisition signals that look principled under supervised active learning become \emph{self-referential} (conformal) or \emph{anti-informative} (teacher-forced loss, action dispersion). Under paired demos and paired eval, they fail to robustly beat random; per-task coverage gives single-seed gains that don't generalize. The contribution is a \emph{diagnostic account of why fixed-budget pool AL for VLAs is brittle}, not a new selector.
+\end{quote}
+
+\vspace{0.4em}
+\textbf{Minimum artifact}: (1) conformal self-reference bug $+$ rank invariant; (2) reproducible $N{=}15$ regression of pure dispersion; (3) random-vs-quota table over $\geq$2 seeds, \emph{labelled as robustness evidence}, not a win.
 \end{frame}
 
 \end{document}
