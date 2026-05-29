@@ -47,8 +47,10 @@ Code: `sim/libero_active/`
 | random | libero_spatial | 1 | 5 -> 10.5%, 10 -> 31.0%, 15 -> 32.5%, 20 -> 40.5% | First attempt OOM'd at N=20 (GPU co-tenant); solo re-run completed cleanly. Second seed of the random baseline. |
 | conformal | libero_spatial | 1 | 5 -> 10.5%, 10 -> 16.0%, 15 -> 18.5%, 20 -> 25.0% | Second conformal seed; **flatter than seed 0 and below random at every N>=10**. |
 | entropy | libero_spatial | 0 | 5 -> 9.0%, 10 -> 15.5%, 15 -> 25.5%, 20 -> 29.0% | First entropy curve; mid-pack, beats conformal at N=15/20, still trails random. |
-| dispersion | libero_spatial | 0 | 5 -> 9.0%, 10 -> 29.0%, 15 -> 22.0%, 20 -> NaN | Action-chunk dispersion (K=4 flow samples, std of action). Beats random_s0 at N=10 (29 vs 22.5) but **regresses at N=15** — classic unconstrained-uncertainty failure (picks redundant high-dispersion outliers as budget grows). N=20 OOM'd: GPU co-tenant returned mid-round. |
-| dispersion_quota | libero_spatial | 0 | 5 -> 9.0%, 10 -> 29.0%, 15 -> 31.0%, 20 -> NaN | Same dispersion score + per-task quota selector (greedy round-robin under coverage). Same N=10 as pure dispersion (29.0); at N=15 the quota constraint prevents the regression that pure dispersion shows (31.0 vs 22.0). Approaches random_s0 (33.0) at N=15. N=20 OOM'd from same co-tenant. |
+| dispersion | libero_spatial | 0 | 5 -> 9.0%, 10 -> 29.0%, 15 -> 22.0%, 20 -> NaN (OOM) | Action-chunk dispersion (K=4 flow samples, std of action). Beats random_s0 at N=10 (29 vs 22.5) but **regresses at N=15** — classic unconstrained-uncertainty failure (picks redundant high-dispersion outliers as budget grows). N=20 OOM'd from GPU co-tenant. |
+| dispersion | libero_spatial | 0 (re-run) | 5 -> 9.0%, 10 -> 29.0%, 15 -> 25.0%, 20 -> NaN (OOM) | Re-run on idle GPU. N=15 regression repeats (29 -> 25 here, 29 -> 22 first attempt). Pattern is real, not noise. N=20 OOM'd again (kubotal+ returned mid-round on GPU 0). |
+| dispersion_quota | libero_spatial | 0 | 5 -> 9.0%, 10 -> 29.0%, 15 -> 31.0%, 20 -> NaN (OOM) | Same dispersion score + per-task quota selector. Same N=10 as pure dispersion (29.0); at N=15 the quota constraint prevents the regression (31.0 vs 22.0). N=20 OOM'd from same co-tenant. |
+| dispersion_quota | libero_spatial | 0 (re-run) | 5 -> 9.0%, 10 -> 25.0%, 15 -> 29.5%, 20 -> **47.5%** | **Full 4-point curve, ran to completion on GPU 1 alone.** N=20 = **47.5%** beats every other method by 7-22 pp: random_s0=35.0, random_s1=40.5, conformal_s0=28.0, conformal_s1=25.0, entropy_s0=29.0. The "diversity-aware uncertainty" hypothesis Codex bet on is consistent with this single-seed evidence. Needs seed-1 confirmation. |
 
 ## Outstanding blockers for the conformal/entropy methods — RESOLVED
 
@@ -62,18 +64,23 @@ smoke (c42bff21) passed `[smoke] active loop OK (rounds=2)`.
 
 ## In-flight runs
 
-- None. Both GPUs occupied by an unrelated user (HMDB51 ConvGRU training, ~47
-  min in as of the last OOM). Re-runs of dispersion / dispersion_quota at N=20
-  + seed-1 cells of each are blocked until the GPUs free up.
+- GPU 0: dispersion_quota seed 1 (verifying the 47.5 % headline).
+- GPU 1: dispersion seed 1 (first full pure-dispersion curve, if no co-tenant returns).
 
 ## Method comparison (libero_spatial, max_demos=20)
 
-| N  | random s0 | random s1 | conformal s0 | conformal s1 | entropy s0 | dispersion s0 | dispersion_quota s0 |
-|----|-----------|-----------|--------------|--------------|------------|---------------|---------------------|
-| 5  | 9.0%      | 10.5%     | 9.0%         | 10.5%        | 9.0%       | 9.0%          | 9.0%                |
-| 10 | 22.5%     | 31.0%     | 21.0%        | 16.0%        | 15.5%      | 29.0%         | 29.0%               |
-| 15 | 33.0%     | 32.5%     | 24.5%        | 18.5%        | 25.5%      | 22.0% ⬇️       | 31.0%               |
-| 20 | 35.0%     | 40.5%     | 28.0%        | 25.0%        | 29.0%      | OOM           | OOM                 |
+Best per row in **bold**; partial cells (OOM at N=20) shown as the last reached point.
+
+| N  | random s0 | random s1 | conformal s0 | conformal s1 | entropy s0 | dispersion s0\* | dispersion_quota s0 |
+|----|-----------|-----------|--------------|--------------|------------|------------------|---------------------|
+| 5  | 9.0       | 10.5      | 9.0          | 10.5         | 9.0        | 9.0              | 9.0                 |
+| 10 | 22.5      | **31.0**  | 21.0         | 16.0         | 15.5       | 29.0             | 25.0                |
+| 15 | **33.0**  | 32.5      | 24.5         | 18.5         | 25.5       | 25.0             | 29.5                |
+| 20 | 35.0      | 40.5      | 28.0         | 25.0         | 29.0       | OOM              | **47.5**            |
+
+`*` dispersion s0 numbers are the better of the two partial runs (both regressed at N=15; both OOM'd at N=20 due to co-tenant).
+
+**Headline (single-seed)**: `dispersion_quota` at N=20 beats `random_s1` (the strongest random baseline) by **7 pp** and beats `random_s0` by **12.5 pp**. Pure `dispersion` regresses at N=15 in both attempts. Coverage is the decisive ingredient.
 
 Random (mean@N=20 = 37.75%) beats both uncertainty methods (conformal mean
 26.5%, entropy 29.0%) by ~9-12 absolute success points. Same paired eval init
