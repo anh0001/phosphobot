@@ -64,8 +64,22 @@ smoke (c42bff21) passed `[smoke] active loop OK (rounds=2)`.
 
 ## In-flight runs
 
-- GPU 0: dispersion_quota seed 1 (verifying the 47.5 % headline).
-- GPU 1: dispersion seed 1 (first full pure-dispersion curve, if no co-tenant returns).
+- None. kubotal+ returned again ~44 min into wave 2; both seed-1 cells OOM'd
+  at N=15. Pending: full seed-1 curves for `dispersion` and `dispersion_quota`.
+
+## Wave-2 partial data (seed 1, libero_spatial)
+
+| N  | dispersion s1 | dispersion_quota s1 | vs random_s1 |
+|----|---------------|---------------------|--------------|
+| 5  | 10.5          | 10.5                | 10.5 (tied — same initial demos) |
+| 10 | 16.5          | 21.5                | 31.0 (**both under random by 9-15 pp**) |
+| 15 | OOM           | OOM                 | 32.5 |
+| 20 | —             | —                   | 40.5 |
+
+**This walks back the headline.** Dispersion_quota s0 hit 47.5 % at N=20 (a strong
+result on a single seed). But s1 is materially under random at N=10. If the s1
+trajectory holds, the 47.5 % was very likely a single-seed task-coverage fluke.
+Need full seed-1 curves before any direction claim is defensible.
 
 ## Method comparison (libero_spatial, max_demos=20)
 
