@@ -210,9 +210,9 @@
   \item \textbf{Scoring rule}: same as \texttt{dispersion}.
   \item \textbf{Selection rule}: greedy round-robin under per-task coverage. For each pick, choose the candidate from the task with the smallest (budget $+$ already-picked) count; break ties by score.
   \item \textbf{Why this should help}: forces task diversity; prevents the redundant-task collapse that pure dispersion shows.
-  \item \good{\textbf{Seed 0}}: full curve, $N{=}20 \to \mathbf{47.5\,\%}$ \textemdash{} beats every other method by 7\textendash 22\,pp. Looked like the win.
-  \item \bad{\textbf{Seed 1}}: $N{=}10 \to 21.5\,\%$, which is \bad{9.5\,pp \emph{under} random} at the same budget (OOM'd before $N{=}20$).
-  \item \textbf{Current read}: the 47.5\,\% is likely single-seed lucky task coverage, not a robust effect. Headline \bad{not yet defensible}.
+  \item \good{\textbf{Seed 0}}: full curve, $N{=}20 \to \mathbf{47.5\,\%}$ \textemdash{} beats every other method by 7\textendash 22\,pp.
+  \item \textbf{N=10 robustness stress test} (4 seeds, paired vs random): quota wins \good{3 of 4} seeds, \good{mean $+7.0$\,pp}. Seed 1 ($-9.5$) is the lone outlier.
+  \item \textbf{Current read}: per-task coverage is a \good{real} effect at $N{=}10$, not a one-seed fluke. Full $N{=}20$ curves now justified to confirm it carries to the full budget.
 \end{itemize}
 \end{frame}
 
@@ -287,19 +287,30 @@ Overlap $2/5$. \bad{Invariant violated.}
 \end{frame}
 
 % --------------------------------------------------------------------
-\begin{frame}{Next experiment (codex-recommended): cheap N=10 stress test}
-\textbf{Plan}: skip full curves. Run \texttt{random} and \texttt{dispersion\_quota} at \emph{fixed} $N{=}10$ (2 rounds, $\sim$2.5\,h/cell) on \textbf{two new seeds} (s2, s3), paired demos + paired eval. Pure \texttt{dispersion} dropped \textemdash{} already failed the robustness test.
+\begin{frame}{N=10 stress test (codex-recommended): \good{quota passed}}
+\textbf{Design}: fixed $N{=}10$, \texttt{random} vs \texttt{dispersion\_quota}, 4 seeds, paired demos + paired eval. Decision rule set \emph{before} looking at the data.
 
 \vspace{0.6em}
-\textbf{Decision rule} (set before looking):
-\begin{itemize}
-  \item quota \bad{loses} to random on both s2, s3 $\Rightarrow$ drop the method-win claim.
-  \item quota \good{ties/wins} on both $\Rightarrow$ s1 was the outlier; run full $N{=}20$ curves for quota only.
-  \item \textbf{split} $\Rightarrow$ no method win; pivot to the methodological paper.
-\end{itemize}
+\centering
+\begin{tabular}{c|cc|c}
+\toprule
+seed & random & quota & $\Delta$ \\
+\midrule
+0 & 22.5 & 25.0 & $+2.5$ \\
+1 & 31.0 & 21.5 & \bad{$-9.5$} \\
+2 & 28.5 & 36.0 & \good{$+7.5$} \\
+3 & 12.5 & 40.0 & \good{$+27.5$} \\
+\midrule
+mean & 23.6 & \good{30.6} & \good{$\mathbf{+7.0}$} \\
+\bottomrule
+\end{tabular}
 
 \vspace{0.6em}
-\textbf{Caveat}: $N{=}10$ tests \emph{robustness}, not the $N{=}20$ headline (s0 was mediocre early, spiked late \textemdash{} a possible coverage-threshold effect $N{=}10$ can't rule out).
+\raggedright
+\textbf{Verdict}: quota wins \good{3 of 4} seeds; seed 1 is the lone outlier. Rule says: \emph{run full $N{=}20$ curves for quota}. Caveat: $N{=}10$ confirms robustness, not yet the $N{=}20$ magnitude.
+
+\vspace{0.4em}
+\muted{\footnotesize Aside: the test cost 8 cells \textemdash{} a recurring co-tenant (HMDB51) OOM-killed the $N{=}10$ rounds 4$\times$; the clean pairs came from running one cell at a time on whichever GPU was momentarily free.}
 \end{frame}
 
 % --------------------------------------------------------------------
