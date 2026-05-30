@@ -91,18 +91,31 @@ there). The random cells were on GPU 0 and survived.
 Salvaged random N=10: s2 -> 28.5 %, s3 -> 12.5 %. Quota s2/s3 dead (no paired
 comparison for the new seeds).
 
-Quota-vs-random at N=10 over the seeds we have:
+Quota-vs-random at N=10 (COMPLETE -- quota s2/s3 re-run solo on GPU 0 once it
+freed up; both cleared round 1 without OOM):
 
 | seed | random | quota | delta |
 |------|--------|-------|-------|
 | 0    | 22.5   | 25.0  | +2.5  |
 | 1    | 31.0   | 21.5  | -9.5  |
-| 2    | 28.5   | dead  | ?     |
-| 3    | 12.5   | dead  | ?     |
+| 2    | 28.5   | 36.0  | +7.5  |
+| 3    | 12.5   | 40.0  | +27.5 |
+| mean | 23.6   | 30.6  | **+7.0** |
 
-Two clean pairs, split and leaning negative. Random's own N=10 swings 12.5->31.0
-across 4 seeds -- seed variance dominates this regime (consistent with codex's
-prior that random is hard to beat for VLA + LoRA + 5..20 demos).
+**dispersion_quota wins 3 of 4 seeds at N=10; mean +7.0 pp. Seed 1 is the
+outlier (the only loss).** Per codex's pre-registered decision rule ("ties/wins
+on both s2 and s3 -> seed 1 was the outlier -> run full N=20 curves for
+dispersion_quota"), the method has cleared the robustness stress test. The
+earlier walk-back (s1 under random) is now contextualized: s1 is 1 of 4, and the
+other 3 favor quota, two of them strongly (s2 +7.5, s3 +27.5).
+
+Random's own N=10 still swings 12.5->31.0 across seeds -- high seed variance is
+real, but quota beats its paired random in 3/4 cases, so the win is not just
+variance.
+
+**Next (justified by the rule)**: full N=20 curves for dispersion_quota +
+paired random across seeds, to confirm the N=10 advantage carries to the full
+budget. Still gated on GPU availability (the OOM lottery with kubotal+).
 
 **Blocker is now resourcing, not research.** GPU contention with an unrelated
 user (kubotal+, HMDB51 ConvGRU, 43-46 GiB on both RTX6000s, returns every
