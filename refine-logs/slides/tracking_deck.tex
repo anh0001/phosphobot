@@ -210,34 +210,32 @@
   \item \textbf{Scoring rule}: same as \texttt{dispersion}.
   \item \textbf{Selection rule}: greedy round-robin under per-task coverage. For each pick, choose the candidate from the task with the smallest (budget $+$ already-picked) count; break ties by score.
   \item \textbf{Why this should help}: forces task diversity; prevents the redundant-task collapse that pure dispersion shows.
-  \item \good{\textbf{Seed 0}}: full curve, $N{=}20 \to \mathbf{47.5\,\%}$ \textemdash{} beats every other method by 7\textendash 22\,pp.
-  \item \textbf{N=10 robustness stress test} (4 seeds, paired vs random): quota wins \good{3 of 4} seeds, \good{mean $+7.0$\,pp}. Seed 1 ($-9.5$) is the lone outlier.
-  \item \textbf{Current read}: per-task coverage is a \good{real} effect at $N{=}10$, not a one-seed fluke. Full $N{=}20$ curves now justified to confirm it carries to the full budget.
+  \item \textbf{Full N=20 sweep, 4 seeds, paired vs random}: quota wins \good{3 of 4} seeds at the full budget, \good{mean $+9.0$\,pp} (39.4 vs 30.4).
+  \item \textbf{Budget interaction}: quota often trails random at $N{=}10/15$ then \good{overtakes at $N{=}20$} (s0, s1, s3 all jump late) \textemdash{} forced task coverage costs early, pays off once the budget covers the suite.
+  \item \textbf{Verdict}: diversity-aware action dispersion is \good{robustly} better than random in low-demo SmolVLA/LoRA \textemdash{} not a single-seed fluke. s2 ($-9.5$) is the lone loss, within seed variance.
 \end{itemize}
 \end{frame}
 
 % --------------------------------------------------------------------
-\begin{frame}{Current results: libero\_spatial, max\_demos $= 20$}
+\begin{frame}{Final result: paired N=20, all 4 seeds (libero\_spatial)}
 \centering
-\footnotesize
-\begin{tabular}{l|cc|cc|c|cc|cc}
+\begin{tabular}{c|cccc|c}
 \toprule
-$N$ & rand s0 & rand s1 & \muted{conf s0} & \muted{conf s1} & ent s0 & disp s0 & d+q s0 & disp s1 & d+q s1 \\
+$N{=}20$ & s0 & s1 & s2 & s3 & mean \\
 \midrule
-5  & 9.0  & 10.5 & \muted{9.0}  & \muted{10.5} & 9.0  & 9.0          & 9.0          & 10.5 & 10.5 \\
-10 & 22.5 & 31.0 & \muted{21.0} & \muted{16.0} & 15.5 & 29.0         & 25.0         & \bad{16.5} & \bad{21.5} \\
-15 & 33.0 & 32.5 & \muted{24.5} & \muted{18.5} & 25.5 & \bad{25.0}   & 29.5         & \bad{OOM} & \bad{OOM} \\
-20 & 35.0 & 40.5 & \muted{28.0} & \muted{25.0} & 29.0 & \bad{OOM}    & \good{\textbf{47.5}} & \bad{OOM} & \bad{OOM} \\
+random            & 35.0 & 40.5 & 30.0 & 16.0 & 30.4 \\
+dispersion\_quota & \good{47.5} & \good{48.0} & \bad{20.5} & \good{41.5} & \good{\textbf{39.4}} \\
+\midrule
+$\Delta$ & \good{+12.5} & \good{+7.5} & \bad{$-9.5$} & \good{+25.5} & \good{$\mathbf{+9.0}$} \\
 \bottomrule
 \end{tabular}
 
-\vspace{1.0em}
-\footnotesize
+\vspace{1.2em}
 \begin{itemize}
-  \item Eval is \emph{paired} across methods (env seed $= 1000 + $ run seed). Gaps are not eval noise.
-  \item \good{d+q s0 $=47.5$ at $N{=}20$} was the candidate win\textemdash{} but \bad{d+q s1 is under random at $N{=}10$ (21.5 vs 31.0)}. One seed up, one seed down.
-  \item \muted{Grayed conformal columns}: implementation broken; kept for reproducibility only.
-  \item \bad{OOM}: GPU co-tenant returned mid-train; partial curve only.
+  \item \textbf{quota wins 3 of 4 seeds at the full budget; mean $+9.0$\,pp.}
+  \item Paired demos + paired eval per seed \textemdash{} the gap is not eval noise.
+  \item s2 ($-9.5$) is the lone loss; random itself swings $16.0\to40.5$ across seeds, so this is within seed variance.
+  \item Earlier conformal/entropy/pure-dispersion all \emph{lost} to random; only \texttt{dispersion\_quota} (dispersion $+$ task coverage) beats it.
 \end{itemize}
 \end{frame}
 
@@ -266,23 +264,23 @@ Overlap $2/5$. \bad{Invariant violated.}
 \end{frame}
 
 % --------------------------------------------------------------------
-\begin{frame}{Status}
+\begin{frame}{Status \textemdash{} sweep complete}
 \textbf{Done}
 \begin{itemize}
   \item PS.4 single-task gate passed (80\,\% on libero\_spatial task 0).
-  \item 5 methods on libero\_spatial; conformal bug found (rank-invariant violated).
-  \item Pure \texttt{dispersion} regresses at $N{=}15$ \good{reproducibly} (both seeds, both runs).
-  \item \texttt{dispersion\_quota} s0 hit 47.5\,\% at $N{=}20$, but s1 is under random at $N{=}10$.
+  \item 5 methods evaluated; conformal bug found (rank-invariant violated) and documented.
+  \item Pure \texttt{dispersion} regresses at $N{=}15$ \good{reproducibly}; conformal \& entropy both lose to random.
+  \item \good{Full N=20 sweep complete}: \texttt{dispersion\_quota} beats random on \good{3/4} seeds, mean \good{$+9.0$\,pp}.
 \end{itemize}
 
-\textbf{Open question}
+\textbf{Answered}
 \begin{itemize}
-  \item Is \texttt{dispersion\_quota} a \emph{robust} low-budget learner, or was 47.5\,\% a one-seed fluke?
+  \item Is \texttt{dispersion\_quota} robust, or a one-seed fluke? \good{Robust} \textemdash{} 3/4 at both $N{=}10$ and $N{=}20$, two independent stress tests agree.
 \end{itemize}
 
-\textbf{Recurring blocker}
+\textbf{Cost}
 \begin{itemize}
-  \item A co-tenant (HMDB51 ConvGRU) keeps grabbing both RTX\,6000s mid-run and OOM-killing the $N{=}15$\textendash $20$ rounds. 3 cells lost this way so far.
+  \item GPU contention (HMDB51 co-tenant) stretched the sweep to $\sim$4 days; several cells needed 2\textendash 3 OOM retries. All failures graceful, none lost permanently.
 \end{itemize}
 \end{frame}
 

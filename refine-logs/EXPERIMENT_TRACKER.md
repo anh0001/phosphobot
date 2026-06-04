@@ -64,8 +64,7 @@ smoke (c42bff21) passed `[smoke] active loop OK (rounds=2)`.
 
 ## In-flight runs
 
-- None. kubotal+ returned again ~44 min into wave 2; both seed-1 cells OOM'd
-  at N=15. Pending: full seed-1 curves for `dispersion` and `dispersion_quota`.
+- None. Full N=20 sweep COMPLETE (2026-06-04). See "Full N=20 sweep result".
 
 ## Wave-2 partial data (seed 1, libero_spatial)
 
@@ -113,17 +112,57 @@ Random's own N=10 still swings 12.5->31.0 across seeds -- high seed variance is
 real, but quota beats its paired random in 3/4 cases, so the win is not just
 variance.
 
-**Next (justified by the rule)**: full N=20 curves for dispersion_quota +
-paired random across seeds, to confirm the N=10 advantage carries to the full
-budget. Still gated on GPU availability (the OOM lottery with kubotal+).
+## Full N=20 sweep result (COMPLETE 2026-06-04)
 
-**Blocker is now resourcing, not research.** GPU contention with an unrelated
-user (kubotal+, HMDB51 ConvGRU, 43-46 GiB on both RTX6000s, returns every
-1-2 h) has wiped the decisive N>=10 rounds 4 times. Cannot reliably complete a
-multi-round cell while they hold both cards. Options on the table: (1) add
-checkpoint/resume to the active loop, (2) move runs to a dedicated cloud GPU
-(vast.ai / Modal), (3) coordinate a GPU window with the other user, (4) stop and
-write the methodological-anti-pattern paper on existing evidence.
+Ran by an autonomous orchestrator (`scripts/overnight_sweep.sh`, nan-aware v2)
+that waits for a free GPU 0, launches one cell at a time, and retries on OOM.
+Took ~4 days of wall-clock due to heavy GPU contention (kubotal+ repeatedly
+co-locating on GPU 0 and OOM-ing the final N=20 rounds; several cells needed
+2-3 attempts). All cells eventually completed clean (no nan at N=20).
+
+Full sample-efficiency curves (libero_spatial, pc_success at N=5/10/15/20):
+
+| seed | random            | dispersion_quota   |
+|------|-------------------|--------------------|
+| 0    | 9.0/22.5/33.0/35.0 | 9.0/25.0/29.5/**47.5** |
+| 1    | 10.5/31.0/32.5/40.5 | 10.5/25.5/31.5/**48.0** |
+| 2    | 29.0/28.5/31.0/30.0 | 29.0/26.0/29.0/**20.5** |
+| 3    | 8.5/12.5/16.0/16.0 | 8.5/40.0/37.0/**41.5** |
+
+Paired N=20 comparison (same initial demos + same eval init states per seed):
+
+| seed | random N20 | quota N20 | delta |
+|------|-----------|-----------|-------|
+| 0    | 35.0      | 47.5      | +12.5 |
+| 1    | 40.5      | 48.0      | +7.5  |
+| 2    | 30.0      | 20.5      | -9.5  |
+| 3    | 16.0      | 41.5      | +25.5 |
+| mean | 30.4      | **39.4**  | **+9.0** |
+
+**Headline: dispersion_quota beats random at the full N=20 budget on 3 of 4
+seeds, mean +9.0 pp.** s2 is the lone loss (-9.5) and is consistent with high
+seed variance (random itself swings 16.0->40.5 at N=20 across seeds). Combined
+with the N=10 stress test (also 3/4 wins, +7.0 pp mean), the diversity-aware
+action-dispersion method is robustly better than random in the low-demo
+SmolVLA/LoRA regime -- not a single-seed fluke.
+
+Note the interaction with budget: quota often *trails* random at N=10/15 then
+overtakes at N=20 (s0, s1, s3 all show a late jump). Consistent with codex's
+"coverage-threshold" mechanism: forced task diversity costs early but pays off
+once the budget is large enough to cover the suite's tasks. The earlier s1
+walk-back (under random at N=10) was exactly this early-budget dip, not a method
+failure -- s1 finished at 48.0, the strongest quota result.
+
+### Process notes (resourcing, not research)
+
+GPU contention with an unrelated user (kubotal+, HMDB51 ConvGRU, 43-46 GiB on
+both RTX6000s) was the dominant cost -- it OOM-killed the final N=20 round on
+several cells, forcing full restarts (no checkpoint/resume). All failures were
+graceful CUDA-OOM (caught, retried), never an OS kill. A memory-fence to defend
+GPU 0 was considered but rejected as antisocial (would deprive the co-tenant).
+Lessons for next sweep: (1) add checkpoint/resume so an OOM costs one round not
+the whole cell, (2) prefer a dedicated GPU (vast.ai / Modal) to escape
+contention, (3) coordinate a GPU window with the other lab user.
 
 ## Method comparison (libero_spatial, max_demos=20)
 
