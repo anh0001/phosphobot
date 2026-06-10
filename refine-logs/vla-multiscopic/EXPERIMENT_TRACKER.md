@@ -55,3 +55,10 @@ Branch `idea/vla-multiscopic-cognition`. Plan: `EXPERIMENT_PLAN.md`. Gates fail-
 - Substrate: SmolVLA LoRA, libero_spatial ckpt ~30% base. Knobs verified: `--policy.n_action_steps`, `num_steps`,
   `rtc_config` (RTC baseline built-in).
 - Traces: `.aris/traces/idea-discovery/2026-06-08_run01/` (jury + refine round 2).
+
+- 2026-06-10 — MISLOCALIZATION PROBE (`preempt/mislocalization_probe.json`, training-free keystone; pose-token
+  probe blocked — HuggingFaceVLA/libero has no object poses, multi-day to regen). 14 clean-success episodes,
+  5cm start shift: closest approach to TRUE obj 5.2cm vs canonical/expected 3.9cm; **93% (13/14) reach toward the
+  canonical spot, not the displaced object**; failures stop ~5.4cm short of true (≈ displacement). → DIRECT
+  evidence the failure is perceptual LOCALIZATION (representation), not control/timing. Keystone for "Unreliable
+  by Default". Caveat n=14 (2/14 do reach true → canonical-biased, not fully blind).

@@ -1,0 +1,172 @@
+{
+  "n_clean_success_pairs": 14,
+  "grasp_xy_thresh_m": 0.03,
+  "perturbed_start_success_rate": 0.07142857142857142,
+  "mean_min_d_true_cm": 5.207435087752526,
+  "mean_min_d_orig_cm": 3.891415604369095,
+  "frac_reached_true": 0.21428571428571427,
+  "frac_reached_orig": 0.2857142857142857,
+  "frac_closer_to_orig_than_true": 0.9285714285714286,
+  "among_failures": {
+    "n": 13,
+    "frac_closer_to_orig": 0.9230769230769231,
+    "frac_reached_orig_not_true": 0.07692307692307693,
+    "mean_min_d_true_cm": 5.383666781312839
+  },
+  "records": [
+    {
+      "success": false,
+      "min_d_true": 0.09491368673681443,
+      "min_d_orig": 0.09219594050581921,
+      "reached_true": false,
+      "reached_orig": false,
+      "closer_to_orig": true,
+      "obj": "akita_black_bowl_1_joint0",
+      "task_id": 0,
+      "seed": 1001
+    },
+    {
+      "success": false,
+      "min_d_true": 0.06215356675675551,
+      "min_d_orig": 0.06125531269900231,
+      "reached_true": false,
+      "reached_orig": false,
+      "closer_to_orig": true,
+      "obj": "akita_black_bowl_1_joint0",
+      "task_id": 0,
+      "seed": 1003
+    },
+    {
+      "success": false,
+      "min_d_true": 0.036778392505675266,
+      "min_d_orig": 0.03381540908094174,
+      "reached_true": false,
+      "reached_orig": false,
+      "closer_to_orig": true,
+      "obj": "akita_black_bowl_1_joint0",
+      "task_id": 0,
+      "seed": 1004
+    },
+    {
+      "success": false,
+      "min_d_true": 0.07193980135250957,
+      "min_d_orig": 0.03040446345023799,
+      "reached_true": false,
+      "reached_orig": false,
+      "closer_to_orig": true,
+      "obj": "akita_black_bowl_1_joint0",
+      "task_id": 2,
+      "seed": 1003
+    },
+    {
+      "success": true,
+      "min_d_true": 0.029164230714684578,
+      "min_d_orig": 0.012934419910269262,
+      "reached_true": true,
+      "reached_orig": true,
+      "closer_to_orig": true,
+      "obj": "cookies_1_joint0",
+      "task_id": 3,
+      "seed": 1000
+    },
+    {
+      "success": false,
+      "min_d_true": 0.03823204954778299,
+      "min_d_orig": 0.026518345779082374,
+      "reached_true": false,
+      "reached_orig": true,
+      "closer_to_orig": true,
+      "obj": "cookies_1_joint0",
+      "task_id": 3,
+      "seed": 1003
+    },
+    {
+      "success": false,
+      "min_d_true": 0.07519214200122917,
+      "min_d_orig": 0.04367338815621072,
+      "reached_true": false,
+      "reached_orig": false,
+      "closer_to_orig": true,
+      "obj": "akita_black_bowl_1_joint0",
+      "task_id": 3,
+      "seed": 1004
+    },
+    {
+      "success": false,
+      "min_d_true": 0.01953198462982618,
+      "min_d_orig": 0.018129875321063818,
+      "reached_true": true,
+      "reached_orig": true,
+      "closer_to_orig": true,
+      "obj": "cookies_1_joint0",
+      "task_id": 6,
+      "seed": 1001
+    },
+    {
+      "success": false,
+      "min_d_true": 0.050004440248914823,
+      "min_d_orig": 0.03869469444938937,
+      "reached_true": false,
+      "reached_orig": false,
+      "closer_to_orig": true,
+      "obj": "akita_black_bowl_1_joint0",
+      "task_id": 6,
+      "seed": 1003
+    },
+    {
+      "success": false,
+      "min_d_true": 0.07606768433592692,
+      "min_d_orig": 0.05052454769974531,
+      "reached_true": false,
+      "reached_orig": false,
+      "closer_to_orig": true,
+      "obj": "akita_black_bowl_1_joint0",
+      "task_id": 7,
+      "seed": 1001
+    },
+    {
+      "success": false,
+      "min_d_true": 0.04171207625097137,
+      "min_d_orig": 0.034975832545712834,
+      "reached_true": false,
+      "reached_orig": false,
+      "closer_to_orig": true,
+      "obj": "akita_black_bowl_1_joint0",
+      "task_id": 7,
+      "seed": 1002
+    },
+    {
+      "success": false,
+      "min_d_true": 0.0025400273409855512,
+      "min_d_orig": 0.005090179446931792,
+      "reached_true": true,
+      "reached_orig": true,
+      "closer_to_orig": false,
+      "obj": "akita_black_bowl_1_joint0",
+      "task_id": 7,
+      "seed": 1004
+    },
+    {
+      "success": false,
+      "min_d_true": 0.07160735742327637,
+      "min_d_orig": 0.05939085620018109,
+      "reached_true": false,
+      "reached_orig": false,
+      "closer_to_orig": true,
+      "obj": "akita_black_bowl_1_joint0",
+      "task_id": 9,
+      "seed": 1000
+    },
+    {
+      "success": false,
+      "min_d_true": 0.0592034724400009,
+      "min_d_orig": 0.03719491936708541,
+      "reached_true": false,
+      "reached_orig": false,
+      "closer_to_orig": true,
+      "obj": "akita_black_bowl_1_joint0",
+      "task_id": 9,
+      "seed": 1004
+    }
+  ]
+}

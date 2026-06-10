@@ -29,6 +29,29 @@ claims: "preemption helps", "VLAs lack a recovery manifold", "LIBERO mid-rollout
 
 ---
 
+## 🔑 Keystone evidence (mislocalization probe, 2026-06-10)
+
+Training-free substitute for the privileged pose-token probe (the training set `HuggingFaceVLA/libero` has no
+object poses → the fine-tune version is multi-day). Tests the same hypothesis directly: after a 5 cm object shift
+at episode start, where does the arm go? (`sim/libero_active/preempt/mislocalization_probe.py`,
+`mislocalization_probe.json`; 14 clean-success episodes.)
+
+| metric | value |
+|---|---|
+| perturbed_start success | 7% (1/14) |
+| mean closest approach to **true** (displaced) object | **5.2 cm** |
+| mean closest approach to **canonical/expected** location | **3.9 cm** |
+| **reached toward canonical spot, not the actual object** | **93% (13/14)** |
+| among failures (13): closer-to-canonical | 92%; stops ~5.4 cm short of true (≈ the 5 cm displacement) |
+
+**Interpretation:** the policy reaches where the object *canonically belongs* (training prior), not where it
+*visually is now*, stopping ~one-displacement short. This is direct, mechanistic evidence that the failure is
+**perceptual localization (representation)**, not control or timing — the keystone claim for *Unreliable by
+Default*. Caveat: n=14 (directionally strong, statistically light); 2/14 episodes do reach the true object, so
+the policy is canonical-*biased*, not fully blind.
+
+---
+
 ## Executive Summary
 
 The reference paper's durable ideas are an *architecture of time and compute*, not a locomotion algorithm:

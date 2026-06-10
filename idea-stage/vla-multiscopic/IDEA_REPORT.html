@@ -7,8 +7,8 @@
 
 <meta name="generator" content="ARIS render-html (academic, v1)">
 <meta name="aris:source-path" content="idea-stage/vla-multiscopic/IDEA_REPORT.md">
-<meta name="aris:source-sha256" content="a7b43d6fe60e51cd7daeb0857c0ca18273787c640a44ddf9914ffcd924f958f1">
-<meta name="aris:generated-at" content="2026-06-08 10:06 UTC">
+<meta name="aris:source-sha256" content="60e8d436b001e2f586aafdf68764e60d10213e1669c30a69b35102133d83e520">
+<meta name="aris:generated-at" content="2026-06-10 23:42 UTC">
 
 <!-- MathJax 3 -->
 <script>
@@ -476,6 +476,10 @@ body.aris-blog h2.aris-active-h2 {
 <nav class="toc">
   <h3>Contents</h3>
   <ol>
+<li><a href="#final-decision-2026-06-10-stopped--negative-result-cross-model-confirmed">⛔ FINAL DECISION (2026-06-10): STOPPED — negative result (cross-model confirmed)</a>
+</li>
+<li><a href="#keystone-evidence-mislocalization-probe-2026-06-10">🔑 Keystone evidence (mislocalization probe, 2026-06-10)</a>
+</li>
 <li><a href="#executive-summary">Executive Summary</a>
 </li>
 <li><a href="#decision--refinement-post-checkpoint">✅ Decision &amp; Refinement (post-checkpoint)</a>
@@ -510,14 +514,23 @@ body.aris-blog h2.aris-active-h2 {
   
   <div class="meta">
     <span><strong>Source:</strong> <code>idea-stage/vla-multiscopic/IDEA_REPORT.md</code></span>
-    <span><strong>SHA256:</strong> <code>a7b43d6fe60e</code></span>
-    <span><strong>Rendered:</strong> 2026-06-08 10:06 UTC</span>
+    <span><strong>SHA256:</strong> <code>60e8d436b001</code></span>
+    <span><strong>Rendered:</strong> 2026-06-10 23:42 UTC</span>
     
   </div>
 </header>
 
 <h1 id="idea-discovery-report--vla--multi-scopic-neuro-cognitive-fusion">Idea Discovery Report — VLA × Multi-Scopic Neuro-Cognitive Fusion</h1>
 <p><strong>Direction</strong>: Combine modern VLA (vision-language-action) manipulation policies with the <em>indigenous</em> primitives of Saputra et al. 2022 ("Multi-scopic neuro-cognitive adaptation for legged locomotion robots"), change a <strong>fundamental</strong> VLA method, and verify in simulation (LIBERO / SmolVLA). <strong>Date</strong>: 2026-06-08 <strong>Branch</strong>: <code>idea/vla-multiscopic-cognition</code> <strong>Pipeline</strong>: research-lit → idea-creator (6 lenses, 30 candidates) → cross-model jury (GPT-5.5 xhigh) → ✅ checkpoint (Direction A selected) → novelty-check → refine round 2 (GPT-5.5) → experiment-plan → pilot P0 (running) <strong>Substrate</strong>: SmolVLA (<code>lerobot/smolvla_base</code>, LeRobot 0.5.x) on LIBERO; flow-matching action expert (chunk n=50, num_steps=10), async RobotClient/PolicyServer; harness already computes per-frame flow-head <strong>dispersion</strong>.</p>
+<hr />
+<h2 id="final-decision-2026-06-10-stopped--negative-result-cross-model-confirmed">⛔ FINAL DECISION (2026-06-10): STOPPED — negative result (cross-model confirmed)</h2>
+<p>The VLA × multi-scopic <strong>preemption/override</strong> direction is <strong>closed</strong>. The pre-registered kill chain fired: method killed at E1; recovery-manifold framing killed at the <code>perturbed_start</code> crux control (displaced pose unsolvable from scratch → confound is object-pose OOD brittleness, already known via LIBERO-Plus). GPT-5.5 jury confirmed STOP (no novel + likely-positive salvage on SmolVLA/LIBERO within ~1 day GPU). Total spend ~8–10 GPU-hours — fail-fast worked as designed.</p>
+<p><strong>Single keepable takeaway</strong> (→ candidate paragraph for the <em>Unreliable by Default</em> paper): <em>In SmolVLA/ LIBERO-Spatial, apparent mid-rollout recovery failures under object nudges are dominated by object-pose distribution shift — the same 5 cm displacement at episode start collapses conditioned success to 1/14 — so faster replanning or fast-loop override solves the wrong bottleneck.</em> Also keep: the perturbation harness (<code>sim/libero_active/preempt/</code>), the RNG-confound lesson, and P0 (<code>n_action_steps=1</code> hurts vs <code>50</code>). Discard as claims: "preemption helps", "VLAs lack a recovery manifold", "LIBERO mid-rollout recovery benchmark".</p>
+<hr />
+<h2 id="keystone-evidence-mislocalization-probe-2026-06-10">🔑 Keystone evidence (mislocalization probe, 2026-06-10)</h2>
+<p>Training-free substitute for the privileged pose-token probe (the training set <code>HuggingFaceVLA/libero</code> has no object poses → the fine-tune version is multi-day). Tests the same hypothesis directly: after a 5 cm object shift at episode start, where does the arm go? (<code>sim/libero_active/preempt/mislocalization_probe.py</code>, <code>mislocalization_probe.json</code>; 14 clean-success episodes.)</p>
+<table><thead><tr><th>metric</th><th>value</th></tr></thead><tbody><tr><td>perturbed_start success</td><td>7% (1/14)</td></tr><tr><td>mean closest approach to <strong>true</strong> (displaced) object</td><td><strong>5.2 cm</strong></td></tr><tr><td>mean closest approach to <strong>canonical/expected</strong> location</td><td><strong>3.9 cm</strong></td></tr><tr><td><strong>reached toward canonical spot, not the actual object</strong></td><td><strong>93% (13/14)</strong></td></tr><tr><td>among failures (13): closer-to-canonical</td><td>92%; stops ~5.4 cm short of true (≈ the 5 cm displacement)</td></tr></tbody></table>
+<p><strong>Interpretation:</strong> the policy reaches where the object <em>canonically belongs</em> (training prior), not where it <em>visually is now</em>, stopping ~one-displacement short. This is direct, mechanistic evidence that the failure is <strong>perceptual localization (representation)</strong>, not control or timing — the keystone claim for <em>Unreliable by Default</em>. Caveat: n=14 (directionally strong, statistically light); 2/14 episodes do reach the true object, so the policy is canonical-<em>biased</em>, not fully blind.</p>
 <hr />
 <h2 id="executive-summary">Executive Summary</h2>
 <p>The reference paper's durable ideas are an <em>architecture of time and compute</em>, not a locomotion algorithm: three independently-clocked adaptation loops (micro/meso/macro), attention-as-compute-allocation, embodiment- relative affordance, and — its deepest idea — a <strong>fast loop that can PREEMPT/OVERRIDE the slow loop</strong>. Modern VLAs have the opposite strengths (web-scale semantics, language, learned generalist control) but are architecturally single-clock and execute action chunks ~open-loop. The fusion is therefore natural: graft the multi-scopic temporal architecture onto a VLA.</p>
@@ -537,6 +550,21 @@ body.aris-blog h2.aris-active-h2 {
 <table><thead><tr><th><code>n_action_steps</code></th><th>pc_success</th></tr></thead><tbody><tr><td>50 (open-loop chunk)</td><td>30% (50 ep) · <strong>31%</strong> (200-ep anchor)</td></tr><tr><td>8</td><td>32% (50 ep)</td></tr><tr><td>1 (re-infer every step)</td><td><strong>20%</strong> (50 ep)</td></tr></tbody></table>
 <p><strong>C0 verdict: clean headroom = <code>succ(n=1) − succ(n=50)</code> = −10 pp (NEGATIVE).</strong> Re-inferring every step <em>hurts</em> — fresh flow-head re-sampling each step breaks chunk coherence (the smoothness-vs-reactivity tradeoff RTC targets). Three implications, all <em>sharpening</em> Direction A (it does not kill it):</p>
 <ol><li><strong>The perturbation protocol P1 is mandatory</strong> — static LIBERO has <em>no</em> reactivity headroom (confirms the  jury's central doubt empirically).</li><li><strong>The contribution must be SELECTIVE intervention</strong> (override on a trigger), because blanket "replan faster"  (<code>n=1</code>) is empirically counter-productive — so <em>full replan is a weak baseline, not a strong one</em>, which  strengthens the override-vs-replan framing.</li><li><strong>The override action must stay coherent</strong> — <code>hold/retract</code> (mode 1) sidesteps the <code>n=1</code> incoherence, so it is  validated as the first mechanism to try in E1.</li></ol>
+<p><strong>E1 result (ORACLE handover, dispersion-free · object-nudge δ-sweep · libero_spatial · 50 pairs, 14 clean-success):</strong></p>
+<table><thead><tr><th>arm</th><th>cond. success @5cm</th><th>cond. success @10cm</th></tr></thead><tbody><tr><td>clean (reference)</td><td>100%</td><td>100%</td></tr><tr><td>open_loop (no recovery)</td><td>21.4%</td><td>21.4%</td></tr><tr><td>replan_only (run stale chunk during L=8 delay)</td><td>21.4%</td><td>21.4%</td></tr><tr><td><strong>preempt_hold</strong> (freeze during L=8 delay)</td><td><strong>28.6%</strong></td><td><strong>14.3%</strong></td></tr></tbody></table>
+<p><strong>Kill criterion FAILS at both magnitudes</strong> → <strong>Direction A's preemption mechanism is killed on LIBERO by its own pre-registered gate.</strong></p>
+<ul><li><code>cond_gain (hold − replan)</code> = <strong>+7.1 pp</strong> @5cm, <strong>−7.1 pp</strong> @10cm — below the +10 pp bar and <em>sign-flips with magnitude</em>; at n=14 conditioning pairs ±7 pp = ±1 pair, i.e. <strong>no detectable effect</strong>.</li><li><code>stale-action harm</code>: HOLD diverges from the recovery action <strong>−35% MORE</strong> than the stale chunk does (freezing is <em>further</em> from what the policy wants than continuing the stale plan).</li><li><strong>Decisive sub-finding</strong>: <code>open_loop == replan_only</code> (21.4%) at <em>both</em> magnitudes → re-planning 8 steps earlier buys <strong>zero</strong>. The bottleneck is the policy's <strong>recovery capability</strong> (it cannot re-perceive + re-approach a displaced object in time), <strong>not</strong> stale-action execution timing — so preemption optimizes a non-bottleneck.</li></ul>
+<p>This confirms P0 (blanket reactivity hurts) and the GPT-5.5 jury's prediction (static manipulation sim lacks closed-loop headroom for preemption). <strong>It is a valid negative / diagnostic result, found in ~5 GPU-hours, not weeks</strong> — exactly what the kill-gated plan was for. <strong>Pivot</strong> (per plan): Direction B (is the dispersion trigger even valid?) or reframe as a diagnostic — <em>"why fast-loop override does not improve VLA manipulation recovery on standard benchmarks."</em></p>
+<p><strong>Recovery-capability probe (the keystone test, δ=5cm, same 14 clean-success pairs):</strong> give the policy the <em>best possible</em> recovery — at the disturbance, discard the stale plan and re-plan IMMEDIATELY from the perturbed observation (zero latency) + track with an 8-step cadence.</p>
+<table><thead><tr><th>arm</th><th>conditional success</th><th>per-14</th></tr></thead><tbody><tr><td>clean (ref)</td><td>100%</td><td>14/14</td></tr><tr><td>open_loop (no recovery)</td><td>21.4%</td><td>3/14</td></tr><tr><td>replan_only</td><td>21.4%</td><td>3/14</td></tr><tr><td>preempt_hold</td><td>35.7%</td><td>5/14</td></tr><tr><td><strong>recovery_probe (best-case)</strong></td><td><strong>28.6%</strong></td><td><strong>4/14</strong></td></tr></tbody></table>
+<p><strong>Thesis CONFIRMED: best-case recovery (4/14) ≈ no-recovery (3/14)</strong> — within ±1 pair. The disturbance roughly halves success and <em>no</em> strategy reliably restores it; the per-pair success pattern is essentially <strong>uncorrelated with strategy</strong> (e.g. some pairs only the probe recovers, others only <code>hold</code>, others the probe <em>fails</em> where <code>open_loop</code> succeeds — the signature of noise, not a mechanism). <strong>→ the bottleneck is the policy's recovery capability, not execution timing.</strong></p>
+<p><strong>Two honest caveats (must fix before any claim):</strong></p>
+<ol><li><strong>Underpowered</strong>: n=14 conditioning pairs; ±1–2 pairs = noise. Needs n≥60 (more seeds / stronger checkpoint).</li><li><strong>Measurement-RNG confound found</strong>: the stale-action-harm secondary metric calls <code>predict_action_chunk</code>,  which advances the policy's flow-sampling RNG and perturbs the <em>primary</em> outcome (<code>preempt_hold</code> = 28.6% with  harm-measurement ON in the sweep vs 35.7% with it OFF here — both within noise, but the measurement must be  decoupled from the rollout RNG). Clean numbers come from <code>--no-stale-harm</code> runs.</li></ol>
+<p><strong>Status: Direction A method killed; the diagnostic (Option B) is now well-supported directionally.</strong> To make it publishable (Codex, 1-week cap): power up to n≥60, add <code>libero_object</code> (and ideally OpenVLA/π0), fix the RNG confound. Results: <code>sim/libero_active/preempt/e1_recovery_d005.json</code>.</p>
+<p><strong>Crux control — <code>perturbed_start</code> (Codex must-run; the framing gate): FAILED.</strong> Displace the SAME object by the same 5 cm but at <strong>episode start</strong>, solve from scratch:</p>
+<table><thead><tr><th>condition</th><th>conditional success (on the 14 clean-success episodes)</th></tr></thead><tbody><tr><td>clean</td><td>100% (14/14)</td></tr><tr><td><strong>perturbed_start (5 cm at reset)</strong></td><td><strong>7.1% (1/14)</strong></td></tr><tr><td>open_loop (5 cm mid-rollout)</td><td>21.4% (3/14)</td></tr><tr><td>recovery_probe (best-case mid-rollout)</td><td>28.6% (4/14)</td></tr></tbody></table>
+<p><strong>The displaced object pose is NOT solvable from scratch</strong> — actually <em>harder</em> than the mid-rollout disturbance (a 5 cm shift pushes the object out of the calibrated init-state distribution → OOD). Per Codex's pre-registered rule, <em>"if <code>perturbed_start</code> also collapses, the honest claim downgrades to 'SmolVLA lacks robustness to object- pose shift,' not 'recovery manifold.'"</em> So the mid-rollout preemption negative is <strong>confounded by object-pose fragility</strong>, and that fragility is <strong>already established</strong> (LIBERO-Plus: 95%→&lt;30% under layout perturbation).</p>
+<p><strong>Consequence: the novel "replanning isn't recovery" diagnostic does NOT hold at δ=5 cm.</strong> The whole chain (P0: reacting hurts · E1: no strategy beats open-loop · recovery-probe: best-case ≈ none · crux: can't solve the displaced pose from scratch) converges on a single, <em>non-novel</em> explanation: <strong>SmolVLA's failure under object displacement is perceptual/distributional brittleness, not control-timing or recovery strategy.</strong> Possible (low- odds) rescue: a small-δ sweep to find a regime where the pose stays solvable-from-scratch but mid-rollout still fails. Otherwise this direction is <strong>done</strong> — method dead, diagnostic confounded/low-novelty. Results: <code>sim/libero_active/preempt/perturbed_start_control.json</code>.</p>
 <hr />
 <h2 id="the-reference-papers-indigenous-primitives-transferable">The Reference Paper's "Indigenous" Primitives (transferable)</h2>
 <p>See <code>REF_PAPER_SUMMARY.md</code> for detail. The seven primitives:</p>
@@ -567,8 +595,8 @@ body.aris-blog h2.aris-active-h2 {
 <footer class="aris-footer">
   Generated by <a href="https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/main/skills/render-html/SKILL.md">ARIS <code>/render-html</code></a> ·
   source path <code>idea-stage/vla-multiscopic/IDEA_REPORT.md</code> ·
-  SHA256 <code>a7b43d6fe60e</code> ·
-  generated at 2026-06-08 10:06 UTC.
+  SHA256 <code>60e8d436b001</code> ·
+  generated at 2026-06-10 23:42 UTC.
   This is a generated view — edit the source Markdown, then re-render.
 </footer>
 </main>
