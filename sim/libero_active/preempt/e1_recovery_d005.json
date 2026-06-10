@@ -1,0 +1,3603 @@
+{
+  "config": {
+    "tasks": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "seeds": [
+      1000,
+      1001,
+      1002,
+      1003,
+      1004
+    ],
+    "perturb_step": 42,
+    "tp_frac": 0.15,
+    "latency": 8,
+    "delta": 0.05,
+    "max_steps": 280,
+    "ckpt": "fixedbuf_random_N20/seed0/004000",
+    "suite": "libero_spatial"
+  },
+  "aggregate": {
+    "arms": {
+      "clean": {
+        "raw_perturbed_success": 0.28,
+        "conditional_perturbed_success": 1.0,
+        "n_pairs": 50,
+        "n_clean_success": 14,
+        "avg_macro_calls": 5.02,
+        "stale_action_harm": null,
+        "n_perturbations_fired_in_clean_pairs": 0
+      },
+      "open_loop": {
+        "raw_perturbed_success": 0.14,
+        "conditional_perturbed_success": 0.21428571428571427,
+        "n_pairs": 50,
+        "n_clean_success": 14,
+        "avg_macro_calls": 5.5,
+        "stale_action_harm": null,
+        "n_perturbations_fired_in_clean_pairs": 14
+      },
+      "replan_only": {
+        "raw_perturbed_success": 0.14,
+        "conditional_perturbed_success": 0.21428571428571427,
+        "n_pairs": 50,
+        "n_clean_success": 14,
+        "avg_macro_calls": 5.5,
+        "stale_action_harm": null,
+        "n_perturbations_fired_in_clean_pairs": 14
+      },
+      "preempt_hold": {
+        "raw_perturbed_success": 0.18,
+        "conditional_perturbed_success": 0.35714285714285715,
+        "n_pairs": 50,
+        "n_clean_success": 14,
+        "avg_macro_calls": 5.4,
+        "stale_action_harm": null,
+        "n_perturbations_fired_in_clean_pairs": 14
+      },
+      "full_replan": {
+        "raw_perturbed_success": null,
+        "conditional_perturbed_success": null,
+        "n_pairs": 50,
+        "n_clean_success": 14,
+        "avg_macro_calls": null,
+        "stale_action_harm": null,
+        "n_perturbations_fired_in_clean_pairs": 0
+      },
+      "recovery_probe": {
+        "raw_perturbed_success": 0.18,
+        "conditional_perturbed_success": 0.2857142857142857,
+        "n_pairs": 50,
+        "n_clean_success": 14,
+        "avg_macro_calls": 27.46,
+        "stale_action_harm": null,
+        "n_perturbations_fired_in_clean_pairs": 14
+      }
+    },
+    "n_clean_success": 14,
+    "n_pairs": 50
+  },
+  "kill_criterion": {
+    "cond_gain_pp": 14.285714285714288,
+    "harm_reduction_pct": null,
+    "equal_macro_calls": false,
+    "pass_via_conditional_success": true,
+    "pass_via_harm_reduction": false,
+    "PASSES": true,
+    "threshold_cond_gain_pp": 10.0,
+    "threshold_harm_reduction_pct": 25.0
+  },
+  "records": [
+    {
+      "task_id": 0,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "clean",
+      "success": true,
+      "n_steps": 86,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "preempt_hold",
+      "success": true,
+      "n_steps": 84,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "open_loop",
+      "success": true,
+      "n_steps": 83,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "replan_only",
+      "success": true,
+      "n_steps": 83,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "preempt_hold",
+      "success": true,
+      "n_steps": 84,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "recovery_probe",
+      "success": true,
+      "n_steps": 237,
+      "macro_calls": 26,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "clean",
+      "success": true,
+      "n_steps": 84,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "clean",
+      "success": true,
+      "n_steps": 82,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 1,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 1,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 1,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 1,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 1,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 1,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 1,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 1,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 1,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 1,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 1,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 1,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 1,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 1,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 1,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 1,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 1,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 1,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 1,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 1,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 1,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 1,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 1,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 1,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 1,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 2,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 2,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 2,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 2,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 2,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 2,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 2,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 2,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 2,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 2,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 2,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 2,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 2,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 2,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 2,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 2,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "clean",
+      "success": true,
+      "n_steps": 88,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 2,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 2,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 2,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 2,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 2,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 2,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 2,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 2,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 2,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "clean",
+      "success": true,
+      "n_steps": 79,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "open_loop",
+      "success": true,
+      "n_steps": 85,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "replan_only",
+      "success": true,
+      "n_steps": 85,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "recovery_probe",
+      "success": true,
+      "n_steps": 82,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "clean",
+      "success": true,
+      "n_steps": 81,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "open_loop",
+      "success": true,
+      "n_steps": 76,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "replan_only",
+      "success": true,
+      "n_steps": 76,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "preempt_hold",
+      "success": true,
+      "n_steps": 82,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "recovery_probe",
+      "success": true,
+      "n_steps": 83,
+      "macro_calls": 7,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "clean",
+      "success": true,
+      "n_steps": 76,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 4,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 4,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 4,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 4,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 4,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 4,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 4,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "glazed_rim_porcelain_ramekin_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 4,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "glazed_rim_porcelain_ramekin_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 4,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "glazed_rim_porcelain_ramekin_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 4,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "glazed_rim_porcelain_ramekin_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 4,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 4,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "glazed_rim_porcelain_ramekin_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 4,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "glazed_rim_porcelain_ramekin_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 4,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "glazed_rim_porcelain_ramekin_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 4,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "glazed_rim_porcelain_ramekin_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 4,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 4,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 4,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 4,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 4,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 4,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 4,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 4,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 4,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 4,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 5,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 5,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "glazed_rim_porcelain_ramekin_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 5,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "glazed_rim_porcelain_ramekin_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 5,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "glazed_rim_porcelain_ramekin_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 5,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "glazed_rim_porcelain_ramekin_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 5,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 5,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "glazed_rim_porcelain_ramekin_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 5,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "glazed_rim_porcelain_ramekin_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 5,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "glazed_rim_porcelain_ramekin_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 5,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "glazed_rim_porcelain_ramekin_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 5,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 5,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "glazed_rim_porcelain_ramekin_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 5,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "glazed_rim_porcelain_ramekin_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 5,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "glazed_rim_porcelain_ramekin_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 5,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "glazed_rim_porcelain_ramekin_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 5,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 5,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "glazed_rim_porcelain_ramekin_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 5,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "glazed_rim_porcelain_ramekin_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 5,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "glazed_rim_porcelain_ramekin_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 5,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "glazed_rim_porcelain_ramekin_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 5,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 5,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "glazed_rim_porcelain_ramekin_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 5,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "glazed_rim_porcelain_ramekin_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 5,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "glazed_rim_porcelain_ramekin_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 5,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "glazed_rim_porcelain_ramekin_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 6,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 6,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "open_loop",
+      "success": true,
+      "n_steps": 115,
+      "macro_calls": 3,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 6,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "replan_only",
+      "success": true,
+      "n_steps": 115,
+      "macro_calls": 3,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 6,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 6,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 6,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "clean",
+      "success": true,
+      "n_steps": 108,
+      "macro_calls": 3,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 6,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 6,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 6,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 6,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "recovery_probe",
+      "success": true,
+      "n_steps": 137,
+      "macro_calls": 13,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 6,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 6,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "open_loop",
+      "success": true,
+      "n_steps": 123,
+      "macro_calls": 3,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 6,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "replan_only",
+      "success": true,
+      "n_steps": 123,
+      "macro_calls": 3,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 6,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "preempt_hold",
+      "success": true,
+      "n_steps": 144,
+      "macro_calls": 3,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 6,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "recovery_probe",
+      "success": true,
+      "n_steps": 132,
+      "macro_calls": 13,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 6,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "clean",
+      "success": true,
+      "n_steps": 107,
+      "macro_calls": 3,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 6,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 6,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 6,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "preempt_hold",
+      "success": true,
+      "n_steps": 119,
+      "macro_calls": 3,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 6,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "recovery_probe",
+      "success": true,
+      "n_steps": 132,
+      "macro_calls": 13,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 6,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 6,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 6,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 6,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 6,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 7,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 7,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 7,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 7,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 7,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 7,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "clean",
+      "success": true,
+      "n_steps": 119,
+      "macro_calls": 3,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 7,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 7,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 7,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 7,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 7,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "clean",
+      "success": true,
+      "n_steps": 115,
+      "macro_calls": 3,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 7,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 7,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 7,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 7,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 7,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 7,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 7,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 7,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 7,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 7,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "clean",
+      "success": true,
+      "n_steps": 110,
+      "macro_calls": 3,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 7,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 7,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 7,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 7,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 8,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 8,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "plate_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 8,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "plate_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 8,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "preempt_hold",
+      "success": true,
+      "n_steps": 104,
+      "macro_calls": 3,
+      "perturb": {
+        "perturbed": true,
+        "object": "plate_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 8,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "recovery_probe",
+      "success": true,
+      "n_steps": 93,
+      "macro_calls": 8,
+      "perturb": {
+        "perturbed": true,
+        "object": "plate_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 8,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 8,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "plate_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 8,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "plate_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 8,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "preempt_hold",
+      "success": true,
+      "n_steps": 104,
+      "macro_calls": 3,
+      "perturb": {
+        "perturbed": true,
+        "object": "plate_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 8,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "recovery_probe",
+      "success": true,
+      "n_steps": 94,
+      "macro_calls": 8,
+      "perturb": {
+        "perturbed": true,
+        "object": "plate_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 8,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 8,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "plate_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 8,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "plate_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 8,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "plate_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 8,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "plate_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 8,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 8,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "open_loop",
+      "success": true,
+      "n_steps": 95,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": true,
+        "object": "plate_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 8,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "replan_only",
+      "success": true,
+      "n_steps": 95,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": true,
+        "object": "plate_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 8,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "plate_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 8,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "recovery_probe",
+      "success": true,
+      "n_steps": 96,
+      "macro_calls": 8,
+      "perturb": {
+        "perturbed": true,
+        "object": "plate_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 8,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 8,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "plate_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 8,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "plate_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 8,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "plate_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 8,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "plate_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 9,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "clean",
+      "success": true,
+      "n_steps": 110,
+      "macro_calls": 3,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 9,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "open_loop",
+      "success": true,
+      "n_steps": 110,
+      "macro_calls": 3,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 9,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "replan_only",
+      "success": true,
+      "n_steps": 110,
+      "macro_calls": 3,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 9,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "preempt_hold",
+      "success": true,
+      "n_steps": 114,
+      "macro_calls": 3,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 9,
+      "seed": 1000,
+      "episode_index": 0,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 9,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 9,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 9,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 9,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 9,
+      "seed": 1001,
+      "episode_index": 1,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "cookies_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 9,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 9,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 9,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 9,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 9,
+      "seed": 1002,
+      "episode_index": 2,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 9,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 9,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 9,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 9,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 9,
+      "seed": 1003,
+      "episode_index": 3,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 9,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "clean",
+      "success": true,
+      "n_steps": 109,
+      "macro_calls": 3,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 9,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 9,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 9,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "preempt_hold",
+      "success": true,
+      "n_steps": 116,
+      "macro_calls": 3,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 9,
+      "seed": 1004,
+      "episode_index": 4,
+      "variant": "recovery_probe",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 31,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    }
+  ],
+  "wall_time_s": 4814.0
+}

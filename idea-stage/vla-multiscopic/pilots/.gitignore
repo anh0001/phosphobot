@@ -1,0 +1,4 @@
+# heavy regenerable eval outputs (videos + per-run eval_info); numbers live in IDEA_REPORT.md
+horizon_ablation/
+horizon_ablation_fast/
+*.log

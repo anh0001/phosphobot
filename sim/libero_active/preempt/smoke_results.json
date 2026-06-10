@@ -1,0 +1,363 @@
+{
+  "config": {
+    "tasks": [
+      0,
+      3
+    ],
+    "seeds": [
+      1003,
+      1004
+    ],
+    "perturb_step": 98,
+    "tp_frac": 0.35,
+    "latency": 8,
+    "delta": 0.05,
+    "max_steps": 280,
+    "ckpt": "fixedbuf_random_N20/seed0/004000",
+    "suite": "libero_spatial"
+  },
+  "aggregate": {
+    "arms": {
+      "clean": {
+        "raw_perturbed_success": 0.75,
+        "conditional_perturbed_success": 1.0,
+        "n_pairs": 4,
+        "n_clean_success": 3,
+        "avg_macro_calls": 3.0,
+        "stale_action_harm": null,
+        "n_perturbations_fired_in_clean_pairs": 0
+      },
+      "open_loop": {
+        "raw_perturbed_success": 0.75,
+        "conditional_perturbed_success": 1.0,
+        "n_pairs": 4,
+        "n_clean_success": 3,
+        "avg_macro_calls": 3.0,
+        "stale_action_harm": null,
+        "n_perturbations_fired_in_clean_pairs": 0
+      },
+      "replan_only": {
+        "raw_perturbed_success": 0.75,
+        "conditional_perturbed_success": 1.0,
+        "n_pairs": 4,
+        "n_clean_success": 3,
+        "avg_macro_calls": 3.0,
+        "stale_action_harm": null,
+        "n_perturbations_fired_in_clean_pairs": 0
+      },
+      "preempt_hold": {
+        "raw_perturbed_success": 0.75,
+        "conditional_perturbed_success": 1.0,
+        "n_pairs": 4,
+        "n_clean_success": 3,
+        "avg_macro_calls": 3.0,
+        "stale_action_harm": null,
+        "n_perturbations_fired_in_clean_pairs": 0
+      },
+      "full_replan": {
+        "raw_perturbed_success": 0.0,
+        "conditional_perturbed_success": 0.0,
+        "n_pairs": 4,
+        "n_clean_success": 3,
+        "avg_macro_calls": 280.0,
+        "stale_action_harm": null,
+        "n_perturbations_fired_in_clean_pairs": 3
+      }
+    },
+    "n_clean_success": 3,
+    "n_pairs": 4
+  },
+  "kill_criterion": {
+    "cond_gain_pp": 0.0,
+    "harm_reduction_pct": null,
+    "equal_macro_calls": true,
+    "pass_via_conditional_success": false,
+    "pass_via_harm_reduction": false,
+    "PASSES": false,
+    "threshold_cond_gain_pp": 10.0,
+    "threshold_harm_reduction_pct": 25.0
+  },
+  "records": [
+    {
+      "task_id": 0,
+      "seed": 1003,
+      "episode_index": 0,
+      "variant": "clean",
+      "success": true,
+      "n_steps": 83,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1003,
+      "episode_index": 0,
+      "variant": "open_loop",
+      "success": true,
+      "n_steps": 83,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1003,
+      "episode_index": 0,
+      "variant": "replan_only",
+      "success": true,
+      "n_steps": 83,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1003,
+      "episode_index": 0,
+      "variant": "preempt_hold",
+      "success": true,
+      "n_steps": 83,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1003,
+      "episode_index": 0,
+      "variant": "full_replan",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 280,
+      "perturb": {
+        "perturbed": true,
+        "object": "plate_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1004,
+      "episode_index": 1,
+      "variant": "clean",
+      "success": true,
+      "n_steps": 98,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1004,
+      "episode_index": 1,
+      "variant": "open_loop",
+      "success": true,
+      "n_steps": 98,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1004,
+      "episode_index": 1,
+      "variant": "replan_only",
+      "success": true,
+      "n_steps": 98,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1004,
+      "episode_index": 1,
+      "variant": "preempt_hold",
+      "success": true,
+      "n_steps": 98,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 0,
+      "seed": 1004,
+      "episode_index": 1,
+      "variant": "full_replan",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 280,
+      "perturb": {
+        "perturbed": true,
+        "object": "plate_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1003,
+      "episode_index": 0,
+      "variant": "clean",
+      "success": true,
+      "n_steps": 87,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1003,
+      "episode_index": 0,
+      "variant": "open_loop",
+      "success": true,
+      "n_steps": 87,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1003,
+      "episode_index": 0,
+      "variant": "replan_only",
+      "success": true,
+      "n_steps": 87,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1003,
+      "episode_index": 0,
+      "variant": "preempt_hold",
+      "success": true,
+      "n_steps": 87,
+      "macro_calls": 2,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1003,
+      "episode_index": 0,
+      "variant": "full_replan",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 280,
+      "perturb": {
+        "perturbed": true,
+        "object": "akita_black_bowl_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1004,
+      "episode_index": 1,
+      "variant": "clean",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": false,
+        "object": null
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1004,
+      "episode_index": 1,
+      "variant": "open_loop",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "plate_1_joint0"
+      },
+      "stale_harm": null
+    },
+    {
+      "task_id": 3,
+      "seed": 1004,
+      "episode_index": 1,
+      "variant": "replan_only",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "plate_1_joint0"
+      },
+      "stale_harm": 1.21894437789917
+    },
+    {
+      "task_id": 3,
+      "seed": 1004,
+      "episode_index": 1,
+      "variant": "preempt_hold",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 6,
+      "perturb": {
+        "perturbed": true,
+        "object": "plate_1_joint0"
+      },
+      "stale_harm": 1.123527581691742
+    },
+    {
+      "task_id": 3,
+      "seed": 1004,
+      "episode_index": 1,
+      "variant": "full_replan",
+      "success": false,
+      "n_steps": 280,
+      "macro_calls": 280,
+      "perturb": {
+        "perturbed": true,
+        "object": "plate_1_joint0"
+      },
+      "stale_harm": null
+    }
+  ],
+  "wall_time_s": 720.3
+}

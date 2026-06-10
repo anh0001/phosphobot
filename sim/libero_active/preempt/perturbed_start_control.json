@@ -1,0 +1,416 @@
+{
+  "n": 50,
+  "perturbed_start_raw_success": 0.08,
+  "clean_raw_success": 0.28,
+  "perturbed_start_conditional_success": 0.07142857142857142,
+  "n_clean_success": 14,
+  "n_clean_success_that_survive_start_displacement": 1,
+  "compare_conditional": {
+    "perturbed_start": 0.07142857142857142,
+    "open_loop_midroll": 0.21428571428571427,
+    "recovery_probe_midroll": 0.2857142857142857,
+    "preempt_hold_midroll": 0.35714285714285715
+  },
+  "records": [
+    {
+      "task_id": 0,
+      "seed": 1000,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 0,
+      "seed": 1001,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": true
+    },
+    {
+      "task_id": 0,
+      "seed": 1002,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 0,
+      "seed": 1003,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": true
+    },
+    {
+      "task_id": 0,
+      "seed": 1004,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": true
+    },
+    {
+      "task_id": 1,
+      "seed": 1000,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 1,
+      "seed": 1001,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 1,
+      "seed": 1002,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 1,
+      "seed": 1003,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 1,
+      "seed": 1004,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 2,
+      "seed": 1000,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 2,
+      "seed": 1001,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 2,
+      "seed": 1002,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 2,
+      "seed": 1003,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": true
+    },
+    {
+      "task_id": 2,
+      "seed": 1004,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 3,
+      "seed": 1000,
+      "object": "cookies_1_joint0",
+      "success": true,
+      "n_steps": 84,
+      "clean_success": true
+    },
+    {
+      "task_id": 3,
+      "seed": 1001,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 3,
+      "seed": 1002,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 3,
+      "seed": 1003,
+      "object": "cookies_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": true
+    },
+    {
+      "task_id": 3,
+      "seed": 1004,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": true
+    },
+    {
+      "task_id": 4,
+      "seed": 1000,
+      "object": "cookies_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 4,
+      "seed": 1001,
+      "object": "glazed_rim_porcelain_ramekin_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 4,
+      "seed": 1002,
+      "object": "glazed_rim_porcelain_ramekin_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 4,
+      "seed": 1003,
+      "object": "cookies_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 4,
+      "seed": 1004,
+      "object": "cookies_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 5,
+      "seed": 1000,
+      "object": "glazed_rim_porcelain_ramekin_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 5,
+      "seed": 1001,
+      "object": "glazed_rim_porcelain_ramekin_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 5,
+      "seed": 1002,
+      "object": "glazed_rim_porcelain_ramekin_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 5,
+      "seed": 1003,
+      "object": "glazed_rim_porcelain_ramekin_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 5,
+      "seed": 1004,
+      "object": "glazed_rim_porcelain_ramekin_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 6,
+      "seed": 1000,
+      "object": "akita_black_bowl_1_joint0",
+      "success": true,
+      "n_steps": 115,
+      "clean_success": false
+    },
+    {
+      "task_id": 6,
+      "seed": 1001,
+      "object": "cookies_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": true
+    },
+    {
+      "task_id": 6,
+      "seed": 1002,
+      "object": "cookies_1_joint0",
+      "success": true,
+      "n_steps": 123,
+      "clean_success": false
+    },
+    {
+      "task_id": 6,
+      "seed": 1003,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": true
+    },
+    {
+      "task_id": 6,
+      "seed": 1004,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 7,
+      "seed": 1000,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 7,
+      "seed": 1001,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": true
+    },
+    {
+      "task_id": 7,
+      "seed": 1002,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": true
+    },
+    {
+      "task_id": 7,
+      "seed": 1003,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 7,
+      "seed": 1004,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": true
+    },
+    {
+      "task_id": 8,
+      "seed": 1000,
+      "object": "plate_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 8,
+      "seed": 1001,
+      "object": "plate_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 8,
+      "seed": 1002,
+      "object": "plate_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 8,
+      "seed": 1003,
+      "object": "plate_1_joint0",
+      "success": true,
+      "n_steps": 95,
+      "clean_success": false
+    },
+    {
+      "task_id": 8,
+      "seed": 1004,
+      "object": "plate_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 9,
+      "seed": 1000,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": true
+    },
+    {
+      "task_id": 9,
+      "seed": 1001,
+      "object": "cookies_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 9,
+      "seed": 1002,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 9,
+      "seed": 1003,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": false
+    },
+    {
+      "task_id": 9,
+      "seed": 1004,
+      "object": "akita_black_bowl_1_joint0",
+      "success": false,
+      "n_steps": 280,
+      "clean_success": true
+    }
+  ]
+}
