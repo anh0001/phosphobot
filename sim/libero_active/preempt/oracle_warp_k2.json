@@ -1,0 +1,76 @@
+{
+  "nowarp_grid": {
+    "n": 60,
+    "med_d_true_cm": 8.264979331719536,
+    "med_d_canon_cm": 7.196164942594047,
+    "med_d_pred_cm": 7.196164942594047,
+    "success": 0.06666666666666667,
+    "med_tau": -0.11712317491886526
+  },
+  "sham_zero": {
+    "n": 15,
+    "med_d_true_cm": 8.234743174878197,
+    "med_d_canon_cm": 7.052843788973499,
+    "med_d_pred_cm": 7.052843788973499,
+    "success": 0.13333333333333333,
+    "med_tau": -0.12617892425365013
+  },
+  "warp_full": {
+    "n": 60,
+    "med_d_true_cm": 10.0850522468331,
+    "med_d_canon_cm": 9.288677515603501,
+    "med_d_pred_cm": 10.0850522468331,
+    "success": 0.03333333333333333,
+    "med_tau": -0.4612514905127817
+  },
+  "warp_image": {
+    "n": 60,
+    "med_d_true_cm": 9.259599452758987,
+    "med_d_canon_cm": 7.098806171441875,
+    "med_d_pred_cm": 9.259599452758987,
+    "success": 0.1,
+    "med_tau": -0.03491757332255609
+  },
+  "warp_proprio": {
+    "n": 60,
+    "med_d_true_cm": 9.5338741357219,
+    "med_d_canon_cm": 8.138785697341577,
+    "med_d_pred_cm": 9.5338741357219,
+    "success": 0.06666666666666667,
+    "med_tau": -0.37173171459480836
+  },
+  "warp_random": {
+    "n": 60,
+    "med_d_true_cm": 9.635433793758306,
+    "med_d_canon_cm": 8.778292101223087,
+    "med_d_pred_cm": 10.836987787505961,
+    "success": 0.016666666666666666,
+    "med_tau": -0.29515961670720403
+  },
+  "warp_clean": {
+    "n": 60,
+    "med_d_true_cm": 7.96909478535631,
+    "med_d_canon_cm": 7.96909478535631,
+    "med_d_pred_cm": 9.837365580557929,
+    "success": 0.13333333333333333,
+    "med_tau": null
+  },
+  "midroll_post": {
+    "n": 60,
+    "med_d_true_cm": 16.090453519490037,
+    "med_d_canon_cm": 13.589345824567971,
+    "med_d_pred_cm": 13.589345824567971,
+    "success": 0.1,
+    "med_tau": 0.03312600452989752
+  },
+  "k2": {
+    "R_e": -0.22021505947733533,
+    "checks": {
+      "endpoint-error reduction R_e >= 0.5 (got -0.22: 8.3 -> 10.1cm)": false,
+      "specificity: warp_random does NOT restore (|E-T| 9.6 vs nowarp 8.3)": true,
+      "sham no-op (mismatches 2)": false,
+      "success restoration (warp_full 3% vs nowarp 7%, clean=100% by conditioning)": false
+    },
+    "verdict": "RED"
+  }
+}

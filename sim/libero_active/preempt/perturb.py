@@ -43,6 +43,34 @@ def perturb_object_by_name(lerobot_env, object_name: str, delta: float = 0.05) -
             "before_xyz": before.tolist(), "after_xyz": after.tolist()}
 
 
+def perturb_object_by_name_vec(lerobot_env, object_name: str, dxy: tuple[float, float]) -> dict:
+    """Nudge a SPECIFIC named free-joint object by (dx, dy) in the world XY plane.
+
+    Generalizes perturb_object_by_name to arbitrary planar directions (reach-field
+    grid). Returns before/after xyz so the analysis can use the REALIZED
+    displacement (collision resolution may shift the commanded one).
+    """
+    rs = lerobot_env._env.env
+    sim = rs.sim
+    match = [(n, a) for (n, a) in _movable_free_joints(sim) if n == object_name]
+    if not match:
+        return {"perturbed": False, "reason": f"object_not_found:{object_name}"}
+    name, adr = match[0]
+    before = np.asarray(sim.data.qpos[adr:adr + 3]).copy()
+    sim.data.qpos[adr] += dxy[0]
+    sim.data.qpos[adr + 1] += dxy[1]
+    sim.forward()
+    after = np.asarray(sim.data.qpos[adr:adr + 3]).copy()
+    return {"perturbed": True, "object": name, "dxy": [float(dxy[0]), float(dxy[1])],
+            "before_xyz": before.tolist(), "after_xyz": after.tolist(), "qpos_adr": adr}
+
+
+def object_xyz(lerobot_env, qpos_adr: int) -> np.ndarray:
+    """Current xyz of a free-joint object given its qpos address."""
+    sim = lerobot_env._env.env.sim
+    return np.asarray(sim.data.qpos[qpos_adr:qpos_adr + 3]).copy()
+
+
 def perturb_nearest_object(lerobot_env, delta: float = 0.05) -> dict:
     """Find the movable object nearest the eef in XY and nudge it +delta in x.
 

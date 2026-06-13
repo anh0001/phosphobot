@@ -256,4 +256,79 @@ External GPT-5.2 review, given the table above:
   epistemic disagreement". *Not* "conformal once debugged" — fixing the bug
   will likely make conformal rank-equivalent to entropy.
 
+## Independent re-run on machine B (A6000) — N=20 headline did NOT reproduce (2026-06-06)
+
+Fresh env bring-up on a **second machine** (kubotaserver2, 1×RTX A6000) — a
+different box from roboserver1; `results/`+`.venv` are not synced, so this is a
+clean independent reproduction. Required fixing a dataset blocker first:
+`HuggingFaceVLA/libero` **v3.0** ships a stale `meta/episodes` map (69-file
+layout) vs the actual **377-file** `data/`; newer lerobot's selective
+per-episode download fetched the wrong file → `Instruction "train" corresponds
+to no data`. Fix (no code edits): pre-fetch the full ~35GB `data/` so lerobot's
+*global* `episode_index` filter resolves (images are embedded in parquet; zero
+videos). Early points then reproduced → pipeline validated.
+
+**dispersion_quota s0 re-run** (libero_spatial, 200 eval rollouts/point):
+
+| N  | machine B | machine A (prior) | Δ |
+|----|-----------|-------------------|---|
+| 5  | 8.5       | 9.0               | −0.5 |
+| 10 | 29.0      | 25.0              | +4.0 |
+| 15 | 27.5      | 29.5              | −2.0 |
+| 20 | **26.5**  | **47.5**          | **−21.0** |
+
+N=5/10/15 reproduce within ~0.5–4pp, but the **headline 47.5% "late jump" at
+N=20 did NOT reproduce (26.5%)**. The curve plateaus flat from N=10.
+
+Forensics (free, pre-GPU):
+- **Coverage mechanism refuted.** At N=20 quota selected exactly **2 demos/task
+  across all 10 tasks** (perfect balanced coverage) yet produced no jump.
+  Coverage is not sufficient.
+- **Per-task success is wildly volatile** — single LoRA rounds swing individual
+  tasks 30–50pp. N=15→N=20 was near-pure cancellation (task6 +50, task7 +25 vs
+  task0 −35, task2 −30, task8 −20; net −1pp). Even "easy" task8 degrades with
+  more demos (90→50→30). The machine-A "late jump" is best explained as a lucky
+  simultaneous up-alignment of ~10 noisy per-task draws, not a mechanism.
+- **AUC/mean-over-N deflates the headline.** Machine-A endpoint delta
+  (quota−random at N=20) = **+9.0pp** across seeds, but **mean-over-N delta =
+  +4.5pp**, and **without seed 3 it is −0.1pp** (seed3 alone = +18.5pp). The
+  entire AUC advantage is one seed.
+
+Codex (GPT-5.2) updated read: **downgrade the headline now.** Honest claim:
+"naive action-dispersion acquisition with task quota is high variance and does
+not robustly beat random for SmolVLA+LoRA in the 5–20 demo regime; perfect
+coverage is insufficient; per-task training instability dominates the N=20
+aggregate." Single paired (quota,random) comparisons are underpowered (seed SD
+~14.5pp → ~15–25 replicates to detect +9pp). **Pre-registered plan:** finish B
+random s0 N=20 (running), then **freeze the N=20 selected buffers** and run 2
+extra LoRA retrains per buffer (3 train seeds), same eval init; positive claim
+survives only if fixed-buffer mean delta **>+5pp AND ≥2/3 train seeds favor
+quota**. No coverage claim under any outcome.
+
+### Paired quota-vs-random on machine B — the headline INVERTS (2026-06-07)
+
+Random s0 N=20 finished on machine B. Paired delta (dispersion_quota − random),
+same nominal seed 0, both methods on identical eval init states (seed=1000):
+
+| N  | random B | quota B | Δ (B) | Δ (machine A / roboserver1) |
+|----|----------|---------|-------|------------------------------|
+| 5  | 8.5      | 8.5     | +0.0  | +0.0  |
+| 10 | 20.0     | 29.0    | +9.0  | +2.5  |
+| 15 | 37.5     | 27.5    | −10.0 | −3.5  |
+| 20 | 33.5     | 26.5    | **−7.0**  | **+12.5** |
+| AUC| —        | —       | **−2.0**  | +2.9  |
+
+**At N=20 the paired advantage flips from +12.5pp (A) to −7.0pp (B) — a 19.5pp
+swing and a SIGN FLIP at the same seed, only the hardware differs.** Per codex's
+pre-registered rule ("if B random > quota+5pp → retire the headline"): random
+beats quota by +7.0 at N=20 → **headline retired; late-jump mechanism dead.** The
+sign of the acquisition advantage is not stable across machines at fixed seed —
+the central evidence for the "Unreliable by Default" pivot (see
+`NOVELTY_CHECK_unreliable-by-default.md`, verdict PROCEED-WITH-CAUTION 6.5/10).
+
+Note both curves are non-monotonic on B (random peaks at N=15=37.5 then drops to
+33.5; quota flat from N=10). Next: E1 fixed-buffer LoRA retrains (k=5 seeds per
+frozen N=20 buffer, fixed eval seed) to decompose retrain variance vs the
+acquisition delta — `fixed_buffer_retrain.py` + `scripts/e1_fixedbuf_orchestrator.sh`.
+
 ## Real-Piper transfer (Stage B) — not started

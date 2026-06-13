@@ -61,8 +61,16 @@ class Pipeline:
     device: torch.device
 
 
-def build_pipeline(ckpt: str = CKPT, device: str = DEVICE) -> Pipeline:
-    """Build policy + all processors exactly like eval_main()."""
+def build_pipeline(ckpt: str = CKPT, device: str = DEVICE,
+                   rename_map: dict[str, str] | None = None,
+                   stats_repo: str | None = None) -> Pipeline:
+    """Build policy + all processors exactly like eval_main().
+
+    rename_map: env-obs key -> policy feature key (e.g. {"observation.images.image2":
+    "observation.images.wrist_image"}) for checkpoints trained with other camera names.
+    stats_repo: dataset repo id for normalization stats — fallback for hub checkpoints
+    that lack saved processor files (older lerobot training format).
+    """
     torch.backends.cudnn.benchmark = True
     torch.backends.cuda.matmul.allow_tf32 = True
 
@@ -74,18 +82,29 @@ def build_pipeline(ckpt: str = CKPT, device: str = DEVICE) -> Pipeline:
     # env config: matches the working CLI (env.type=libero, env.task=libero_spatial)
     env_cfg = LiberoEnvConfig(task=SUITE_NAME)
 
-    policy = make_policy(cfg=policy_cfg, env_cfg=env_cfg)
+    policy = make_policy(cfg=policy_cfg, env_cfg=env_cfg, rename_map=rename_map)
     policy.eval()
 
     preprocessor_overrides = {
         "device_processor": {"device": str(policy.config.device)},
-        "rename_observations_processor": {"rename_map": {}},
+        "rename_observations_processor": {"rename_map": rename_map or {}},
     }
-    preprocessor, postprocessor = make_pre_post_processors(
-        policy_cfg=policy_cfg,
-        pretrained_path=policy_cfg.pretrained_path,
-        preprocessor_overrides=preprocessor_overrides,
-    )
+    try:
+        preprocessor, postprocessor = make_pre_post_processors(
+            policy_cfg=policy_cfg,
+            pretrained_path=policy_cfg.pretrained_path,
+            preprocessor_overrides=preprocessor_overrides,
+        )
+    except FileNotFoundError:
+        if not stats_repo:
+            raise
+        # Hub checkpoint without saved processors: build defaults from the
+        # training dataset's normalization stats.
+        preprocessor, postprocessor = make_pre_post_processors(
+            policy_cfg=policy_cfg,
+            dataset_stats=_stats_from_repo(stats_repo),
+            preprocessor_overrides=preprocessor_overrides,
+        )
     env_preprocessor, env_postprocessor = make_env_pre_post_processors(
         env_cfg=env_cfg, policy_cfg=policy_cfg
     )
@@ -98,6 +117,32 @@ def build_pipeline(ckpt: str = CKPT, device: str = DEVICE) -> Pipeline:
         env_postprocessor=env_postprocessor,
         device=get_safe_device(policy),
     )
+
+
+def _stats_from_repo(stats_repo: str) -> dict:
+    """Normalization stats for a dataset repo, tolerating v2.1-format datasets.
+
+    v3 datasets: LeRobotDatasetMetadata. v2.1 datasets (incompatible with this
+    lerobot): aggregate meta/episodes_stats.jsonl with lerobot's own utility.
+    """
+    import json
+
+    try:
+        from lerobot.datasets.lerobot_dataset import LeRobotDatasetMetadata
+        return LeRobotDatasetMetadata(stats_repo).stats
+    except Exception:
+        pass
+    from huggingface_hub import hf_hub_download
+    from lerobot.datasets.compute_stats import aggregate_stats
+
+    path = hf_hub_download(stats_repo, "meta/episodes_stats.jsonl", repo_type="dataset")
+
+    def _np(d):
+        return {k: ({kk: np.asarray(vv) for kk, vv in v.items()} if isinstance(v, dict) else v)
+                for k, v in d.items()}
+
+    ep_stats = [_np(json.loads(line)["stats"]) for line in open(path) if line.strip()]
+    return aggregate_stats(ep_stats)
 
 
 def get_safe_device(policy: Any) -> torch.device:
@@ -376,9 +421,18 @@ def run_variant(env: LiberoEnv, pipe: Pipeline, seed: int, variant: str,
 
 
 def _refresh_obs(env: LiberoEnv) -> dict:
-    """Re-read the env observation in the lerobot obs format (no env.step)."""
+    """Re-read the env observation in the lerobot obs format (no env.step).
+
+    force_update=True is REQUIRED: robosuite's _get_observations() returns the
+    cached observables by default, which do NOT reflect direct qpos mutations
+    (verified 2026-06-12: post-perturb default obs was bit-identical to the
+    pre-perturb frame). Every pre-fix result that planned a chunk from a
+    _refresh_obs frame right after a perturbation (mislocalization probe,
+    perturbed_start control, E1 recovery_probe first replan, reach-field v1)
+    fed the policy a STALE pre-displacement image at that boundary.
+    """
     rs = env._env.env
-    return env._format_raw_obs(rs._get_observations())
+    return env._format_raw_obs(rs._get_observations(force_update=True))
 
 
 def _zeros_action(pipe: Pipeline) -> torch.Tensor:
