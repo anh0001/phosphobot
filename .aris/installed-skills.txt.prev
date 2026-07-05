@@ -1,7 +1,7 @@
 version	1
-repo_root	/srv/data/users/anhar/codes/Auto-claude-code-research-in-sleep
-project_root	/srv/data/users/anhar/codes/phosphobot
-generated	2026-06-05T05:41:03Z
+repo_root	/srv/storage/roboserver1/home/anhar/codes/Auto-claude-code-research-in-sleep
+project_root	/srv/storage/roboserver1/home/anhar/codes/phosphobot
+generated	2026-07-05T13:52:37Z
 kind	name	source_rel	target_rel	mode
 skill	ablation-planner	skills/ablation-planner	.claude/skills/ablation-planner	symlink
 skill	alphaxiv	skills/alphaxiv	.claude/skills/alphaxiv	symlink
@@ -49,6 +49,7 @@ skill	paper-illustration	skills/paper-illustration	.claude/skills/paper-illustra
 skill	paper-illustration-image2	skills/paper-illustration-image2	.claude/skills/paper-illustration-image2	symlink
 skill	paper-plan	skills/paper-plan	.claude/skills/paper-plan	symlink
 skill	paper-poster	skills/paper-poster	.claude/skills/paper-poster	symlink
+skill	paper-poster-html	skills/paper-poster-html	.claude/skills/paper-poster-html	symlink
 skill	paper-slides	skills/paper-slides	.claude/skills/paper-slides	symlink
 skill	paper-talk	skills/paper-talk	.claude/skills/paper-talk	symlink
 skill	paper-write	skills/paper-write	.claude/skills/paper-write	symlink

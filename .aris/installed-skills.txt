@@ -1,7 +1,7 @@
 version	1
-repo_root	/srv/data/users/anhar/codes/Auto-claude-code-research-in-sleep
-project_root	/srv/data/users/anhar/codes/phosphobot
-generated	2026-07-03T13:58:31Z
+repo_root	/srv/storage/roboserver1/home/anhar/codes/Auto-claude-code-research-in-sleep
+project_root	/srv/storage/roboserver1/home/anhar/codes/phosphobot
+generated	2026-07-05T13:52:51Z
 kind	name	source_rel	target_rel	mode
 skill	ablation-planner	skills/ablation-planner	.claude/skills/ablation-planner	symlink
 skill	alphaxiv	skills/alphaxiv	.claude/skills/alphaxiv	symlink
