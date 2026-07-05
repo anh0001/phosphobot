@@ -31,11 +31,13 @@ def main() -> None:
     ap.add_argument("--unflip", action="store_true",
                     help="pre-flip images so the LiberoProcessorStep 180-flip cancels "
                          "(for checkpoints trained on unflipped frames)")
+    ap.add_argument("--src", default="preempt/e1_recovery_d005.json",
+                    help="pair-metadata (obj_map source); default libero_spatial")
     args = ap.parse_args()
 
     tasks = [int(x) for x in args.tasks.split(",")]
     seeds = [int(x) for x in args.seeds.split(",")]
-    obj_map, _ = load_pair_meta("preempt/e1_recovery_d005.json")
+    obj_map, _ = load_pair_meta(args.src)
     out_path = Path(args.out)
     done = set()
     if out_path.exists():

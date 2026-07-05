@@ -1,0 +1,30 @@
+\section{Diagnostic Protocol}
+\label{sec:protocol}
+
+\paragraph{Policy and training.} We study SmolVLA \citep{shukor2025smolvla}, a compact flow-matching VLA, fine-tuned on LIBERO-spatial \citep{liu2023libero}. Following the standard SmolVLA full action-expert preset, we freeze the vision-language backbone and fine-tune the action expert (the only trainable module; $\sim$100M of 450M parameters) on all $432$ demonstrations across the $10$ tasks, for $100$k steps at learning rate $10^{-4}$ with a cosine schedule (warmup $1000$, decay over the full run to $2.5\times10^{-6}$), batch size $32$, in bfloat16. Actions are relative (delta) end-effector poses plus a gripper command, executed in chunks of $50$.
+
+\paragraph{Clean evaluation (competence).} We measure clean success on a fixed, position-disciplined grid: each (task, seed) pair is rolled out in a freshly constructed environment with the object at its canonical location, for $10$ tasks $\times$ $5$ seeds $=50$ rollouts, using the standard LIBERO success criterion. We use clean success as the policy's \emph{competence}, the quantity a strong checkpoint must establish before any failure it exhibits can be attributed to the policy rather than to undertraining.
+
+\paragraph{Reach-field protocol.} For a displacement of magnitude $m$ in a cardinal direction, we move the target object from its canonical location $\Cv$ to $\Tv=\Cv+\dv$ at episode start and re-render the observation so the policy plans on the post-displacement image (we verified that a naive observation refresh returns a cached, pre-displacement frame; all reach-field rollouts force a fresh render). We then roll out the policy and record three endpoint definitions of the end-effector trajectory: the \emph{pregrasp} endpoint (pose at first gripper closure), the \emph{closest} approach to the object, and the \emph{final} pose. The \emph{primary} endpoint is pregrasp where defined, else closest. All endpoints are taken in the table ($xy$) plane, the plane of displacement.
+
+\paragraph{Clean-conditioned primary set.} Our primary analysis conditions on \emph{clean-success pairs}: displaced rollouts whose paired clean rollout (same (task, seed), same run) succeeded. This is the direct answer to the ``weak/undertrained policy'' objection---the policy provably solves the undisplaced task, so any displacement failure is not an inability to do the task. Clean success defines $37$ of the $50$ task-seed pairs as clean-capable, so the $50$\,mm primary set comprises $37\times4=148$ displaced rollouts (one per cardinal direction per clean-capable pair); displaced success is reported separately over those displaced trials. We report all-attempt and clean-conditioned-failure subsets as secondary views.
+
+\paragraph{Statistics.} For each displaced rollout we form the displacement $\dv=\Tv-\Cv$ and the endpoint error $\ev=\Ev-\Tv$, and report (i) the directional alignment $\cossim(\ev,-\dv)$ (positive $=$ reaching toward the canonical prior, zero $=$ tracking the displaced object), (ii) the signed projection $\langle\ev,-\dv\rangle/\lVert\dv\rVert^2$ (a magnitude-transfer measure: $1$ means the endpoint stays at $\Cv$ as the object moves), and (iii) the fraction of endpoints closer to $\Cv$ than to $\Tv$. Population summaries use the median with a \emph{task-cluster bootstrap} $95\%$ CI (resampling tasks, then pooling their rollouts) to respect the per-task correlation of canonical geometry. We pre-registered a replication bar (\cref{tab:protocol}); the pooled $|\ev|\!\sim\!|\dv|$ regression $R^2$ is reported descriptively only, as it is confounded by per-task geometry and is not a valid gate.
+
+\begin{table}[t]
+\centering
+\caption{Protocols, sample sizes, primary metrics, and pre-registered pass bars.}
+\label{tab:protocol}
+\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+Protocol & Rollouts & Primary metric & Pass bar \\
+\midrule
+E0 clean eval & $50$ ($10{\times}5$) & clean success & strong ckpt $\geq 33/50$ ($65\%$) \\
+E1r reach-field & $850$ ($50{\times}17$) & $\cossim(\ev,-\dv)$, $50$\,mm, clean-cond. & med.\ $\geq 0.50$; boot-low $>0.20$; \\
+ & & & proj.\ $\geq 0.35$; closer-canon.\ $\geq 0.65$ \\
+E2r object-paste & $740$ ($37{\times}4{\times}5$) & $S=\langle\Ev_{CT}{-}\Ev_{CC},\dv\rangle/\lVert\dv\rVert^2$ & sufficiency: med.\ $S\geq0.40$ \\
+Emergence ladder & $4{\times}250$ & bias vs.\ competence & (descriptive) \\
+\bottomrule
+\end{tabular}
+\end{table}

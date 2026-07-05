@@ -1,0 +1,14 @@
+\section{Implementation and Reproducibility Details}
+\label{sec:appendix}
+
+\paragraph{Why full action-expert fine-tuning.} A parameter-efficient LoRA fine-tune (rank $64$, $\sim$3M trainable parameters) of the same SmolVLA backbone plateaus at $36$--$38\%$ clean success and does not clear the strong-checkpoint bar, independent of learning rate ($10^{-3}$ and the preset $10^{-4}$ give statistically indistinguishable results, $18/50$ and $19/50$). Only the full action-expert fine-tune (frozen vision-language backbone, $\sim$100M trainable parameters, $100$k steps) reaches $74\%$. We therefore use the full action-expert checkpoint as the competent policy throughout; the LoRA checkpoints serve only as low-competence references and are not the subject of any claim.
+
+\paragraph{Fresh-observation discipline.} Robosuite's default observation accessor returns a cached frame that does not reflect direct object-pose mutation; an early version of the protocol planned the first post-displacement chunk on a stale, pre-displacement image. All reach-field and intervention rollouts force a fresh render after any pose change, so the policy always plans on the post-displacement (or post-paste) observation.
+
+\paragraph{Endpoint extraction.} The pregrasp endpoint is the end-effector pose at the first gripper-close transition; the closest endpoint is the nearest approach (in the $xy$ plane) to the physical object; the final endpoint is the last pose. The primary endpoint is pregrasp where a gripper-close occurs, else closest. Cosine and projection statistics use the realized displacement $\dv$ (filtered to $\geq 1$\,cm) in the table plane.
+
+\paragraph{Bootstrap.} Confidence intervals resample tasks with replacement (cluster bootstrap over the $10$ tasks), pool the resampled tasks' rollouts, and take the median; we report the $2.5$/$97.5$ percentiles over $10^4$ resamples.
+
+\paragraph{Object-paste machinery.} Per policy step: save the target object's free-joint $qpos$; set its $xy$ to the visual location $V$; \texttt{sim.forward()} and re-render; restore $qpos$ and \texttt{sim.forward()}; feed the policy the re-rendered image(s) with the true proprioception, and step the real physics with the object at its physical location. Both the agentview and wrist images are edited. A sham render ($V$ equal to the physical location) changes $0$ pixels, confirming the intervention is identity in the no-op case; CT/TC/CR change only the $\sim$2k pixels of the object's footprint.
+
+\paragraph{Reproducibility.} All result files (per-rollout endpoints, frozen verdict JSONs, and figures) and the harness scripts are released with the paper.

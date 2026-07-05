@@ -213,6 +213,8 @@ def main() -> None:
                     help="task0/seed1000, mags {0.05,0.10}, dirs {px,py} + clean")
     ap.add_argument("--ckpt", default=None,
                     help="checkpoint path or hub id (default: harness CKPT)")
+    ap.add_argument("--src", default=SRC,
+                    help="pair-metadata file (obj_map source); default libero_spatial")
     args = ap.parse_args()
 
     tasks = [int(x) for x in args.tasks.split(",")]
@@ -236,7 +238,7 @@ def main() -> None:
             except Exception:
                 pass
 
-    obj_map, prior_clean = load_pair_meta(SRC)
+    obj_map, prior_clean = load_pair_meta(args.src)
     conditions = [("clean", None)] + [
         (f"d{int(m * 1000)}mm_{dn}", (m * dv[0], m * dv[1]))
         for m in mags for dn, dv in dirs.items()

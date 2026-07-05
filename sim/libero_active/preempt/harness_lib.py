@@ -19,6 +19,7 @@ single actions from it ourselves, applying steps 6-7 to each (1,7) action.
 """
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -41,7 +42,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CKPT = str(
     REPO_ROOT / "results/fixedbuf_random_N20/seed0/train/checkpoints/004000/pretrained_model"
 )
-SUITE_NAME = "libero_spatial"
+SUITE_NAME = os.environ.get("E_SUITE", "libero_spatial")  # set E_SUITE=libero_object for the 2nd suite
 # CLI uses LiberoEnv defaults: obs 360x360, control_mode relative; policy resizes to 256.
 OBS_HW = 360
 DEVICE = "cuda"

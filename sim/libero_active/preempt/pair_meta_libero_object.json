@@ -1,0 +1,1008 @@
+{
+ "config": {
+  "suite": "libero_object",
+  "source": "gen_pair_meta (env-only instruction match)"
+ },
+ "records": [
+  {
+   "task_id": 0,
+   "seed": 1000,
+   "variant": "open_loop",
+   "task": "pick up the alphabet soup and place it in the basket",
+   "perturb": {
+    "object": "alphabet_soup_1_joint0",
+    "before_xyz": [
+     -0.11909425548200042,
+     -0.2397812171983395,
+     0.03839291037026633
+    ]
+   }
+  },
+  {
+   "task_id": 0,
+   "seed": 1000,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 0,
+   "seed": 1001,
+   "variant": "open_loop",
+   "task": "pick up the alphabet soup and place it in the basket",
+   "perturb": {
+    "object": "alphabet_soup_1_joint0",
+    "before_xyz": [
+     -0.11909425548200042,
+     -0.2397812171983395,
+     0.03839291037026633
+    ]
+   }
+  },
+  {
+   "task_id": 0,
+   "seed": 1001,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 0,
+   "seed": 1002,
+   "variant": "open_loop",
+   "task": "pick up the alphabet soup and place it in the basket",
+   "perturb": {
+    "object": "alphabet_soup_1_joint0",
+    "before_xyz": [
+     -0.11909425548200044,
+     -0.23978121719833947,
+     0.038392910370266334
+    ]
+   }
+  },
+  {
+   "task_id": 0,
+   "seed": 1002,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 0,
+   "seed": 1003,
+   "variant": "open_loop",
+   "task": "pick up the alphabet soup and place it in the basket",
+   "perturb": {
+    "object": "alphabet_soup_1_joint0",
+    "before_xyz": [
+     -0.11909425548200044,
+     -0.23978121719833947,
+     0.038392910370266334
+    ]
+   }
+  },
+  {
+   "task_id": 0,
+   "seed": 1003,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 0,
+   "seed": 1004,
+   "variant": "open_loop",
+   "task": "pick up the alphabet soup and place it in the basket",
+   "perturb": {
+    "object": "alphabet_soup_1_joint0",
+    "before_xyz": [
+     -0.11909425548200044,
+     -0.23978121719833947,
+     0.038392910370266334
+    ]
+   }
+  },
+  {
+   "task_id": 0,
+   "seed": 1004,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 1,
+   "seed": 1000,
+   "variant": "open_loop",
+   "task": "pick up the cream cheese and place it in the basket",
+   "perturb": {
+    "object": "cream_cheese_1_joint0",
+    "before_xyz": [
+     0.04607199348127172,
+     -0.10264932772423524,
+     0.008921477418607906
+    ]
+   }
+  },
+  {
+   "task_id": 1,
+   "seed": 1000,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 1,
+   "seed": 1001,
+   "variant": "open_loop",
+   "task": "pick up the cream cheese and place it in the basket",
+   "perturb": {
+    "object": "cream_cheese_1_joint0",
+    "before_xyz": [
+     0.05451915769709573,
+     -0.10286021768051089,
+     0.008921477418607906
+    ]
+   }
+  },
+  {
+   "task_id": 1,
+   "seed": 1001,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 1,
+   "seed": 1002,
+   "variant": "open_loop",
+   "task": "pick up the cream cheese and place it in the basket",
+   "perturb": {
+    "object": "cream_cheese_1_joint0",
+    "before_xyz": [
+     0.05208605585281599,
+     -0.10132385159690716,
+     0.008921477418607906
+    ]
+   }
+  },
+  {
+   "task_id": 1,
+   "seed": 1002,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 1,
+   "seed": 1003,
+   "variant": "open_loop",
+   "task": "pick up the cream cheese and place it in the basket",
+   "perturb": {
+    "object": "cream_cheese_1_joint0",
+    "before_xyz": [
+     0.05360784088937931,
+     -0.10149700854647638,
+     0.008921477418607906
+    ]
+   }
+  },
+  {
+   "task_id": 1,
+   "seed": 1003,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 1,
+   "seed": 1004,
+   "variant": "open_loop",
+   "task": "pick up the cream cheese and place it in the basket",
+   "perturb": {
+    "object": "cream_cheese_1_joint0",
+    "before_xyz": [
+     0.04576834239053862,
+     -0.09630071904756879,
+     0.008921477418607906
+    ]
+   }
+  },
+  {
+   "task_id": 1,
+   "seed": 1004,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 2,
+   "seed": 1000,
+   "variant": "open_loop",
+   "task": "pick up the salad dressing and place it in the basket",
+   "perturb": {
+    "object": "salad_dressing_1_joint0",
+    "before_xyz": [
+     0.05000070616597218,
+     -0.09999129744190557,
+     0.07270544980088967
+    ]
+   }
+  },
+  {
+   "task_id": 2,
+   "seed": 1000,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 2,
+   "seed": 1001,
+   "variant": "open_loop",
+   "task": "pick up the salad dressing and place it in the basket",
+   "perturb": {
+    "object": "salad_dressing_1_joint0",
+    "before_xyz": [
+     0.05000070616597218,
+     -0.09999129744190557,
+     0.07270544980088967
+    ]
+   }
+  },
+  {
+   "task_id": 2,
+   "seed": 1001,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 2,
+   "seed": 1002,
+   "variant": "open_loop",
+   "task": "pick up the salad dressing and place it in the basket",
+   "perturb": {
+    "object": "salad_dressing_1_joint0",
+    "before_xyz": [
+     0.05000070616597218,
+     -0.09999129744190557,
+     0.07270544980088967
+    ]
+   }
+  },
+  {
+   "task_id": 2,
+   "seed": 1002,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 2,
+   "seed": 1003,
+   "variant": "open_loop",
+   "task": "pick up the salad dressing and place it in the basket",
+   "perturb": {
+    "object": "salad_dressing_1_joint0",
+    "before_xyz": [
+     0.050000706165972186,
+     -0.09999129744190556,
+     0.07270544980088967
+    ]
+   }
+  },
+  {
+   "task_id": 2,
+   "seed": 1003,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 2,
+   "seed": 1004,
+   "variant": "open_loop",
+   "task": "pick up the salad dressing and place it in the basket",
+   "perturb": {
+    "object": "salad_dressing_1_joint0",
+    "before_xyz": [
+     0.050000706165972186,
+     -0.09999129744190556,
+     0.07270544980088967
+    ]
+   }
+  },
+  {
+   "task_id": 2,
+   "seed": 1004,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 3,
+   "seed": 1000,
+   "variant": "open_loop",
+   "task": "pick up the bbq sauce and place it in the basket",
+   "perturb": {
+    "object": "bbq_sauce_1_joint0",
+    "before_xyz": [
+     0.0431295725817596,
+     -0.09009850396627363,
+     0.054625477418273796
+    ]
+   }
+  },
+  {
+   "task_id": 3,
+   "seed": 1000,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 3,
+   "seed": 1001,
+   "variant": "open_loop",
+   "task": "pick up the bbq sauce and place it in the basket",
+   "perturb": {
+    "object": "bbq_sauce_1_joint0",
+    "before_xyz": [
+     0.04822007607452743,
+     -0.1055765281310559,
+     0.054625477418273796
+    ]
+   }
+  },
+  {
+   "task_id": 3,
+   "seed": 1001,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 3,
+   "seed": 1002,
+   "variant": "open_loop",
+   "task": "pick up the bbq sauce and place it in the basket",
+   "perturb": {
+    "object": "bbq_sauce_1_joint0",
+    "before_xyz": [
+     0.040842594576873475,
+     -0.09950128103426444,
+     0.054625477418273796
+    ]
+   }
+  },
+  {
+   "task_id": 3,
+   "seed": 1002,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 3,
+   "seed": 1003,
+   "variant": "open_loop",
+   "task": "pick up the bbq sauce and place it in the basket",
+   "perturb": {
+    "object": "bbq_sauce_1_joint0",
+    "before_xyz": [
+     0.053339987847154775,
+     -0.10204214939226748,
+     0.054625477418273796
+    ]
+   }
+  },
+  {
+   "task_id": 3,
+   "seed": 1003,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 3,
+   "seed": 1004,
+   "variant": "open_loop",
+   "task": "pick up the bbq sauce and place it in the basket",
+   "perturb": {
+    "object": "bbq_sauce_1_joint0",
+    "before_xyz": [
+     0.05730991674017447,
+     -0.09373060559313656,
+     0.054625477418273796
+    ]
+   }
+  },
+  {
+   "task_id": 3,
+   "seed": 1004,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 4,
+   "seed": 1000,
+   "variant": "open_loop",
+   "task": "pick up the ketchup and place it in the basket",
+   "perturb": {
+    "object": "ketchup_1_joint0",
+    "before_xyz": [
+     -0.11999706998666346,
+     -0.23999758536033297,
+     0.07240547317984357
+    ]
+   }
+  },
+  {
+   "task_id": 4,
+   "seed": 1000,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 4,
+   "seed": 1001,
+   "variant": "open_loop",
+   "task": "pick up the ketchup and place it in the basket",
+   "perturb": {
+    "object": "ketchup_1_joint0",
+    "before_xyz": [
+     -0.11999706998666346,
+     -0.23999758536033297,
+     0.07240547317984357
+    ]
+   }
+  },
+  {
+   "task_id": 4,
+   "seed": 1001,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 4,
+   "seed": 1002,
+   "variant": "open_loop",
+   "task": "pick up the ketchup and place it in the basket",
+   "perturb": {
+    "object": "ketchup_1_joint0",
+    "before_xyz": [
+     -0.11999706998666344,
+     -0.23999758536033347,
+     0.0724054731798436
+    ]
+   }
+  },
+  {
+   "task_id": 4,
+   "seed": 1002,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 4,
+   "seed": 1003,
+   "variant": "open_loop",
+   "task": "pick up the ketchup and place it in the basket",
+   "perturb": {
+    "object": "ketchup_1_joint0",
+    "before_xyz": [
+     -0.11999706998666344,
+     -0.23999758536033347,
+     0.0724054731798436
+    ]
+   }
+  },
+  {
+   "task_id": 4,
+   "seed": 1003,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 4,
+   "seed": 1004,
+   "variant": "open_loop",
+   "task": "pick up the ketchup and place it in the basket",
+   "perturb": {
+    "object": "ketchup_1_joint0",
+    "before_xyz": [
+     -0.11999706998666344,
+     -0.23999758536033347,
+     0.0724054731798436
+    ]
+   }
+  },
+  {
+   "task_id": 4,
+   "seed": 1004,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 5,
+   "seed": 1000,
+   "variant": "open_loop",
+   "task": "pick up the tomato sauce and place it in the basket",
+   "perturb": {
+    "object": "tomato_sauce_1_joint0",
+    "before_xyz": [
+     0.0502390974120273,
+     -0.09993923005860601,
+     0.038392596419837104
+    ]
+   }
+  },
+  {
+   "task_id": 5,
+   "seed": 1000,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 5,
+   "seed": 1001,
+   "variant": "open_loop",
+   "task": "pick up the tomato sauce and place it in the basket",
+   "perturb": {
+    "object": "tomato_sauce_1_joint0",
+    "before_xyz": [
+     0.05023909741202729,
+     -0.09993923005860599,
+     0.038392596419837124
+    ]
+   }
+  },
+  {
+   "task_id": 5,
+   "seed": 1001,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 5,
+   "seed": 1002,
+   "variant": "open_loop",
+   "task": "pick up the tomato sauce and place it in the basket",
+   "perturb": {
+    "object": "tomato_sauce_1_joint0",
+    "before_xyz": [
+     0.05023909741202729,
+     -0.09993923005860599,
+     0.038392596419837124
+    ]
+   }
+  },
+  {
+   "task_id": 5,
+   "seed": 1002,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 5,
+   "seed": 1003,
+   "variant": "open_loop",
+   "task": "pick up the tomato sauce and place it in the basket",
+   "perturb": {
+    "object": "tomato_sauce_1_joint0",
+    "before_xyz": [
+     0.05023909741202729,
+     -0.09993923005860599,
+     0.038392596419837124
+    ]
+   }
+  },
+  {
+   "task_id": 5,
+   "seed": 1003,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 5,
+   "seed": 1004,
+   "variant": "open_loop",
+   "task": "pick up the tomato sauce and place it in the basket",
+   "perturb": {
+    "object": "tomato_sauce_1_joint0",
+    "before_xyz": [
+     0.05023909741202729,
+     -0.09993923005860599,
+     0.038392596419837124
+    ]
+   }
+  },
+  {
+   "task_id": 5,
+   "seed": 1004,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 6,
+   "seed": 1000,
+   "variant": "open_loop",
+   "task": "pick up the butter and place it in the basket",
+   "perturb": {
+    "object": "butter_1_joint0",
+    "before_xyz": [
+     -0.11958883265960131,
+     -0.2443576456062605,
+     0.008695477418600533
+    ]
+   }
+  },
+  {
+   "task_id": 6,
+   "seed": 1000,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 6,
+   "seed": 1001,
+   "variant": "open_loop",
+   "task": "pick up the butter and place it in the basket",
+   "perturb": {
+    "object": "butter_1_joint0",
+    "before_xyz": [
+     -0.11861537002176983,
+     -0.24169898878097912,
+     0.008695477418600533
+    ]
+   }
+  },
+  {
+   "task_id": 6,
+   "seed": 1001,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 6,
+   "seed": 1002,
+   "variant": "open_loop",
+   "task": "pick up the butter and place it in the basket",
+   "perturb": {
+    "object": "butter_1_joint0",
+    "before_xyz": [
+     -0.12251672534365678,
+     -0.23600888486921373,
+     0.008695477418600533
+    ]
+   }
+  },
+  {
+   "task_id": 6,
+   "seed": 1002,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 6,
+   "seed": 1003,
+   "variant": "open_loop",
+   "task": "pick up the butter and place it in the basket",
+   "perturb": {
+    "object": "butter_1_joint0",
+    "before_xyz": [
+     -0.12107835404792085,
+     -0.24021813390637647,
+     0.008695477418600533
+    ]
+   }
+  },
+  {
+   "task_id": 6,
+   "seed": 1003,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 6,
+   "seed": 1004,
+   "variant": "open_loop",
+   "task": "pick up the butter and place it in the basket",
+   "perturb": {
+    "object": "butter_1_joint0",
+    "before_xyz": [
+     -0.12380267069583695,
+     -0.2394842297754209,
+     0.008695477418600533
+    ]
+   }
+  },
+  {
+   "task_id": 6,
+   "seed": 1004,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 7,
+   "seed": 1000,
+   "variant": "open_loop",
+   "task": "pick up the milk and place it in the basket",
+   "perturb": {
+    "object": "milk_1_joint0",
+    "before_xyz": [
+     -0.11716081610144712,
+     -0.244295503024241,
+     0.0697354763840371
+    ]
+   }
+  },
+  {
+   "task_id": 7,
+   "seed": 1000,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 7,
+   "seed": 1001,
+   "variant": "open_loop",
+   "task": "pick up the milk and place it in the basket",
+   "perturb": {
+    "object": "milk_1_joint0",
+    "before_xyz": [
+     -0.11979737202968735,
+     -0.2440453140418064,
+     0.06973547638403718
+    ]
+   }
+  },
+  {
+   "task_id": 7,
+   "seed": 1001,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 7,
+   "seed": 1002,
+   "variant": "open_loop",
+   "task": "pick up the milk and place it in the basket",
+   "perturb": {
+    "object": "milk_1_joint0",
+    "before_xyz": [
+     -0.12485639076904716,
+     -0.24140589071974797,
+     0.06973547638403721
+    ]
+   }
+  },
+  {
+   "task_id": 7,
+   "seed": 1002,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 7,
+   "seed": 1003,
+   "variant": "open_loop",
+   "task": "pick up the milk and place it in the basket",
+   "perturb": {
+    "object": "milk_1_joint0",
+    "before_xyz": [
+     -0.1212626558311886,
+     -0.2427038649830169,
+     0.06973547638403721
+    ]
+   }
+  },
+  {
+   "task_id": 7,
+   "seed": 1003,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 7,
+   "seed": 1004,
+   "variant": "open_loop",
+   "task": "pick up the milk and place it in the basket",
+   "perturb": {
+    "object": "milk_1_joint0",
+    "before_xyz": [
+     -0.11815152827289807,
+     -0.23755395217841055,
+     0.06973547638403714
+    ]
+   }
+  },
+  {
+   "task_id": 7,
+   "seed": 1004,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 8,
+   "seed": 1000,
+   "variant": "open_loop",
+   "task": "pick up the chocolate pudding and place it in the basket",
+   "perturb": {
+    "object": "chocolate_pudding_1_joint0",
+    "before_xyz": [
+     -0.12000011255647869,
+     -0.24000000000000002,
+     0.013065477418602346
+    ]
+   }
+  },
+  {
+   "task_id": 8,
+   "seed": 1000,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 8,
+   "seed": 1001,
+   "variant": "open_loop",
+   "task": "pick up the chocolate pudding and place it in the basket",
+   "perturb": {
+    "object": "chocolate_pudding_1_joint0",
+    "before_xyz": [
+     -0.12000011255647869,
+     -0.24000000000000002,
+     0.013065477418602346
+    ]
+   }
+  },
+  {
+   "task_id": 8,
+   "seed": 1001,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 8,
+   "seed": 1002,
+   "variant": "open_loop",
+   "task": "pick up the chocolate pudding and place it in the basket",
+   "perturb": {
+    "object": "chocolate_pudding_1_joint0",
+    "before_xyz": [
+     -0.12000011255647869,
+     -0.24,
+     0.013065477418602346
+    ]
+   }
+  },
+  {
+   "task_id": 8,
+   "seed": 1002,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 8,
+   "seed": 1003,
+   "variant": "open_loop",
+   "task": "pick up the chocolate pudding and place it in the basket",
+   "perturb": {
+    "object": "chocolate_pudding_1_joint0",
+    "before_xyz": [
+     -0.12000011255647869,
+     -0.24000000000000002,
+     0.013065477418602346
+    ]
+   }
+  },
+  {
+   "task_id": 8,
+   "seed": 1003,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 8,
+   "seed": 1004,
+   "variant": "open_loop",
+   "task": "pick up the chocolate pudding and place it in the basket",
+   "perturb": {
+    "object": "chocolate_pudding_1_joint0",
+    "before_xyz": [
+     -0.12000011255647869,
+     -0.24,
+     0.013065477418602346
+    ]
+   }
+  },
+  {
+   "task_id": 8,
+   "seed": 1004,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 9,
+   "seed": 1000,
+   "variant": "open_loop",
+   "task": "pick up the orange juice and place it in the basket",
+   "perturb": {
+    "object": "orange_juice_1_joint0",
+    "before_xyz": [
+     0.05000006520574797,
+     -0.10000162784620051,
+     0.06973547638403717
+    ]
+   }
+  },
+  {
+   "task_id": 9,
+   "seed": 1000,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 9,
+   "seed": 1001,
+   "variant": "open_loop",
+   "task": "pick up the orange juice and place it in the basket",
+   "perturb": {
+    "object": "orange_juice_1_joint0",
+    "before_xyz": [
+     0.05000006520574807,
+     -0.1000016278462005,
+     0.06973547638403711
+    ]
+   }
+  },
+  {
+   "task_id": 9,
+   "seed": 1001,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 9,
+   "seed": 1002,
+   "variant": "open_loop",
+   "task": "pick up the orange juice and place it in the basket",
+   "perturb": {
+    "object": "orange_juice_1_joint0",
+    "before_xyz": [
+     0.05000006520574807,
+     -0.1000016278462005,
+     0.06973547638403711
+    ]
+   }
+  },
+  {
+   "task_id": 9,
+   "seed": 1002,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 9,
+   "seed": 1003,
+   "variant": "open_loop",
+   "task": "pick up the orange juice and place it in the basket",
+   "perturb": {
+    "object": "orange_juice_1_joint0",
+    "before_xyz": [
+     0.05000006520574797,
+     -0.10000162784620051,
+     0.06973547638403717
+    ]
+   }
+  },
+  {
+   "task_id": 9,
+   "seed": 1003,
+   "variant": "clean",
+   "success": true
+  },
+  {
+   "task_id": 9,
+   "seed": 1004,
+   "variant": "open_loop",
+   "task": "pick up the orange juice and place it in the basket",
+   "perturb": {
+    "object": "orange_juice_1_joint0",
+    "before_xyz": [
+     0.05000006520574797,
+     -0.10000162784620051,
+     0.06973547638403717
+    ]
+   }
+  },
+  {
+   "task_id": 9,
+   "seed": 1004,
+   "variant": "clean",
+   "success": true
+  }
+ ]
+}

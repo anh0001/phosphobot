@@ -1,0 +1,45 @@
+% The Failure Is a Vector — diagnosis-first paper, SmolVLA / LIBERO-spatial.
+% Self-contained article class with ICLR-like geometry so it compiles anywhere;
+% swap to iclr20XX_conference.sty for the actual submission.
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{times}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{subcaption}
+\usepackage{xcolor}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage{cleveref}
+\usepackage{microtype}
+
+\input{math_commands}
+
+\title{Anchored, Not Steered:\\ What Controls the Reach of a Competent SmolVLA Under Object Displacement}
+\author{Anonymous Authors}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\input{sections/0_abstract}
+\end{abstract}
+
+\input{sections/1_introduction}
+\input{sections/2_related_work}
+\input{sections/3_protocol}
+\input{sections/4_competent_failure}
+\input{sections/5_sufficiency}
+\input{sections/6_emergence}
+\input{sections/7_discussion}
+\input{sections/8_limitations}
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\appendix
+\input{sections/A_appendix}
+
+\end{document}
