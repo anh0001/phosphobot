@@ -1,0 +1,11 @@
+# Large generated artifacts — all reproducible via orchestrate.sh.
+# Committed: code (*.py/*.sh/*.md), summary results (*.json/*.jsonl), QA visuals (*.png).
+datasets/
+libero_demos/
+staging/
+staging_openloop_v1/
+staging_smoke/
+ft/
+sentinels/
+*_logs/
+*.npz
