@@ -8,16 +8,16 @@ Reuse column marks runs whose data already exists from round-1/round-2.
 | R001 | M0 | contact/lift endpoints offline | `endpoints.py` (3D disp + z-rise) | spatial | — | contact<=lift 7/8; lift-defined succ 65% vs fail 21% | MUST | **DONE** | CONTACT_M=1cm, LIFT_M=3cm |
 | R002 | M0 | stats module | `stats.py`: wild-cluster boot + u_gap/G + TOST | — | — | reproduces base/A/M2/M3 u_succ exactly | MUST | **DONE** | u_gap monotone −.06/.27/.40/.60 |
 | R003 | M0 | u/ρ/\|v\| success-cond @ 3 endpoints | base + A–E + M1–M3 (reuse) | spatial | reuse | M2 succ u: pregrasp .51 → contact .22 → lift .32 | MUST | **DONE** | anchored plan, corrected contact |
-| R010 | M1 | degradation null: action-noise scale search | base + action-noise FT | spatial | 1 | clean, disp@50 (match 52/37) | MUST | TODO | bisect noise; target ±3pp |
+| R010 | M1 | degradation null: action-noise scale search | base + inference action-noise | spatial | 1 | clean 66/56/46% @ σ .10/.15/.20; null u_gap 0.10/0.24/−.06 | MUST | **DONE** | σ=0.15 primary (clean 56≈52); G(M2 vs null)=+.16 CI[−.22,+.40] → underpowered, need 3 seeds |
 | R011 | M1 | robustness null: label-noise FT | base + label-noise FT | spatial | 1 | clean, disp@50 | MUST | TODO | match M2 competence |
 | R012 | M1 | robustness null: early-stopped FT | base, early stop | spatial | 1 | clean, disp@50 | MUST | TODO | match M2 competence |
 | R013 | M1 | Octo-Small integration smoke | Octo-Small | spatial | 1 | trains + reach field runs | MUST | TODO | biggest new eng; ACT fallback |
 | R014 | M1 | N1 dataset build (352 syn + 352 orig) | — | spatial | — | dataset loads | MUST | TODO | reuse `make_mixed_dataset.py` |
 | R020 | M2 | primary null reach field + G | action-noise null | spatial | 3 | **G vs M2**, |v| guard | MUST | TODO | decisive |
 | R021 | M2 | robustness nulls reach field + G | label-noise, early-stop | spatial | 1 | G vs M2 | MUST | TODO | must beat strongest |
-| R022 | M2 | critical cell N1 fine-tune + reach | 100%-syn + 352 canonical | spatial | 3 | u, ρ, |v| | MUST | TODO | fraction-vs-count decoupling |
-| R023 | M2 | base 3-seed | base | spatial | 3 (add 2) | u_succ | MUST | TODO | seed variance for claim-critical |
-| R024 | M2 | M2 3-seed | 100%-syn | spatial | 3 (add 2) | u_succ, G | MUST | TODO | seed variance |
+| R022 | M2 | critical cell N1 (fraction-vs-count) | 100%-syn + 352 canonical | spatial | 3 | u_gap 0.23±.03; **M2−N1 +0.20 [+.16,+.24] seed** | MUST | **DONE** | canonical PRESENCE re-anchors → gradient competition |
+| R020 | M2 | primary null σ=0.15 × 3 noise-seed + G | base+action-noise | spatial | 3 | null u_gap 0.20±.10; G(M2) seed +.24[+.15,+.32] excl0, **cluster +.26[−.10,+.59] incl0** | MUST | **DONE** | grounding seed-robust, task-cluster underpowered |
+| R024 | M2 | M2 3-seed | 100%-syn | spatial | 3 | **u_gap 0.43±0.02** (seed-robust) | MUST | **DONE** | kills n=1-seed concern |
 | R030 | M2 | TOST equivalence on round-1 A–E | A,B,C,D,E (reuse) | spatial | reuse | TOST u/ρ/|v|, Holm | MUST | REUSE | stats-only |
 | R040 | M3 | C1 replication — SmolVLA × object | base | object | 1 | u_succ dissociation | MUST | TODO | base object 68% already validated |
 | R041 | M3 | C1 replication — Octo × spatial | Octo-Small base | spatial | 1 | u_succ dissociation | MUST | TODO | VLM-specificity test |

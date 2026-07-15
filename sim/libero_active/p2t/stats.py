@@ -2,9 +2,15 @@
 
 - readout: u (along -d, 0=object,1=canonical), v (orthogonal), rho (||e||/||d||),
   per rollout, at a chosen endpoint (pregrasp | contact | lift), success-conditioned.
-- wild_cluster_boot: Rademacher wild bootstrap over task clusters (10 clusters in
-  LIBERO; percentile bootstrap undercovers at k~10, so we resample cluster mean
-  perturbations) for a median/mean statistic and for differences.
+- cluster_boot (a.k.a. wild_cluster_boot, kept as alias): NONPARAMETRIC task-cluster
+  (pairs-cluster) bootstrap — resample the 10 LIBERO task clusters with replacement
+  and recompute the median statistic. NOTE: this is NOT the Rademacher wild-cluster
+  bootstrap (Cameron-Gelbach-Miller), which is defined for regression coefficients,
+  not medians. For the final paper the pre-registered inference should move to a
+  beta-binomial / logistic GLMM with task random effects (per round-2 review) where
+  the wild-cluster bootstrap properly applies; the pairs-cluster bootstrap here is a
+  reasonable nonparametric stand-in and is what the reported CIs use. (gpt-5.5 audit
+  2026-07-15 flagged the earlier "wild-cluster" wording as inaccurate.)
 - G: competence-matched grounding gain
      G = ([u_fail - u_succ]_intervention) - ([u_fail - u_succ]_null), with CI.
 - tost: two-one-sided-tests equivalence for a paired-condition difference vs a margin.

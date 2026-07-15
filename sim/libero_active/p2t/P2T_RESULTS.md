@@ -208,6 +208,92 @@ correctly mag-filtered base).
 
 Figures: `p2t/figs/fig1..fig4`. Raw: `p2t/eval*.jsonl`, `p2t/staging/*/meta.jsonl`.
 
+## M1 — degradation-null noise search + first G (2026-07-15)
+
+The decisive validity control from the refined plan (`refine-logs/FINAL_PROPOSAL.md`).
+Primary null = the BASE policy under inference-time action noise (same policy → same
+grounding; degraded only by execution noise), noise σ searched to match M2's clean
+competence (52%). A degradation null cannot reach M2's *displaced* success (37% >
+base 31% — that increase IS the basin-widening gain), so matching is on clean.
+
+| Arm | clean | u_gap = [u_fail − u_succ] @50 |
+|---|---|---|
+| null σ=0.10 | 66% | 0.10 |
+| **null σ=0.15** (clean-closest, strongest) | 56% | **0.24** |
+| null σ=0.20 | 46% | −0.06 |
+| **M2 (100% synthetic)** | 52% | **0.40** |
+
+**G = u_gap(M2) − u_gap(null σ=0.15) = +0.16, task-cluster bootstrap CI90 [−0.22,+0.40]
+— includes 0.** |v|-dispersion guard passes (M2 not more dispersed).
+
+**Reading (honest):** the null itself produces u_gap 0.24 from pure survivorship — so
+**much of M2's apparent grounding is degradation-explained**; a residual directional
+signal remains (0.40 vs 0.24) but is **not significant at n=1 seed**. This both (a)
+validates the control (it is discriminating, exactly the audit's concern quantified)
+and (b) shows the grounding sub-claim is underpowered → the pre-registered **3-seed**
+runs (M2 stage, `m2stage.sh`: M2 + N1 + primary null each ×3 seeds) are required before
+any grounding claim. Launched 2026-07-15. If the powered G still includes 0, the paper
+reports "no grounding beyond basin-widening/degradation" — a clean result either way.
+
+## M2-stage — powered G (3 seeds, 2026-07-15)
+
+M2 (100% synthetic) and N1 (100% synthetic + 352 canonical, SAME synthetic count) each
+at 3 training seeds; primary degradation null (base + action-noise σ=0.15) at 3
+noise-seeds. u_gap = median[u_fail] − median[u_succ] @50mm (pregrasp), enriched with
+contact/lift endpoints. All arms n=600 (3×200).
+
+| Arm | u_gap per seed | mean ± sd |
+|---|---|---|
+| **M2** (100% syn) | 0.40 / 0.43 / 0.46 | **0.43 ± 0.02** |
+| **N1** (100% syn + 352 canonical) | 0.28 / 0.20 / 0.22 | **0.23 ± 0.03** |
+| null σ=0.15 (matched degradation) | 0.14 / 0.33 / 0.12 | 0.20 ± 0.10 |
+
+**Three findings, at two inference levels (between-seed | pre-registered task-cluster):**
+
+1. **Grounding is seed-robust, not noise.** M2 u_gap = 0.43 ± **0.02** across independent
+   training seeds — kills the "n=1 seed" concern. The signal is real and reproducible.
+
+2. **Canonical demonstrations defend the prior (the mechanism — cleanest result).**
+   N1 has the SAME synthetic count as M2 but adds 352 canonical demos → u_gap collapses
+   0.43 → 0.23. Contrast **M2 − N1 = +0.20**, between-seed CI90 [+0.16, +0.24]
+   (excludes 0); pooled-cluster CI90 [−0.01, +0.46] (boundary). This is the decisive
+   fraction-vs-count decoupling: it is canonical PRESENCE, not synthetic count, that
+   re-anchors — direct evidence for gradient competition. Does not depend on the null.
+
+3. **Grounding beyond a competence-matched degradation null: directionally supported,
+   seed-robust, but not task-cluster-significant.** G(M2 vs null): between-seed
+   +0.24 [+0.15, +0.32] (excludes 0) BUT pre-registered task-cluster
+   +0.26 [−0.10, +0.59] (includes 0). |v|-dispersion guard passes. N1 vs null ≈ 0
+   (+0.06 [−0.27, +0.28]) — consistent with N1 being re-anchored to near-null.
+
+**Honest verdict (pre-registered statistic governs):** by the pre-registered
+wild-cluster (task) bootstrap, "grounding exceeds degradation" is NOT established at
+3 seeds / 10 clusters (CI includes 0), though it is seed-robust and directionally
+positive. What IS established: (a) basin-widening dominates; (b) the anchoring prior is
+defended by the canonical demonstrations (M2 vs N1, seed-robust). The paper leads with
+the readout + these two mechanism results; the grounding-beyond-degradation claim is
+reported as seed-robust directional evidence that is task-cluster-underpowered — a
+boundary result inviting more seeds/tasks (or the 2nd suite/policy in M3), not a
+settled claim. Either way the eval-blindspot + defended-prior story stands.
+
+**External audit of M2-stage (gpt-5.5, 2026-07-15) — GO to M3.** Verified all numbers
+from raw data (match). Verdict: good mechanism/evaluation result, NOT a "grounding
+proven" result — lead with eval-blindspot + basin-widening + defended-prior. Key points:
+(a) the **task-cluster** level is the correct PRIMARY inference (between-seed n=3 is a
+stability diagnostic only); the task-cluster CI is the honest bottleneck. (b) M2−N1 is
+the strongest, cleanest claim and is NOT competence-confounded (N1 clean 66% > M2 57%,
+N1 d50 41% > M2 39% — N1 is not worse, yet u_gap is far lower); caveat: N1 has 2× TOTAL
+data (352 syn + 352 canon), so phrase as "fixed synthetic count, canonical added back,
+same training budget," NOT "total data controlled"; and M2−N1 is positive in only 5/10
+tasks (why the cluster CI touches 0). (c) `stats.py` mislabelled its bootstrap
+"wild-cluster" — it is a pairs-cluster bootstrap; final paper should use a
+beta-binomial/logistic GLMM with task random effects (fixed in stats.py docstring).
+(d) **M3's one job**: replicate the FULL M2/N1/null contrast on the 2nd policy
+(Octo-Small) + 2nd suite (LIBERO-object) and analyze across the COMBINED task clusters
+— seeds alone won't fix task/suite heterogeneity. Decision rule: M3 replicates M2>N1 AND
+M2>null with task-CI excluding 0 → publish grounding-beyond-degradation; only M2>N1 →
+publish defended-prior/basin-widening, demote grounding; M2−N1 fails → cut defended-prior.
+
 ## Adversarial review (3 lenses, 2026-07-12) — actions
 
 Strongest objections and how they are being addressed:

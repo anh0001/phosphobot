@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -58,6 +59,12 @@ TASKS = list(range(10))
 MAGS = [0.025, 0.05, 0.075, 0.10]
 DIRS = {"px": (1.0, 0.0), "nx": (-1.0, 0.0), "py": (0.0, 1.0), "ny": (0.0, -1.0)}
 FLOW_K = 5  # extra RNG-isolated chunk re-samples per macro call (dispersion log)
+# P2T degradation-null hook: additive Gaussian noise (std, normalized action units)
+# on the executed xyz action deltas. 0.0 = no-op (backward compatible). Set via
+# --action-noise / env P2T_ACTION_NOISE to build a competence-matched null that
+# shares the base policy's grounding but is degraded only by execution noise.
+ACTION_NOISE_STD = float(os.environ.get("P2T_ACTION_NOISE", "0.0"))
+_NOISE_RNG = np.random.default_rng(int(os.environ.get("P2T_NOISE_SEED", "12345")))
 
 
 def load_pair_meta(src_path: str) -> tuple[dict, dict]:
@@ -153,6 +160,8 @@ def run_rollout(pipe: Pipeline, env, seed: int, obj_name: str,
         action = pipe.postprocessor(a)
         action = pipe.env_postprocessor({ACTION: action})[ACTION]
         action_np = action.to("cpu").numpy()
+        if ACTION_NOISE_STD > 0.0:  # degradation-null: noise on xyz deltas only
+            action_np[0, :3] += _NOISE_RNG.normal(0.0, ACTION_NOISE_STD, size=3)
         raw_obs, reward, terminated, truncated, info = env.step(action_np[0])
         exec_actions.append(action_np[0].astype(np.float64))
         if bool(info.get("is_success", False)):
