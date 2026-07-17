@@ -70,12 +70,12 @@ fig.savefig(FIGS / "fig_hero.png"); plt.close(fig)
 fig, ax = plt.subplots(figsize=(5.2, 3.4))
 mags = [25, 50, 75, 100]
 spatial = [0.64, 0.30, 0.18, 0.12]
-obj_m = [50, 75]; obj_s = [0.10, 0.01]
+obj_s = [0.42, 0.10, 0.01, 0.00]
 ax.plot(mags, spatial, "-o", color=BLUE, lw=2, markersize=7, label="LIBERO-spatial (wide basin)", zorder=4)
-ax.plot(obj_m, obj_s, "-D", color=RED, lw=2, markersize=6, label="LIBERO-object (tight basin)", zorder=4)
+ax.plot(mags, obj_s, "-D", color=RED, lw=2, markersize=6, label="LIBERO-object (tight basin)", zorder=4)
 for m, s in zip(mags, spatial):
     ax.annotate(f"{s:.0%}", (m, s), textcoords="offset points", xytext=(0, 8), ha="center", fontsize=7.4, color=BLUE)
-for m, s in zip(obj_m, obj_s):
+for m, s in zip(mags, obj_s):
     ax.annotate(f"{s:.0%}", (m, s), textcoords="offset points", xytext=(0, -13), ha="center", fontsize=7.4, color=RED)
 ax.set_xlabel("Object displacement (mm)"); ax.set_ylabel("Base-policy displaced success")
 ax.set_ylim(-0.03, 0.72); ax.set_xticks(mags)
