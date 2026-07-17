@@ -19,9 +19,9 @@ Reuse column marks runs whose data already exists from round-1/round-2.
 | R020 | M2 | primary null σ=0.15 × 3 noise-seed + G | base+action-noise | spatial | 3 | null u_gap 0.20±.10; G(M2) seed +.24[+.15,+.32] excl0, **cluster +.26[−.10,+.59] incl0** | MUST | **DONE** | grounding seed-robust, task-cluster underpowered |
 | R024 | M2 | M2 3-seed | 100%-syn | spatial | 3 | **u_gap 0.43±0.02** (seed-robust) | MUST | **DONE** | kills n=1-seed concern |
 | R030 | M2 | TOST equivalence on round-1 A–E | A,B,C,D,E (reuse) | spatial | reuse | TOST u/ρ/|v|, Holm | MUST | REUSE | stats-only |
-| R040 | M3 | C1 replication — SmolVLA × object | base | object | 1 | u_succ dissociation | MUST | TODO | base object 68% already validated |
-| R041 | M3 | C1 replication — Octo × spatial | Octo-Small base | spatial | 1 | u_succ dissociation | MUST | TODO | VLM-specificity test |
-| R042 | M3 | C2 on chosen 2nd setting | base/100%-syn/N1/null | object OR octo | 3 | G, u | MUST | TODO | ≥1 setting; scope if only one |
+| R040 | M3 | C1 replication — SmolVLA × object | base (retrained 68% clean) | object | 1 | **u_succ 0.67@50 anchored, disp 10%; u_gap +0.37** | MUST | **DONE** | C1 REPLICATES; cross-suite: object base already u_gap+0.37 (tighter basin needs more grounding) vs spatial ~0 |
+| R041 | M3 | C1 replication — ACT (VLM-specificity) | ACT base (from-scratch) | spatial | 2 tries | clean 0%/4% both recipes | MUST | **DROPPED** | harness↔ACT eval mismatch / missing ACT-LIBERO recipe; NOT a result; future work |
+| R042 | M3 | C2 on object (M2/N1/null) | base/M2/N1 (+null running) | object | 1 | M2 u_succ 0.21 (strong grounding); **M2−N1 +0.03 [−.15,+.19]** | MUST | **DONE (M2/N1); null running** | defended-prior does NOT replicate on object (tight basin); rich cross-suite regime finding instead |
 | R050 | M3 | decodability probe | frozen SmolVLM feats | spatial | 1 | probe R²/MAE for obj xy vs u | MUST | TODO | CPU-cheap; feature-dump hook |
 | R060 | M4 | state-masked arm | 100%-syn, proprio masked | spatial | 1 | Δu vs M2 | NICE | TODO | proprio-shortcut check |
 | R061 | M4 | first-chunk intervention | teacher-force k toward object | spatial | 1 | continue vs snap-back | NICE | TODO | appendix |

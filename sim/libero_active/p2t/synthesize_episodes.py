@@ -35,7 +35,12 @@ from p2t.p2t_lib import env_state8  # noqa: E402
 from preempt.harness_lib import SUITE_NAME, _refresh_obs  # noqa: E402
 from preempt.perturb import object_xyz, perturb_object_by_name_vec  # noqa: E402
 
-DEMO_DIR = Path(__file__).parent / "libero_demos/libero_spatial"
+import os as _os  # noqa: E402
+# suite-aware (env-driven, defaults preserve spatial behavior)
+_SUITE = _os.environ.get("E_SUITE", "libero_spatial")
+DEMO_DIR = Path(_os.environ.get(
+    "P2T_DEMO_DIR", str(Path(__file__).parent / f"libero_demos/{_SUITE}")))
+_OBJ_SRC = _os.environ.get("P2T_OBJ_SRC", "preempt/e1_recovery_d005.json")
 STEP_MAX_M = 0.05           # OSC_POSE output_max (demo env_args)
 DIRS = {"px": (1.0, 0.0), "nx": (-1.0, 0.0), "py": (0.0, 1.0), "ny": (0.0, -1.0)}
 OBS_HW = 256                # native dataset resolution (no resize blur)
@@ -64,7 +69,7 @@ def demo_file(task_id: int) -> Path:
 
 def task_object(task_id: int) -> str:
     import json as _json
-    src = _json.load(open("preempt/e1_recovery_d005.json"))
+    src = _json.load(open(_OBJ_SRC))
     for r in src["records"]:
         if r["task_id"] == task_id:
             o = r.get("perturb", {}).get("object")

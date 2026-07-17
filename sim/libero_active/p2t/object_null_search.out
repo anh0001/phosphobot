@@ -1,0 +1,4 @@
+[objnull] sigma=0.10 clean=60% (target object M2 ~42%)
+[objnull] sigma=0.15 clean=48% (target object M2 ~42%)
+[objnull] sigma=0.20 clean=40% (target object M2 ~42%)
+OBJNULL_SEARCH_DONE

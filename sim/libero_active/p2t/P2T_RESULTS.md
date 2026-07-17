@@ -294,6 +294,67 @@ beta-binomial/logistic GLMM with task random effects (fixed in stats.py docstrin
 M2>null with task-CI excluding 0 → publish grounding-beyond-degradation; only M2>N1 →
 publish defended-prior/basin-widening, demote grounding; M2−N1 fails → cut defended-prior.
 
+## M3 — generality (2026-07-17): 2nd suite (LIBERO-object) + 2nd policy (ACT)
+
+**Object base retrained** (68% clean — reproduces pilot). **Claim-1 dissociation
+REPLICATES** on object: displaced successes anchored (u_succ 0.67@50mm) despite 10%
+success — success rate again cannot reveal the reach is 2/3 toward canonical.
+
+**Cross-suite regime difference (the rich M3 finding):** LIBERO-object @50mm.
+
+| Arm | clean | disp | u_succ | u_gap |
+|---|---|---|---|---|
+| object base | 68% | 10% | 0.67 | +0.37 |
+| object M2 (100% syn) | 42% | 27% | **0.21** | +0.52 |
+| object N1 (syn + canon) | 44% | 18% | 0.26 | +0.49 |
+
+Two suite-dependent results:
+1. **Counterfactual FT grounds MUCH more on object** (u_succ 0.67→0.21, disp 10→27%)
+   than on spatial (M2 u_succ 0.51). Object tasks have TIGHTER basins → you cannot
+   succeed without grounding, so the same intervention is forced to ground here while
+   it merely widens the basin on spatial. **Success rate hides this entirely (both
+   suites just show "success up").** This is the eval-blindspot paper's strongest
+   evidence — the readout reveals the SAME intervention does different things by regime.
+2. **Defended-prior (M2−N1) does NOT replicate on object**: +0.03, task-cluster
+   CI90 [−0.15,+0.19] (spatial was +0.20). Mechanistic reason: the canonical prior
+   (reach the training location) STRUCTURALLY FAILS in tight object basins, so it
+   cannot "defend" via steering — both M2 and N1 must ground. Canonical demos still
+   hurt, but via displaced SUCCESS (N1 27→18%), not steering geometry.
+3. **Grounding-beyond-degradation also FAILS on object**: matched null (σ=0.20,
+   clean 40% ≈ M2 42%) has u_gap +0.64 ≥ M2's +0.52 → G = −0.12 [−0.40,+0.08].
+   In a tight basin every surviving policy (including a noise-degraded base) must
+   ground, so counterfactual FT adds no grounding beyond degradation-survivorship.
+
+**Combined spatial+object verdict** (per Codex decision rule — M2−N1 fails on object):
+| Claim | Spatial | Object | General? |
+|---|---|---|---|
+| Readout dissociates basin/grounding (Claim-1) | ✅ | ✅ | **YES — robust** |
+| Grounding > degradation | boundary (seed-robust, cluster incl 0) | ✗ (G −0.12) | no |
+| Defended-prior (M2−N1) | +0.20 (near-sig) | ✗ (+0.03) | no |
+
+**Final paper position**: an EVALUATION/METHODOLOGY paper. The robust general
+contribution is the interventional reach readout + the eval-blindspot it exposes:
+success-only benchmarks hide what counterfactual fine-tuning actually does — basin-
+widening in wide-basin regimes (spatial), forced grounding in tight-basin regimes
+(object) — the SAME intervention, opposite mechanism. The mechanistic claims
+(defended-prior, grounding-beyond-degradation) are honest boundary/negative results,
+scoped to wide-basin, that demonstrate the readout's discriminating power rather than
+settling a mechanism.
+
+**Honest reframing (data forced this):** the "prior defended by gradient competition
+via steering" claim is WIDE-BASIN-SPECIFIC (spatial), not general. The robust,
+general result is the READOUT itself: it dissociates basin-widening from grounding and
+shows the same counterfactual-FT intervention produces opposite mechanisms across
+regimes — invisible to success-only evaluation. Object G-vs-null pending
+(`object_null_search.sh`).
+
+**2nd policy (ACT): DROPPED — integration failure, not a result.** ACT (from-scratch,
+no VLM) trained twice (lr 1e-4/chunk 50, then corrected lr 1e-5/chunk 100) — loss
+decreased both times but eval clean stayed 0–4%. This is a harness↔ACT obs/eval
+mismatch or a missing ACT-LIBERO recipe, not a scientific finding. Reported as future
+work needing a proper ACT-LIBERO training + harness-obs adaptation; the paper's
+generality rests on the 2nd SUITE (object), which worked and gave the richer result.
+
 ## Adversarial review (3 lenses, 2026-07-12) — actions
 
 Strongest objections and how they are being addressed:

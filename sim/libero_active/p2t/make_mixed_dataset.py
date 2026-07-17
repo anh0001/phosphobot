@@ -35,8 +35,9 @@ CONDITIONS = ("A_gain", "C_uniform", "D_failure", "E_sham")
 
 
 def task_language(task_id: int) -> str:
+    import os
     from libero.libero import benchmark
-    suite = benchmark.get_benchmark_dict()["libero_spatial"]()
+    suite = benchmark.get_benchmark_dict()[os.environ.get("E_SUITE", "libero_spatial")]()
     return suite.get_task(task_id).language
 
 

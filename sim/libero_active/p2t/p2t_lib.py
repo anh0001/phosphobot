@@ -34,10 +34,15 @@ def _snapshot_dir() -> str:
     return sorted(glob.glob(pat))[0]
 
 
-@functools.lru_cache(maxsize=1)
-def spatial_episode_map() -> dict[int, list[int]]:
-    m = json.load(open(SUITE_MAP))["libero_spatial"]
+@functools.lru_cache(maxsize=4)
+def suite_episode_map(suite: str = "libero_spatial") -> dict[int, list[int]]:
+    m = json.load(open(SUITE_MAP))[suite]
     return {int(k): sorted(int(e) for e in v) for k, v in m.items()}
+
+
+def spatial_episode_map() -> dict[int, list[int]]:  # backward-compat alias
+    import os
+    return suite_episode_map(os.environ.get("E_SUITE", "libero_spatial"))
 
 
 @functools.lru_cache(maxsize=1)
