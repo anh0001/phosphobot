@@ -1,0 +1,30 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+We introduced a cheap, interventional, success-conditioned reach readout that asks a
+question success rate cannot: when a VLA policy appears to generalize spatially, including
+on the rollouts it gets right, is the reach grounded to the displaced object or anchored to
+the canonical training location and tolerated by a wide grasp basin? Using it on a
+competent SmolVLA across two LIBERO suites, we found that the same counterfactual
+fine-tuning basin-widens on a wide-basin suite and reaches object-near on a tight-basin
+suite---opposite mechanisms behind identical-looking success gains. A boundary analysis
+showed the readout also rejects tempting mechanistic explanations that fail to hold across
+suites, underscoring that the robust contribution is the instrument, not any single
+mechanism.
+
+\paragraph{Limitations.}
+Our study uses a single policy family (SmolVLA) and simulation (LIBERO). The readout is
+model-agnostic by construction---it needs only object displacement at reset and endpoint
+logging---but a second-policy datapoint is empirically pending: our attempts to obtain one
+(ACT and a pi0.5 checkpoint) were blocked by policy-integration and compute-contention
+issues, not by anything intrinsic to the readout.
+%% <!-- DATA_NEEDED: GEN_2ND_POLICY — one second-policy base-only readout (u_succ / rho_succ / displaced success, one suite, 50 mm) to substantiate model-agnostic reuse -->
+Seed budgets are set by a single-GPU regime; the mechanistic boundary results in
+\Cref{sec:boundary} are correspondingly underpowered at the task-cluster level and are
+reported as such.
+
+\paragraph{Future work.}
+The readout is released as a drop-in tool; the immediate next step is to apply it to
+additional policy families and to real-robot rollouts, where basin geometry and grounding
+may diverge further. Contact- and lift-time endpoints suggest a finer question---when and
+where an anchored plan is corrected---that the readout is already positioned to measure.

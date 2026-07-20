@@ -1,0 +1,62 @@
+\section{Introduction}
+\label{sec:intro}
+
+Vision--language--action (VLA) policies are increasingly evaluated on \emph{spatial
+generalization}: can a policy trained on objects at certain locations still act when the
+object moves? The field's answer is a number---task success rate under object
+displacement. That number is convenient, comparable, and, we argue, not diagnostic of
+what it is taken to mean.
+
+Consider a policy that, when the object is displaced, reaches toward the \emph{canonical}
+location where it saw the object during training, rather than toward the object's new
+position. If the task's grasp basin is wide---many pre-grasp poses lead to a successful
+grasp---such an anchored reach can still succeed a nontrivial fraction of the time.
+Success rate credits this as spatial generalization. A second policy that actually
+\emph{grounds} to the displaced object and reaches for it produces the same success
+number. Success rate cannot tell the two apart, yet they differ in exactly the capability
+the metric claims to measure.
+
+That VLA policies can anchor to training regularities is known, under names such as
+causal confusion~\citep{dehaan2019causal} and ``memory traps''~\citep{afi2025memory}; that
+success-only evaluation is imperfect has also been argued~\citep{liberox2026}. Our
+contribution is neither. It is a \emph{readout} for a question these lines of work do not
+answer: on the rollouts that \emph{succeed}, is the reach caused by the perceived object
+position (grounding), or is it anchored to the canonical location and merely tolerated by
+a wide basin?
+
+We introduce an interventional, displacement-normalized, success-conditioned reach
+readout. We displace the target object by $\dvec$ at episode start and measure where the
+reach endpoint $\Ept$ lands, in the frame normalized by $\dvec$: $\uu = \langle \evec,
+-\hat{\dvec}\rangle / \|\dvec\|$ runs from $0$ at the object to $1$ at the canonical
+location, and $\rrho = \|\evec\|/\|\dvec\|$ is the normalized error, with $\evec = \Ept -
+\Tpt$. We compute these at the pre-grasp, object-contact, and object-lift endpoints and,
+crucially, split them by success and failure. The readout is cheap (it reuses the
+rollout), model-agnostic (any policy that produces rollouts), and interpretable
+($\uu \to 0$ means grounded, $\uu \to 1$ means anchored).
+
+Using the readout on a competent SmolVLA~\citep{smolvla2025} across two LIBERO
+suites~\citep{liu2023libero}, we surface a finding that success rate hides. The
+\emph{same} counterfactual-augmentation fine-tuning improves displaced success in both
+suites, but for opposite reasons (\Cref{fig:hero}). In wide-basin LIBERO-spatial,
+successful reaches stay \emph{off the object} ($\usucc$ moves from $1.06$ to $0.51$):
+success rises because the basin widens, not because the policy grounds. In tight-basin
+LIBERO-object, successful reaches become \emph{object-near} ($\usucc$ moves from $0.67$ to
+$0.21$; displaced success rises from $10\%$ to $27\%$): here the tight basin makes
+grounding necessary for success, so the same intervention is forced to ground. Success
+rate reports ``improvement'' in both and cannot distinguish the mechanisms.
+
+\paragraph{Contributions.}
+\begin{enumerate}[topsep=2pt,itemsep=1pt,leftmargin=1.4em]
+\item A cheap, interventional, displacement-normalized, success-conditioned \emph{reach
+readout} ($\uu$, $\rrho$; pre-grasp/contact/lift) that dissociates object-grounding from
+grasp-basin tolerance, released as a drop-in evaluation tool (\Cref{sec:method}).
+\item The \emph{basin-vs-grounding dissociation} on competent VLAs across two suites:
+displaced successes can be anchored, which success rate cannot reveal (\Cref{sec:exp}).
+\item The \emph{cross-regime finding}: the same counterfactual-fine-tuning success gain
+reflects basin-widening in one suite and object-near reaching in another, invisible to
+success rate (\Cref{sec:exp}).
+\end{enumerate}
+A boundary analysis (\Cref{sec:boundary}) shows the readout also \emph{rejects} tempting
+mechanistic explanations that do not survive across suites, illustrating its
+discriminating power. We scope our study to a single policy family and simulation;
+\Cref{sec:conclusion} states these limits and the model-agnostic path forward.

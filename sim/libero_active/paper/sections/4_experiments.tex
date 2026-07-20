@@ -1,0 +1,93 @@
+\section{Experiments}
+\label{sec:exp}
+
+We ask three questions. Does the dissociation exist---can successful displaced rollouts be
+anchored (\Cref{sec:exp:dissoc})? Is it invisible to success rate (\Cref{sec:exp:hidden})?
+And does the same intervention behave oppositely across regimes
+(\Cref{sec:exp:crossregime})? Unless noted, displacement is $50$\,mm and $\uu$ is the
+pre-grasp endpoint; $n=200$ displaced rollouts per condition per magnitude.
+
+\subsection{The basin--grounding dissociation exists}
+\label{sec:exp:dissoc}
+
+On the base policies, displaced successes are anchored, not grounded. On LIBERO-object at
+$50$\,mm, the policy succeeds $10\%$ of the time yet its successful pre-grasp reaches sit
+at $\usucc = 0.67$---about two-thirds of the way to the canonical location, not at the
+object. On LIBERO-spatial the effect is stronger still: displaced successes sit near
+$\usucc = 1.06$. Success rate reports these as spatial-generalization successes; the
+readout shows the reach never grounded (\Cref{fig:clouds}).
+
+The contact and lift endpoints resolve an apparent tension---how can an anchored reach
+succeed? On LIBERO-spatial, successful rollouts have an anchored \emph{plan} (pre-grasp
+$\uu = 0.51$ after fine-tuning) but engage the object late: the contact endpoint sits at
+$\uu = 0.22$ and lift at $\uu = 0.32$. The pre-grasp endpoint captures a planning bias
+toward the canonical location; success comes from late correction inside the basin, not
+from grounded planning. Measuring only success, or only the final endpoint, would miss
+this.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig4_endpoint_clouds.png}
+\caption{\textbf{Displacement-normalized pre-grasp endpoints}, success (filled) vs failure
+(open), for the base policy and fine-tuned conditions. Median $\uu$ annotated. Successful
+reaches remain centered away from the object ($\uu{\approx}1$) on the wide-basin suite; the
+readout exposes what success rate cannot.}
+\label{fig:clouds}
+\end{figure}
+
+\subsection{Success rate hides it}
+\label{sec:exp:hidden}
+
+We fine-tune the base policy under five counterfactual-augmentation conditions that differ
+in where synthetic displaced demonstrations are placed. Across all five, the pre-grasp
+steering stays anchored---median $\uu$ remains near $1.0$ regardless of the condition's
+displaced success---so success changes are \emph{not} diagnostic of steering. A
+two-one-sided-tests equivalence check confirms the steering distributions are
+statistically indistinguishable across conditions within our margins. A reader with access
+only to success rate would conclude that some conditions ``generalize better''; the readout
+shows their reaches are equally anchored.
+
+\subsection{The cross-regime inversion}
+\label{sec:exp:crossregime}
+
+The central finding is that the same intervention---fine-tuning on $100\%$ counterfactual
+(displaced) synthetic demonstrations, denoted M2---produces opposite mechanisms across
+suites (\Cref{tab:main}). On LIBERO-spatial, M2 raises displaced success from $31\%$ to
+$37\%$ but successful reaches remain off-object ($\usucc$ moves only from $1.06$ to
+$0.51$): the gain is basin-widening. On LIBERO-object, M2 raises displaced success from
+$10\%$ to $27\%$ and successful reaches become object-near ($\usucc$ moves from $0.67$ to
+$0.21$). The mechanism differs because the basin differs. \Cref{fig:basin} shows the base
+policy's displaced success collapsing far faster on object ($42\%{\to}0\%$ over
+$25{\to}100$\,mm) than on spatial ($64\%{\to}12\%$): object tasks have tight basins, so a
+policy cannot succeed on a displaced object \emph{without} grounding, and the same
+intervention is forced to ground. Success rate reports ``improvement'' in both suites and
+is blind to the inversion.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.62\linewidth]{fig_basin.png}
+\caption{\textbf{Basin tightness by suite.} Base-policy displaced success versus
+displacement magnitude. LIBERO-object collapses far faster than LIBERO-spatial, so the
+same intervention that can basin-widen on spatial must ground on object.}
+\label{fig:basin}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\small
+\caption{\textbf{Same intervention, opposite mechanism.} Displaced success and
+success-conditioned steering $\usucc$ at $50$\,mm. Success rises in both suites; only the
+readout ($\usucc$) reveals that spatial stays off-object while object becomes object-near.}
+\label{tab:main}
+\begin{tabular}{llccc}
+\toprule
+Suite & Condition & Clean & Displaced (50\,mm) & $\usucc$ \\
+\midrule
+\multirow{2}{*}{LIBERO-spatial} & base       & $74\%$ & $31\%$ & $1.06$ \\
+                                & +FT (M2)   & $52\%$ & $37\%$ & $0.51$ \\
+\midrule
+\multirow{2}{*}{LIBERO-object}  & base       & $68\%$ & $10\%$ & $0.67$ \\
+                                & +FT (M2)   & $42\%$ & $27\%$ & $0.21$ \\
+\bottomrule
+\end{tabular}
+\end{table}

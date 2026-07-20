@@ -1,0 +1,18 @@
+Vision--language--action (VLA) policies report steadily improving \emph{spatial
+generalization}, almost always measured by task success rate. But a policy can
+succeed on a displaced object while never reaching toward it---executing a canonical,
+memorized motor program whose grasp basin is wide enough to occasionally succeed.
+Success rate cannot separate these cases. We introduce a cheap, interventional,
+displacement-normalized, \emph{success-conditioned} reach readout: we displace the
+target object at episode start and measure where the pre-grasp, contact, and lift
+endpoints land along the axis from the object ($\uu{=}0$) to the canonical training
+location ($\uu{=}1$), split by success and failure. The readout asks a question success
+rate cannot: when a rollout \emph{succeeds}, was the reach object-grounded or merely
+tolerated by a wide basin? Applying it to a competent SmolVLA across two LIBERO suites,
+we find that the same counterfactual-augmentation fine-tuning does opposite things by
+regime---in wide-basin LIBERO-spatial, successful reaches stay off the object
+($\usucc$ moves $1.06{\to}0.51$: success rises by widening the basin), while in
+tight-basin LIBERO-object, successful reaches become object-near
+($\usucc$ $0.67{\to}0.21$, displaced success $10{\to}27\%$). Success rate hides this
+inversion entirely. The readout is model-agnostic by construction and released as a
+drop-in evaluation tool.

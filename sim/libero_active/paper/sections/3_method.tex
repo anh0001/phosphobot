@@ -1,0 +1,65 @@
+\section{The Reach Readout}
+\label{sec:method}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig_hero.png}
+\caption{\textbf{The readout and the cross-regime inversion.} \emph{Left:} we displace the
+object by $\dvec$ and measure the reach endpoint along $\uu$ (object $\uu{=}0$, canonical
+$\uu{=}1$). A grounded reach lands near the object ($\uu{\to}0$); an anchored reach lands
+near the canonical location ($\uu{\to}1$) yet can still succeed inside a wide grasp basin.
+\emph{Right (data):} the \emph{same} counterfactual-fine-tuning intervention raises
+displaced success in both suites, but spatial successes stay off-object
+($\usucc\,1.06{\to}0.51$) while object successes become object-near
+($\usucc\,0.67{\to}0.21$). Success rate cannot distinguish the two.}
+\label{fig:hero}
+\end{figure}
+
+\paragraph{Setup.}
+We study SmolVLA~\citep{smolvla2025} fine-tuned to competence on the LIBERO-spatial and
+LIBERO-object suites~\citep{liu2023libero} (10 tasks each), reaching $74\%$ and $68\%$
+clean success respectively. All rollouts run in simulation with fresh observations at
+each planning step.
+
+\paragraph{The intervention.}
+At episode start we displace the task-relevant object by a planar vector $\dvec$ (a grid
+of four magnitudes $\{25,50,75,100\}$\,mm $\times$ four directions), leaving the rest of
+the scene intact, then roll out the policy under its normal chunked execution. The
+canonical location $\Cpt$ is the object's training position; the displaced location is
+$\Tpt = \Cpt + \dvec$.
+
+\paragraph{The readout.}
+Let $\Ept$ be a reach endpoint and $\evec = \Ept - \Tpt$ its error relative to the
+displaced object. In the displacement-normalized frame we define
+\begin{equation}
+\uu = \frac{\langle \evec,\, -\hat{\dvec}\rangle}{\|\dvec\|},
+\qquad
+\vv = \frac{\langle \evec,\, \hat{\dvec}^{\perp}\rangle}{\|\dvec\|},
+\qquad
+\rrho = \frac{\|\evec\|}{\|\dvec\|},
+\end{equation}
+so $\uu = 0$ when the endpoint is at the object $\Tpt$ and $\uu = 1$ when it is at the
+canonical location $\Cpt$; $\vv$ is the orthogonal component and $\rrho$ the normalized
+error magnitude. We extract three endpoints per rollout: \emph{pre-grasp} (end-effector at
+the first gripper-close command), \emph{contact} (first object motion), and \emph{lift}
+(first object $z$-rise beyond a threshold). The pre-grasp endpoint captures the
+\emph{planned} reach; contact and lift confirm whether the object was physically engaged.
+
+\paragraph{Success conditioning.}
+The defining move is to split $\uu,\vv,\rrho$ by rollout success. The question ``do
+\emph{successful} spatial-generalization rollouts ground to the object?'' is exactly
+$\usucc$: if displaced successes have $\usucc \approx 1$, the policy succeeds while reaching
+the canonical location---basin tolerance, not grounding. We summarize a condition by the
+success-conditioned gap $\ugap = \mathrm{median}(\ufail) - \mathrm{median}(\usucc)$:
+$\ugap > 0$ means successful reaches are pulled toward the object more than failing ones.
+
+\paragraph{Statistics.}
+Endpoints are aggregated with a task-cluster (pairs) bootstrap over the 10 LIBERO tasks;
+we report $90\%$ intervals. For ``unchanged'' claims we use two-one-sided-tests
+equivalence with pre-declared margins. Full statistical details, including a
+competence-matched degradation-null control used in \Cref{sec:boundary}, are in the
+appendix.
+
+\paragraph{Reusability.}
+The readout needs only object displacement at reset and endpoint logging; it is agnostic
+to the policy architecture and the task suite, and we release it as a drop-in tool.

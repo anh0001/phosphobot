@@ -1,0 +1,57 @@
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Anchoring, shortcuts, and memory traps.}
+That imitation and VLA policies latch onto training-distribution regularities rather than
+task-causal features is well documented. Causal confusion~\citep{dehaan2019causal} shows
+behavioral cloning exploits nuisance correlates of expert actions; object-aware
+regularization~\citep{park2021object} targets spurious object cues. In the VLA setting,
+``memory traps''~\citep{afi2025memory} name the failure of reproducing memorized
+trajectories instead of adapting to a moved scene, and propose an affordance-field fix;
+proprioceptive state has been identified as a shortcut that harms spatial
+generalization~\citep{proprio2025}. We take the \emph{existence} of anchoring as given.
+Our contribution is not the phenomenon but an instrument that measures, on the
+\emph{successful} rollouts, whether the reach is grounded or anchored---a question these
+works do not pose.
+
+\paragraph{Evaluating spatial generalization.}
+Recent work argues that success-only benchmarks give incomplete or misleading pictures.
+LIBERO-X~\citep{liberox2026} introduces a robustness litmus with progressive perturbations
+and a capability decomposition; ``Robust Skills, Brittle Grounding''~\citep{robustskills2026}
+perturbs object locations and decomposes success into skill-execution versus
+instruction-grounding metrics. Spatial-tolerance and success-region analyses characterize
+\emph{where} a policy works~\citep{mobipi2025,n2m2025,manibox2024}. These measure success
+degradation, capability axes, or spatial extent. None measures, on the rollouts that
+succeed, whether the endpoint moved with the displaced object or stayed at the canonical
+location---the basin-versus-grounding distinction (\Cref{tab:delta}). Our readout is the
+manipulation-reach analogue of interventional acceptance tests for
+attribution~\citep{adebayo2018sanity}: it actively perturbs the cause and checks the
+effect.
+
+\paragraph{Counterfactual data and fine-tuning geometry.}
+We use counterfactual-augmentation fine-tuning purely as a controlled intervention, in the
+lineage of MimicGen~\citep{mandlekar2023mimicgen} and DemoGen~\citep{demogen2025}; we make
+no data-generation claim. Our boundary analysis (\Cref{sec:boundary}) connects to work on
+fine-tuning geometry---linear-probing versus full fine-tuning~\citep{kumar2022finetuning},
+last-layer retraining for spurious correlations~\citep{kirichenko2023last}, and robust
+weight interpolation~\citep{wortsman2022wise}---which studies classification, not embodied
+reach.
+
+\begin{table}[t]
+\centering
+\small
+\caption{What related evaluation work measures, versus the reach readout. Only the readout
+is conditioned on \emph{successful} rollouts and separates basin-tolerance from grounding.}
+\label{tab:delta}
+\begin{tabular}{lcccc}
+\toprule
+ & Perturbs & Measures reach & Conditioned on & Separates basin \\
+ & object? & endpoint? & successes? & from grounding? \\
+\midrule
+Robust Skills, Brittle Grounding~\citep{robustskills2026} & yes & partial & no & no \\
+LIBERO-X~\citep{liberox2026} & yes & no & no & no \\
+AFI / Memory Traps~\citep{afi2025memory} & yes & no & no & no \\
+\textbf{Reach readout (ours)} & \textbf{yes} & \textbf{yes} & \textbf{yes} & \textbf{yes} \\
+\bottomrule
+\end{tabular}
+\end{table}

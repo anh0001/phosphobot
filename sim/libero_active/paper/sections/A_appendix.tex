@@ -1,0 +1,45 @@
+\section{Statistical Details}
+\label{app:stats}
+
+\paragraph{Task-cluster bootstrap.}
+LIBERO suites contain 10 tasks, which we treat as clusters. All intervals are $90\%$
+percentile intervals from a nonparametric pairs-cluster bootstrap: we resample the 10 task
+clusters with replacement and recompute the median statistic. (This is not the Rademacher
+wild-cluster bootstrap, which is defined for regression coefficients rather than medians; a
+beta-binomial / logistic mixed model with task random effects is the appropriate
+pre-registered inference for a camera-ready version.)
+
+\paragraph{Success-conditioned gap.}
+For a condition, $\ugap = \mathrm{median}(\ufail) - \mathrm{median}(\usucc)$ over displaced
+rollouts at $50$\,mm, with $\uu$ the pre-grasp endpoint (closest-approach fallback when the
+gripper never closes; fallback was not triggered in the reported runs).
+
+\paragraph{Competence-matched degradation null.}
+The null is the base policy under inference-time Gaussian action noise added to the
+executed end-effector deltas. We search the noise scale so that the null's clean and
+displaced success match the intervention arm; the matched scales are $\sigma\!\approx\!0.15$
+(spatial) and $\sigma\!\approx\!0.20$ (object). The null shares the base policy's grounding
+and is degraded only by execution noise, isolating whether the intervention grounds
+\emph{beyond} degradation-survivorship. We report the directional gain
+$G = \ugap_{\mathrm{int}} - \ugap_{\mathrm{null}}$ with a $\vv$-dispersion guard requiring
+the intervention not to be more dispersed than the null.
+
+\paragraph{Seeds.}
+Claim-critical fine-tuning arms are run at 3 training seeds; the reported spatial $\ugap$
+for the $100\%$-synthetic arm is $0.43 \pm 0.02$ across seeds, indicating the steering
+signal is not seed noise.
+
+\section{Additional Figures}
+\label{app:figs}
+Supplementary figures---success-by-condition bars, the success-versus-steering scatter,
+realized synthetic-displacement distributions, and the full dose--response of steering
+versus synthetic fraction---are provided in the released artifact.
+
+\section{Second-Policy Integration Notes}
+\label{app:2ndpolicy}
+We attempted a second-policy datapoint with a from-scratch ACT policy and a pretrained
+pi0.5 LIBERO checkpoint. ACT trained (training loss decreased) but evaluated at near-zero
+clean success in our rollout harness, consistent with an evaluation-interface mismatch
+rather than a training failure; the pi0.5 attempt was repeatedly interrupted by
+checkpoint-download and shared-GPU contention. We report these as engineering limitations;
+the readout itself is policy-agnostic and imposes no such requirement.
