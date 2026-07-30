@@ -12,9 +12,23 @@ from fastapi.responses import StreamingResponse
 from loguru import logger
 
 from phosphobot.camera import AllCameras, ZMQCamera, get_all_cameras
-from phosphobot.models import AddZMQCameraRequest
+from phosphobot.models import (
+    AddZMQCameraRequest,
+    CameraToggleResponse,
+    CameraToggleResult,
+)
 
 router = APIRouter(tags=["camera"])
+
+
+def _toggle_result(camera_id: int, cameras: AllCameras) -> CameraToggleResult:
+    """Read back the state of a camera after an enable/disable operation."""
+    camera = cameras.get_camera_by_id(camera_id)
+    return CameraToggleResult(
+        camera_id=camera_id,
+        is_active=camera.is_active if camera is not None else False,
+        is_disabled=camera.is_disabled if camera is not None else True,
+    )
 
 
 @router.get(
@@ -72,6 +86,12 @@ def video_feed_for_camera(
     }
 
     camera = cameras.get_camera_by_id(camera_id)
+    if camera is not None and camera.is_disabled:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Camera {camera_id} is disabled. "
+            f"Enable it with POST /cameras/{camera_id}/enable to stream it.",
+        )
     if camera is None or not camera.is_active:
         raise HTTPException(status_code=404, detail="Camera not available")
     logger.info(f"Starting video feed with params {stream_params}")
@@ -184,6 +204,113 @@ async def refresh_camera_list(
     """
     cameras.refresh()
     return {"message": "Camera list refreshed successfully"}
+
+
+@router.post(
+    "/cameras/enable-all",
+    response_model=CameraToggleResponse,
+    description="Re-acquire every camera that was previously disabled.",
+)
+async def enable_all_cameras(
+    cameras: AllCameras = Depends(get_all_cameras),
+) -> CameraToggleResponse:
+    """
+    Enable all cameras, re-opening the devices phosphobot released.
+    """
+    results = cameras.set_all_cameras_enabled(enabled=True)
+    failed = [camera_id for camera_id, is_active in results.items() if not is_active]
+    if failed:
+        message = (
+            f"Enabled {len(results) - len(failed)}/{len(results)} cameras. "
+            f"Could not re-open: {failed}. They may still be used by another process."
+        )
+    else:
+        message = f"Enabled {len(results)} cameras"
+
+    return CameraToggleResponse(
+        message=message,
+        cameras=[_toggle_result(camera_id, cameras) for camera_id in results],
+    )
+
+
+@router.post(
+    "/cameras/disable-all",
+    response_model=CameraToggleResponse,
+    description="Disable every camera and release the underlying devices, "
+    + "so that another process can use them. Streaming and recording will not "
+    + "capture frames until the cameras are enabled again.",
+)
+async def disable_all_cameras(
+    cameras: AllCameras = Depends(get_all_cameras),
+) -> CameraToggleResponse:
+    """
+    Disable all cameras and release the underlying devices.
+    """
+    results = cameras.set_all_cameras_enabled(enabled=False)
+    return CameraToggleResponse(
+        message=f"Disabled {len(results)} cameras. Devices are released.",
+        cameras=[_toggle_result(camera_id, cameras) for camera_id in results],
+    )
+
+
+@router.post(
+    "/cameras/{camera_id}/enable",
+    response_model=CameraToggleResponse,
+    description="Re-acquire a camera device that was previously disabled.",
+    responses={
+        404: {"description": "Camera not found"},
+        409: {"description": "Camera could not be re-opened"},
+    },
+)
+async def enable_camera(
+    camera_id: int,
+    cameras: AllCameras = Depends(get_all_cameras),
+) -> CameraToggleResponse:
+    """
+    Enable a single camera, re-opening the device phosphobot released.
+    """
+    try:
+        is_active = cameras.set_camera_enabled(camera_id, enabled=True)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+    if not is_active:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Camera {camera_id} could not be re-opened. "
+            "It may still be used by another process.",
+        )
+
+    return CameraToggleResponse(
+        message=f"Camera {camera_id} enabled",
+        cameras=[_toggle_result(camera_id, cameras)],
+    )
+
+
+@router.post(
+    "/cameras/{camera_id}/disable",
+    response_model=CameraToggleResponse,
+    description="Disable a camera and release the underlying device, so that "
+    + "another process can use it. Streaming and recording will not capture "
+    + "frames from this camera until it is enabled again.",
+    responses={404: {"description": "Camera not found"}},
+)
+async def disable_camera(
+    camera_id: int,
+    cameras: AllCameras = Depends(get_all_cameras),
+) -> CameraToggleResponse:
+    """
+    Disable a single camera and release the underlying device.
+    """
+    try:
+        cameras.set_camera_enabled(camera_id, enabled=False)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+    return CameraToggleResponse(
+        message=f"Camera {camera_id} disabled. Device is released.",
+        cameras=[_toggle_result(camera_id, cameras)],
+    )
 
 
 @router.post(

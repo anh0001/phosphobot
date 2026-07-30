@@ -7,7 +7,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CameraOff, X } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { CameraOff, PlugZap, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type React from "react";
 
@@ -40,6 +41,14 @@ export interface CameraStreamProps {
   onRecordingToggle?: (id: number, isRecording: boolean) => void;
   showRecordingControls?: boolean;
   labelText?: string;
+  /**
+   * When false, the backend has released the underlying device (eg: /dev/video0)
+   * so another process can use it. No frames are available until it is enabled.
+   */
+  isDeviceEnabled?: boolean;
+  onDeviceToggle?: (id: number, isEnabled: boolean) => void;
+  showDeviceControls?: boolean;
+  isDeviceToggling?: boolean;
 }
 
 export const CardContentPiece = ({
@@ -49,6 +58,7 @@ export const CardContentPiece = ({
   isRecording,
   showRecordingControls,
   quality,
+  isDeviceEnabled = true,
 }: {
   id: number;
   streamPath: string;
@@ -56,13 +66,16 @@ export const CardContentPiece = ({
   isRecording: boolean;
   showRecordingControls: boolean;
   quality: number;
+  isDeviceEnabled?: boolean;
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
 
-  // Whether this card should actually show a live stream
-  const isStreamActive = isRecording || !showRecordingControls;
+  // Whether this card should actually show a live stream. A released device
+  // has no frames to serve, so never try to connect to it.
+  const isStreamActive =
+    isDeviceEnabled && (isRecording || !showRecordingControls);
 
   const handleImageLoad = () => {
     setIsLoading(false);
@@ -119,7 +132,19 @@ export const CardContentPiece = ({
           Stream Unavailable
         </div>
       )}
-      {!isStreamActive && (
+      {!isStreamActive && !isDeviceEnabled && (
+        <div>
+          <div className="flex items-center gap-1">
+            <PlugZap className="size-6" />
+            Camera Released
+          </div>
+          <p className="text-sm">
+            The device is free for other processes. Turn the camera back on to
+            view the feed.
+          </p>
+        </div>
+      )}
+      {!isStreamActive && isDeviceEnabled && (
         <div>
           <div className="flex items-center gap-1">
             <X className="size-6" />
@@ -133,9 +158,7 @@ export const CardContentPiece = ({
         ref={imgRef}
         alt={alt}
         className={`w-full max-h-[360px] object-cover transition-opacity duration-300 ${
-          isLoading || hasError || !isStreamActive
-            ? "opacity-0"
-            : "opacity-100"
+          isLoading || hasError || !isStreamActive ? "opacity-0" : "opacity-100"
         }`}
         onLoad={handleImageLoad}
         onError={handleImageError}
@@ -154,6 +177,10 @@ export const CameraStreamCard = ({
   onRecordingToggle,
   showRecordingControls = false,
   labelText = "Record",
+  isDeviceEnabled = true,
+  onDeviceToggle,
+  showDeviceControls = false,
+  isDeviceToggling = false,
 }: CameraStreamProps) => {
   const [quality, setQuality] = useState(defaultQuality);
   const toggleQuality = () => {
@@ -163,6 +190,12 @@ export const CameraStreamCard = ({
   const handleRecordingChange = (checked: boolean) => {
     if (onRecordingToggle) {
       onRecordingToggle(id, checked);
+    }
+  };
+
+  const handleDeviceChange = (checked: boolean) => {
+    if (onDeviceToggle) {
+      onDeviceToggle(id, checked);
     }
   };
 
@@ -184,6 +217,7 @@ export const CameraStreamCard = ({
           isRecording={isRecording}
           showRecordingControls={showRecordingControls}
           quality={quality}
+          isDeviceEnabled={isDeviceEnabled}
         />
       </CardContent>
       <CardFooter className="justify-between">
@@ -196,12 +230,34 @@ export const CameraStreamCard = ({
             Preview:{" "}
             {quality === defaultQuality ? "Low quality" : "High quality"}
           </Badge>
+          {showDeviceControls && (
+            <div className="flex items-center gap-2">
+              <Switch
+                id={`device-${id}`}
+                checked={isDeviceEnabled}
+                disabled={isDeviceToggling}
+                onCheckedChange={handleDeviceChange}
+                aria-label={
+                  isDeviceEnabled
+                    ? `Release camera ${id} for other processes`
+                    : `Reconnect camera ${id}`
+                }
+              />
+              <label
+                htmlFor={`device-${id}`}
+                className="text-sm font-medium leading-none"
+              >
+                {isDeviceEnabled ? "Camera on" : "Released"}
+              </label>
+            </div>
+          )}
         </div>
         {showRecordingControls && (
           <div className="flex items-center gap-2">
             <Checkbox
               id={`record-${id}`}
               checked={isRecording}
+              disabled={!isDeviceEnabled}
               onCheckedChange={handleRecordingChange}
             />
             <label

@@ -34,6 +34,11 @@ from phosphobot.types import CameraTypes
 
 cameras = None
 
+# How long we wait for a camera capture thread to exit before giving up on it.
+CAMERA_THREAD_JOIN_TIMEOUT_S = 2.0
+# Fallback framerate used for streaming when a device does not report its fps.
+DEFAULT_STREAM_FPS = 30
+
 
 def filter_available_camera_ids(
     requested_camera_ids: Iterable[int],
@@ -335,9 +340,13 @@ def detect_video_indexes(
 class BaseCamera(ABC):
     camera_type: CameraTypes
     is_active: bool = False
-    width: int
-    height: int
-    fps: int
+    # True when the camera was turned off on purpose (as opposed to failing to open).
+    is_disabled: bool = False
+    # Defaults matter for cameras that are created disabled: they never run
+    # init_camera(), yet status() still reports on them.
+    width: int = 0
+    height: int = 0
+    fps: int = 0
 
     def __init__(self) -> None:
         atexit.register(self.stop)
@@ -360,6 +369,24 @@ class BaseCamera(ABC):
     def stop(self) -> None:
         """Stop the camera from capturing frames."""
         raise NotImplementedError("Stop method not implemented")
+
+    def disable(self) -> None:
+        """
+        Release the underlying device so that another process can open it.
+
+        Unlike stop(), the camera stays registered and can be brought back with enable().
+        """
+        self.is_disabled = True
+        self.stop()
+
+    def enable(self) -> bool:
+        """
+        Re-acquire the underlying device.
+
+        Returns True if the camera is active after the call.
+        """
+        self.is_disabled = False
+        return self.is_active
 
     def get_depth_frame(self) -> Optional[cv2.typing.MatLike]:
         """Get the latest depth frame from the camera."""
@@ -416,9 +443,12 @@ class BaseCamera(ABC):
                     )
                     # Prevent tight loop
                     await asyncio.sleep(0.02)
-                # Wait according to the fps
+                # Wait according to the fps. Some devices report fps=0.
                 time_spent = time.perf_counter() - time_start
-                time_to_wait = max(0, 1 / self.fps - time_spent)
+                frame_duration = (
+                    1 / self.fps if self.fps > 0 else 1 / DEFAULT_STREAM_FPS
+                )
+                time_to_wait = max(0, frame_duration - time_spent)
                 await asyncio.sleep(time_to_wait)
         except GeneratorExit:
             logger.info(f"{self.camera_name} Generator exited")
@@ -455,6 +485,7 @@ class VideoCamera(threading.Thread, BaseCamera):
         if disable:
             logger.info(f"{self.camera_name}: disabled")
             self.is_active = False
+            self.is_disabled = True
             return
 
         if video:
@@ -490,6 +521,80 @@ class VideoCamera(threading.Thread, BaseCamera):
             pass
         finally:
             self.video = None
+
+    def _open_capture(self) -> Optional[cv2.VideoCapture]:
+        """
+        Create a fresh OpenCV capture for this camera.
+
+        Overridden by cameras that are not backed by an OpenCV device.
+        """
+        if self.camera_id is None:
+            return None
+        return cv2.VideoCapture(self.camera_id)
+
+    def _release_capture(self) -> None:
+        """Release the OpenCV handle without touching the thread state."""
+        try:
+            if self.video is not None:
+                self.video.release()
+        except Exception as e:
+            logger.warning(f"{self.camera_name}: Error releasing capture: {str(e)}")
+        finally:
+            self.video = None
+
+    def disable(self) -> None:
+        """
+        Release the device (eg: /dev/video0) so another process can open it.
+
+        The camera object stays registered in AllCameras and can be brought back
+        with enable().
+        """
+        self.is_disabled = True
+        was_running = self.is_active
+        self.stop()
+        if was_running and self.is_alive():
+            self.join(timeout=CAMERA_THREAD_JOIN_TIMEOUT_S)
+            if self.is_alive():
+                logger.warning(
+                    f"{self.camera_name}: Capture thread did not exit within "
+                    f"{CAMERA_THREAD_JOIN_TIMEOUT_S}s"
+                )
+        self.last_frame = None
+        logger.info(f"{self.camera_name}: Disabled, device released")
+
+    def enable(self) -> bool:
+        """
+        Re-open the device and restart the capture thread.
+
+        Returns True if the camera is active after the call.
+        """
+        self.is_disabled = False
+        if self.is_active:
+            return True
+
+        # A stale thread would race with the new one on self.video.
+        if self.is_alive():
+            logger.warning(
+                f"{self.camera_name}: Previous capture thread is still running, "
+                "cannot enable yet"
+            )
+            return False
+
+        self.video = self._open_capture()
+        if not self.init_camera():
+            logger.warning(f"{self.camera_name}: Failed to re-open, staying inactive")
+            self._release_capture()
+            return False
+
+        self.is_active = True
+        # threading.Thread instances cannot be started twice: reset the thread
+        # bookkeeping so this object can run again.
+        threading.Thread.__init__(self)
+        self.lock = threading.Lock()
+        self._stop_event = threading.Event()
+        self.start()
+        logger.info(f"{self.camera_name}: Enabled, device re-acquired")
+        return True
 
     def init_camera(self) -> bool:
         if not self.video:
@@ -614,6 +719,10 @@ class DummyCamera(VideoCamera):
         self.last_frame = np.zeros((self.height, self.width, 3), dtype=np.uint8)
         return True
 
+    def _open_capture(self) -> Optional[cv2.VideoCapture]:
+        """A dummy camera is not backed by a real device: never grab /dev/video*."""
+        return cv2.VideoCapture()
+
     def get_rgb_frame(
         self, resize: Optional[Tuple[int, int]] = None
     ) -> Optional[cv2.typing.MatLike]:
@@ -736,8 +845,18 @@ try:
 
             if disable:
                 logger.debug(f"{self.camera_name} disabled")
+                self.is_disabled = True
                 return
 
+            self._open_pipeline()
+
+        def _open_pipeline(self) -> bool:
+            """
+            Acquire the RealSense device and start streaming.
+
+            Called on construction and again by enable() after the device was
+            released. Returns True if the camera is active afterwards.
+            """
             # Configure depth and color streams
             self.pipeline = rs.pipeline()
             config = rs.config()
@@ -748,22 +867,25 @@ try:
 
             if realsense_devices.size() == 0:
                 logger.warning("No RealSense devices found")
-                return
+                return False
 
             # Find the specific device if serial number is provided
             target_device = None
-            if device_serial and device_serial != "unknown":
+            if self.device_serial and self.device_serial != "unknown":
                 for i in range(realsense_devices.size()):
                     device = realsense_devices[i]
-                    if device.get_info(rs.camera_info.serial_number) == device_serial:
+                    if (
+                        device.get_info(rs.camera_info.serial_number)
+                        == self.device_serial
+                    ):
                         target_device = device
                         break
 
                 if target_device is None:
                     logger.error(
-                        f"RealSense device with serial {device_serial} not found"
+                        f"RealSense device with serial {self.device_serial} not found"
                     )
-                    return
+                    return False
             else:
                 # Use device by index if no serial number provided
                 if self.device_index < realsense_devices.size():
@@ -776,7 +898,7 @@ try:
                     logger.error(
                         f"RealSense device index {self.device_index} out of range"
                     )
-                    return
+                    return False
 
             self.is_connected = True
 
@@ -840,6 +962,8 @@ try:
                     except:  # noqa: E722
                         pass
 
+            return self.is_active
+
         def _start_capture_loop(self) -> None:
             """Start a daemon thread that continuously reads frames from the
             RealSense pipeline and caches the latest color + depth frames."""
@@ -898,7 +1022,11 @@ try:
                 logger.warning(f"{self.camera_name} is not active")
                 return None
             with self._frame_lock:
-                frame = self._cached_rgb_frame.copy() if self._cached_rgb_frame is not None else None
+                frame = (
+                    self._cached_rgb_frame.copy()
+                    if self._cached_rgb_frame is not None
+                    else None
+                )
             if frame is None:
                 logger.warning(f"{self.camera_name} failed to grab frame")
                 return None
@@ -913,7 +1041,11 @@ try:
                 logger.warning(f"{self.camera_name} is not active")
                 return None
             with self._frame_lock:
-                frame = self._cached_depth_frame.copy() if self._cached_depth_frame is not None else None
+                frame = (
+                    self._cached_depth_frame.copy()
+                    if self._cached_depth_frame is not None
+                    else None
+                )
             if frame is None:
                 logger.warning(f"{self.camera_name} Failed to grab frame")
                 return None
@@ -927,13 +1059,37 @@ try:
                 self.is_active = False
                 self._stop_event.set()
                 if self._capture_thread is not None:
-                    self._capture_thread.join(timeout=2.0)
+                    self._capture_thread.join(timeout=CAMERA_THREAD_JOIN_TIMEOUT_S)
                     self._capture_thread = None
                 try:
                     time.sleep(0.1)
                     self.pipeline.stop()
                 except Exception as e:
                     logger.warning(f"{self.camera_name} failed to stop: {str(e)}")
+
+        def disable(self) -> None:
+            """Stop the pipeline so another process can claim the RealSense device."""
+            self.is_disabled = True
+            self.stop()
+            self.is_connected = False
+            with self._frame_lock:
+                self._cached_rgb_frame = None
+                self._cached_depth_frame = None
+            logger.info(f"{self.camera_name}: Disabled, device released")
+
+        def enable(self) -> bool:
+            """Restart the pipeline on the same physical device."""
+            self.is_disabled = False
+            if self.is_active:
+                return True
+            self._capture_error_count = 0
+            if not self._open_pipeline():
+                logger.warning(
+                    f"{self.camera_name}: Failed to re-open, staying inactive"
+                )
+                return False
+            logger.info(f"{self.camera_name}: Enabled, device re-acquired")
+            return True
 
     class RealSenseVirtualCamera(VideoCamera):
         def __init__(
@@ -964,6 +1120,22 @@ try:
         @is_active.setter
         def is_active(self, value: bool) -> None:
             return
+
+        @property
+        def is_disabled(self) -> bool:
+            # Both virtual cameras share one pipeline, so they share one state.
+            return self.realsense_camera.is_disabled
+
+        @is_disabled.setter
+        def is_disabled(self, value: bool) -> None:
+            return
+
+        def disable(self) -> None:
+            """Disabling either virtual camera releases the shared RealSense device."""
+            self.realsense_camera.disable()
+
+        def enable(self) -> bool:
+            return self.realsense_camera.enable()
 
         def get_rgb_frame(
             self, resize: Optional[Tuple[int, int]] = None
@@ -1134,14 +1306,20 @@ class ZMQCamera(VideoCamera):
 
         logger.info(f"{self.camera_name}: Thread stopped.")
 
+    def _open_capture(self) -> Optional[cv2.VideoCapture]:
+        """A ZMQ camera is fed over the network: it owns no OpenCV device."""
+        return None
+
     def stop(self) -> None:
         """Extends the parent stop method to gracefully close ZMQ resources."""
         if self._stop_event.is_set():
             return
         logger.debug(f"{self.camera_name}: Stopping...")
+        self.is_active = False
+        self.stream_initialized = False
         self._stop_event.set()
         if self.thread and self.thread.is_alive():
-            self.thread.join(timeout=2.0)
+            self.thread.join(timeout=CAMERA_THREAD_JOIN_TIMEOUT_S)
 
         try:
             if self.socket:
@@ -1150,6 +1328,10 @@ class ZMQCamera(VideoCamera):
                 self.context.term()
         except Exception as e:
             logger.error(f"{self.camera_name}: Error during ZMQ cleanup: {e}")
+        finally:
+            self.socket = None
+            self.poller = None
+            self.context = None
 
 
 class AllCameras:
@@ -1523,6 +1705,7 @@ class AllCameras:
                     camera_id=camera.camera_id,
                     camera_type=camera.camera_type,
                     is_active=camera.is_active,
+                    is_disabled=camera.is_disabled,
                     width=camera.width,
                     height=camera.height,
                     fps=camera.fps,
@@ -1535,6 +1718,62 @@ class AllCameras:
     def stop(self) -> None:
         for camera in self.cameras:
             camera.stop()
+
+    def _remember_disabled(self, camera_id: int, disabled: bool) -> None:
+        """
+        Keep self.disabled_cameras in sync so that refresh() honors the choice.
+        """
+        if self.disabled_cameras is None:
+            self.disabled_cameras = []
+
+        if disabled and camera_id not in self.disabled_cameras:
+            self.disabled_cameras = self.disabled_cameras + [camera_id]
+        elif not disabled and camera_id in self.disabled_cameras:
+            self.disabled_cameras = [
+                id for id in self.disabled_cameras if id != camera_id
+            ]
+
+    def set_camera_enabled(self, camera_id: int, enabled: bool) -> bool:
+        """
+        Enable or disable a single camera.
+
+        Disabling releases the underlying device (eg: /dev/video0 or the RealSense
+        pipeline) so that another process can open it. Enabling re-acquires it.
+
+        Returns the resulting is_active state of the camera.
+
+        Raises ValueError if no camera has this id.
+        """
+        camera = self.get_camera_by_id(camera_id)
+        if camera is None:
+            raise ValueError(
+                f"Camera with id {camera_id} not available in {self.camera_ids}"
+            )
+
+        if enabled:
+            is_active = camera.enable()
+        else:
+            camera.disable()
+            is_active = camera.is_active
+
+        self._remember_disabled(camera_id, disabled=not enabled)
+        # The main camera is cached and may now point at a released device.
+        self._main_camera = None
+        return is_active
+
+    def set_all_cameras_enabled(self, enabled: bool) -> Dict[int, bool]:
+        """
+        Enable or disable every registered camera.
+
+        Returns a mapping of camera id to the resulting is_active state.
+        """
+        results: Dict[int, bool] = {}
+        for camera_id in self.camera_ids:
+            try:
+                results[camera_id] = self.set_camera_enabled(camera_id, enabled=enabled)
+            except ValueError as e:
+                logger.warning(f"Skipping camera {camera_id}: {str(e)}")
+        return results
 
     def get_camera_by_id(self, id: int) -> Optional[BaseCamera]:
         if id not in self.camera_ids:

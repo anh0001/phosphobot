@@ -23,6 +23,7 @@ camera_endpoint_module = _load_camera_endpoint_module()
 
 class _DummyCamera:
     is_active = True
+    is_disabled = False
 
     async def generate_rgb_frames(
         self,

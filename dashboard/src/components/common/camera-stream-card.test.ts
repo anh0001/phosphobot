@@ -49,6 +49,7 @@ describe("realsense_depth filtering", () => {
     {
       camera_id: 0,
       is_active: true,
+      is_disabled: false,
       camera_type: "classic",
       width: 640,
       height: 480,
@@ -57,6 +58,7 @@ describe("realsense_depth filtering", () => {
     {
       camera_id: 1,
       is_active: true,
+      is_disabled: false,
       camera_type: "realsense_rgb",
       width: 640,
       height: 480,
@@ -65,6 +67,7 @@ describe("realsense_depth filtering", () => {
     {
       camera_id: 2,
       is_active: true,
+      is_disabled: false,
       camera_type: "realsense_depth",
       width: 640,
       height: 480,

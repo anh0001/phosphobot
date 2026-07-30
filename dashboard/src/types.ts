@@ -12,6 +12,8 @@ export type RobotConfigStatus = {
 export type SingleCameraStatus = {
   camera_id: number;
   is_active: boolean;
+  /** True when the camera was turned off on purpose and its device released. */
+  is_disabled: boolean;
   camera_type:
     | "classic"
     | "stereo"

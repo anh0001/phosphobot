@@ -8,7 +8,12 @@ from phosphobot._version import __version__
 from phosphobot.types import VideoCodecs
 from phosphobot.utils import NetworkDevice
 
-from .camera import AllCamerasStatus, SingleCameraStatus
+from .camera import (
+    AllCamerasStatus,
+    CameraToggleResponse,
+    CameraToggleResult,
+    SingleCameraStatus,
+)
 from .dataset import BaseDataset, BaseEpisode, JsonEpisode, Observation, Step
 from .lerobot_dataset import (
     BaseRobotInfo,

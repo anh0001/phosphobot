@@ -4,14 +4,16 @@ import { Button } from "@/components/ui/button";
 import { useCameraControls } from "@/lib/hooks";
 import { cn, fetchWithBaseUrl, fetcher } from "@/lib/utils";
 import type { AdminSettings, ServerStatus } from "@/types";
-import { RotateCw, Video } from "lucide-react";
-import { useState } from "react";
+import { PlugZap, RotateCw, Video } from "lucide-react";
+import { useCallback, useState } from "react";
 import useSWR from "swr";
 
 export function ViewVideoPage({ labelText }: { labelText?: string }) {
   if (!labelText) labelText = "Camera Stream";
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isZMQModalOpen, setIsZMQModalOpen] = useState(false);
+  const [togglingCameraIds, setTogglingCameraIds] = useState<number[]>([]);
+  const [isTogglingAll, setIsTogglingAll] = useState(false);
 
   const { data: serverStatus, mutate: mutateStatus } = useSWR<ServerStatus>(
     ["/status"],
@@ -35,9 +37,62 @@ export function ViewVideoPage({ labelText }: { labelText?: string }) {
     mutateSettings,
   );
 
+  const camerasStatus = serverStatus?.cameras.cameras_status ?? [];
+  const hasReleasedCamera = camerasStatus.some((cam) => cam.is_disabled);
+
+  // Releasing a device frees it (eg: /dev/video0) for another process.
+  const toggleCameraDevice = useCallback(
+    async (cameraId: number, isEnabled: boolean) => {
+      setTogglingCameraIds((ids) => [...ids, cameraId]);
+      try {
+        await fetchWithBaseUrl(
+          `/cameras/${cameraId}/${isEnabled ? "enable" : "disable"}`,
+          "POST",
+        );
+        await mutateStatus();
+      } finally {
+        setTogglingCameraIds((ids) => ids.filter((id) => id !== cameraId));
+      }
+    },
+    [mutateStatus],
+  );
+
+  const toggleAllCameraDevices = useCallback(
+    async (isEnabled: boolean) => {
+      setIsTogglingAll(true);
+      try {
+        await fetchWithBaseUrl(
+          `/cameras/${isEnabled ? "enable-all" : "disable-all"}`,
+          "POST",
+        );
+        await mutateStatus();
+      } finally {
+        setIsTogglingAll(false);
+      }
+    },
+    [mutateStatus],
+  );
+
   return (
     <>
       <div className="mb-2 flex justify-end gap-x-2">
+        <Button
+          variant="outline"
+          onClick={() => toggleAllCameraDevices(hasReleasedCamera)}
+          disabled={isTogglingAll || isRefreshing || camerasStatus.length === 0}
+          title={
+            hasReleasedCamera
+              ? "Re-open every camera device"
+              : "Release every camera device so other processes can use them"
+          }
+        >
+          <div className="flex items-center gap-2">
+            <PlugZap className="h-4 w-4" />
+            {hasReleasedCamera
+              ? "Reconnect all cameras"
+              : "Release all cameras"}
+          </div>
+        </Button>
         <Button
           variant="outline"
           className="ml-2"
@@ -75,7 +130,7 @@ export function ViewVideoPage({ labelText }: { labelText?: string }) {
           </div>
         )}
         {!isRefreshing &&
-          serverStatus?.cameras.cameras_status
+          camerasStatus
             .filter((cam) => cam.camera_type !== "realsense_depth")
             .map((cam) => {
               return (
@@ -90,6 +145,12 @@ export function ViewVideoPage({ labelText }: { labelText?: string }) {
                   onRecordingToggle={updateCameraRecording}
                   showRecordingControls={true}
                   labelText={labelText}
+                  isDeviceEnabled={!cam.is_disabled}
+                  onDeviceToggle={toggleCameraDevice}
+                  showDeviceControls={true}
+                  isDeviceToggling={
+                    isTogglingAll || togglingCameraIds.includes(cam.camera_id)
+                  }
                 />
               );
             })}

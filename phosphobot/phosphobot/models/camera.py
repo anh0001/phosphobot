@@ -8,6 +8,12 @@ from phosphobot.types import CameraTypes
 class SingleCameraStatus(BaseModel):
     camera_id: int
     is_active: bool
+    is_disabled: bool = Field(
+        default=False,
+        description="Whether the camera was turned off on purpose, releasing the "
+        "underlying device so other processes can use it. A camera that is neither "
+        "active nor disabled failed to open.",
+    )
     camera_type: CameraTypes = Field(
         description="Type of camera."
         + "\n`classic`: Standard camera detected by OpenCV."
@@ -38,3 +44,22 @@ class AllCamerasStatus(BaseModel):
         default_factory=list,
         description="List of camera ids that are video cameras.",
     )
+
+
+class CameraToggleResult(BaseModel):
+    """Outcome of enabling or disabling a single camera."""
+
+    camera_id: int
+    is_active: bool = Field(
+        description="Whether the camera is streaming after the operation."
+    )
+    is_disabled: bool = Field(
+        description="Whether the camera is intentionally off after the operation."
+    )
+
+
+class CameraToggleResponse(BaseModel):
+    """Outcome of an enable/disable request on one or several cameras."""
+
+    message: str
+    cameras: List[CameraToggleResult] = Field(default_factory=list)
